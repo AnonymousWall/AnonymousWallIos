@@ -189,7 +189,8 @@ struct RegistrationView: View {
                 let response = try await AuthService.shared.registerWithEmail(email: email, code: verificationCode)
                 await MainActor.run {
                     isLoading = false
-                    // User is now logged in, but needs to set password
+                    // User is now logged in after registration
+                    // Password setup is required for new registrations
                     authState.login(user: response.user, token: response.accessToken, needsPasswordSetup: true)
                     showingSuccess = true
                 }

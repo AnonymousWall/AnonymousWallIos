@@ -222,10 +222,7 @@ class AuthService {
                     let result = try JSONDecoder().decode(T.self, from: data)
                     return result
                 } catch {
-                    print("Decoding error: \(error)")
-                    if let dataString = String(data: data, encoding: .utf8) {
-                        print("Response data: \(dataString)")
-                    }
+                    // Failed to decode response
                     throw AuthError.decodingError
                 }
             } else if httpResponse.statusCode == 401 {

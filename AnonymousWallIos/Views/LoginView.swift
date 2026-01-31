@@ -250,6 +250,8 @@ struct LoginView: View {
                 
                 await MainActor.run {
                     isLoading = false
+                    // User is logging in (password should already be set)
+                    // Note: Backend should ideally indicate password setup status in response
                     authState.login(user: response.user, token: response.accessToken, needsPasswordSetup: false)
                 }
             } catch {

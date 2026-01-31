@@ -112,6 +112,7 @@ struct WallView: View {
         }
         .onAppear {
             // Show password setup if needed
+            // Small delay to allow view to fully load before presenting sheet
             if authState.needsPasswordSetup {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                     showSetPassword = true

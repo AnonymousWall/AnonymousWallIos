@@ -15,8 +15,10 @@ iOS app for college student anonymous posting platform (similar to Blind).
 
 1. Clone the repository
 2. Open `AnonymousWallIos.xcodeproj` in Xcode
-3. The app is configured to use `http://localhost:8080` as the base URL
+3. The app is configured to use `http://localhost:8080` as the base URL (for local development)
 4. Build and run on iOS Simulator or device
+
+**⚠️ Important**: For production deployment, update the base URL in `AuthService.swift` to use HTTPS to protect authentication tokens in transit.
 
 ## Authentication Flows
 
