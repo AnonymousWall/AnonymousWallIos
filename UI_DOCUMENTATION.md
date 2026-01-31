@@ -132,3 +132,49 @@
 - NavigationLink for view transitions
 - Programmatic navigation for post-authentication flow
 - Back navigation available on all sub-views
+
+## Navigation Improvements (Latest Updates)
+
+### RegistrationView Navigation
+- **Navigation Bar**: Now visible with title "Create Account"
+- **Back Button**: Automatically provided by NavigationStack
+- **User Action**: Tap "< Back" or swipe right to return to AuthenticationView
+
+### WallView Menu System
+- **Hamburger Menu**: Three horizontal lines icon (☰) in top right
+- **Menu Items**:
+  - **Change Password** (conditional): Only shown if password is already set
+    - Icon: Lock shield (🔒)
+    - Action: Opens ChangePasswordView sheet
+  - **Logout** (always shown):
+    - Icon: Rectangle with arrow (🚪)
+    - Style: Destructive (red text)
+    - Action: Logs out user and returns to AuthenticationView
+
+### Benefits of Menu System
+1. **More Screen Space**: Removed large buttons from bottom of WallView
+2. **Professional UI**: Standard iOS hamburger menu pattern
+3. **Organized Settings**: All account actions in one place
+4. **Scalable**: Easy to add more menu items in future
+5. **Clear Hierarchy**: Destructive actions (logout) properly styled
+
+### Before vs After
+
+**Before (RegistrationView)**:
+- No navigation bar → User stuck, can't go back
+- Had to restart app to exit registration flow
+
+**After (RegistrationView)**:
+- Navigation bar with back button
+- Can easily return to main screen
+- Standard iOS navigation pattern
+
+**Before (WallView)**:
+- Large "Change Password" button (if password set)
+- Large red "Logout" button at bottom
+- Takes significant screen space
+
+**After (WallView)**:
+- Clean interface with hamburger menu
+- Settings tucked away but easily accessible
+- More space for future content (post feed)
