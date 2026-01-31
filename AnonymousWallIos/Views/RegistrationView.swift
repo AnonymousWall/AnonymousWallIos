@@ -108,7 +108,7 @@ struct RegistrationView: View {
         guard !email.isEmpty else { return }
         
         // Validate email format
-        guard isValidEmail(email) else {
+        guard ValidationUtils.isValidEmail(email) else {
             errorMessage = "Please enter a valid email address"
             return
         }
@@ -134,12 +134,6 @@ struct RegistrationView: View {
                 }
             }
         }
-    }
-    
-    private func isValidEmail(_ email: String) -> Bool {
-        let emailRegex = "[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,64}"
-        let emailPredicate = NSPredicate(format: "SELF MATCHES %@", emailRegex)
-        return emailPredicate.evaluate(with: email)
     }
 }
 

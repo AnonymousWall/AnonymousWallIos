@@ -22,7 +22,8 @@ This iOS app implements email-based authentication with verification codes for a
 
 - **AuthState.swift**: Authentication state management
   - `AuthState`: ObservableObject that manages authentication state across the app
-  - Handles login, logout, and session persistence using UserDefaults
+  - Handles login, logout, and session persistence
+  - Uses Keychain for secure token storage and UserDefaults for non-sensitive data
 
 ### Services (`Services/`)
 
@@ -37,6 +38,13 @@ This iOS app implements email-based authentication with verification codes for a
 - **RegistrationView.swift**: Email registration form
 - **LoginView.swift**: Login form with email and verification code inputs
 - **WallView.swift**: Main authenticated view (placeholder for post feed)
+
+### Utils (`Utils/`)
+
+- **ValidationUtils.swift**: Shared validation utilities
+  - Email format validation
+- **KeychainHelper.swift**: Secure storage wrapper
+  - Safe Keychain operations for storing sensitive data like JWT tokens
 
 ## Backend API Integration
 
@@ -129,18 +137,27 @@ private let baseURL = "https://api.example.com" // Replace with your actual back
 
 ## Session Persistence
 
-User sessions are stored in UserDefaults with the following keys:
+User sessions use a hybrid storage approach for security:
+
+**Keychain** (for sensitive data):
+- `com.anonymouswall.authToken`: JWT authentication token
+
+**UserDefaults** (for non-sensitive data):
 - `isAuthenticated`: Boolean indicating authentication status
-- `authToken`: JWT token for API requests
 - `userId`: User's unique identifier
 - `userEmail`: User's email address
+
+This approach ensures sensitive authentication tokens are stored securely in the iOS Keychain, which is encrypted and protected by the system, while less sensitive user metadata is stored in UserDefaults for quick access.
 
 ## Security Notes
 
 - All API calls use HTTPS (ensure your backend URL uses https://)
-- JWT tokens are stored securely in UserDefaults
+- JWT tokens are stored securely in iOS Keychain (not UserDefaults)
+- Non-sensitive user data (email, user ID) stored in UserDefaults
+- Keychain items are marked as `kSecAttrAccessibleWhenUnlockedThisDeviceOnly` for enhanced security
 - Verification codes should be time-limited on the backend
 - Email validation is performed client-side before API calls
+- All sensitive authentication data is cleared from Keychain on logout
 
 ## Testing
 

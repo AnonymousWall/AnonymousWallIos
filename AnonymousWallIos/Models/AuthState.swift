@@ -15,9 +15,12 @@ class AuthState: ObservableObject {
     
     private let userDefaultsKeys = (
         isAuthenticated: "isAuthenticated",
-        authToken: "authToken",
         userId: "userId",
         userEmail: "userEmail"
+    )
+    
+    private let keychainKeys = (
+        authToken: "com.anonymouswall.authToken"
     )
     
     init() {
@@ -39,15 +42,22 @@ class AuthState: ObservableObject {
     }
     
     private func saveAuthState() {
+        // Save non-sensitive data to UserDefaults
         UserDefaults.standard.set(isAuthenticated, forKey: userDefaultsKeys.isAuthenticated)
-        UserDefaults.standard.set(authToken, forKey: userDefaultsKeys.authToken)
         UserDefaults.standard.set(currentUser?.id, forKey: userDefaultsKeys.userId)
         UserDefaults.standard.set(currentUser?.email, forKey: userDefaultsKeys.userEmail)
+        
+        // Save sensitive token to Keychain
+        if let token = authToken {
+            KeychainHelper.shared.save(token, forKey: keychainKeys.authToken)
+        }
     }
     
     private func loadAuthState() {
         isAuthenticated = UserDefaults.standard.bool(forKey: userDefaultsKeys.isAuthenticated)
-        authToken = UserDefaults.standard.string(forKey: userDefaultsKeys.authToken)
+        
+        // Load token from Keychain
+        authToken = KeychainHelper.shared.get(keychainKeys.authToken)
         
         if let userId = UserDefaults.standard.string(forKey: userDefaultsKeys.userId),
            let userEmail = UserDefaults.standard.string(forKey: userDefaultsKeys.userEmail) {
@@ -56,9 +66,12 @@ class AuthState: ObservableObject {
     }
     
     private func clearAuthState() {
+        // Clear UserDefaults
         UserDefaults.standard.removeObject(forKey: userDefaultsKeys.isAuthenticated)
-        UserDefaults.standard.removeObject(forKey: userDefaultsKeys.authToken)
         UserDefaults.standard.removeObject(forKey: userDefaultsKeys.userId)
         UserDefaults.standard.removeObject(forKey: userDefaultsKeys.userEmail)
+        
+        // Clear Keychain
+        KeychainHelper.shared.delete(keychainKeys.authToken)
     }
 }
