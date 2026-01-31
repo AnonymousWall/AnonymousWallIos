@@ -16,29 +16,31 @@ struct AnonymousWallIosTests {
         #expect(authState.isAuthenticated == false)
         #expect(authState.currentUser == nil)
         #expect(authState.authToken == nil)
+        #expect(authState.needsPasswordSetup == false)
     }
     
     @Test func testAuthStateLogin() async throws {
         // Test that login updates authentication state
         let authState = AuthState()
-        let testUser = User(id: "test-123", email: "test@example.com", createdAt: nil)
+        let testUser = User(id: "test-123", email: "test@example.com", isVerified: true, createdAt: "2026-01-31T00:00:00Z")
         let testToken = "test-token-abc"
         
-        authState.login(user: testUser, token: testToken)
+        authState.login(user: testUser, token: testToken, needsPasswordSetup: true)
         
         #expect(authState.isAuthenticated == true)
         #expect(authState.currentUser?.id == "test-123")
         #expect(authState.currentUser?.email == "test@example.com")
         #expect(authState.authToken == "test-token-abc")
+        #expect(authState.needsPasswordSetup == true)
     }
     
     @Test func testAuthStateLogout() async throws {
         // Test that logout clears authentication state
         let authState = AuthState()
-        let testUser = User(id: "test-123", email: "test@example.com", createdAt: nil)
+        let testUser = User(id: "test-123", email: "test@example.com", isVerified: true, createdAt: "2026-01-31T00:00:00Z")
         
         // Login first
-        authState.login(user: testUser, token: "test-token")
+        authState.login(user: testUser, token: "test-token", needsPasswordSetup: false)
         #expect(authState.isAuthenticated == true)
         
         // Then logout
@@ -46,39 +48,41 @@ struct AnonymousWallIosTests {
         #expect(authState.isAuthenticated == false)
         #expect(authState.currentUser == nil)
         #expect(authState.authToken == nil)
+        #expect(authState.needsPasswordSetup == false)
     }
     
     @Test func testUserModelDecoding() async throws {
-        // Test that User model can be decoded from JSON
+        // Test that User model can be decoded from JSON (new format)
         let json = """
         {
             "id": "user-456",
             "email": "user@test.com",
-            "created_at": "2026-01-31T00:00:00Z"
+            "isVerified": true,
+            "createdAt": "2026-01-31T00:00:00Z"
         }
         """
         
         let data = json.data(using: .utf8)!
         let decoder = JSONDecoder()
-        decoder.dateDecodingStrategy = .iso8601
         
         let user = try decoder.decode(User.self, from: data)
         #expect(user.id == "user-456")
         #expect(user.email == "user@test.com")
-        #expect(user.createdAt != nil)
+        #expect(user.isVerified == true)
+        #expect(user.createdAt == "2026-01-31T00:00:00Z")
     }
     
     @Test func testAuthResponseDecoding() async throws {
-        // Test that AuthResponse can be decoded from JSON
+        // Test that AuthResponse can be decoded from JSON (new format)
         let json = """
         {
-            "success": true,
-            "message": "Login successful",
+            "accessToken": "jwt-token-here",
             "user": {
                 "id": "user-789",
-                "email": "success@test.com"
-            },
-            "token": "jwt-token-here"
+                "email": "success@test.com",
+                "isVerified": true,
+                "createdAt": "2026-01-31T00:00:00Z"
+            }
         }
         """
         
@@ -86,10 +90,9 @@ struct AnonymousWallIosTests {
         let decoder = JSONDecoder()
         
         let response = try decoder.decode(AuthResponse.self, from: data)
-        #expect(response.success == true)
-        #expect(response.message == "Login successful")
-        #expect(response.user?.id == "user-789")
-        #expect(response.token == "jwt-token-here")
+        #expect(response.accessToken == "jwt-token-here")
+        #expect(response.user.id == "user-789")
+        #expect(response.user.email == "success@test.com")
     }
     
     @Test func testEmailValidation() async throws {
@@ -128,6 +131,20 @@ struct AnonymousWallIosTests {
         // Verify deleted
         let afterDelete = KeychainHelper.shared.get(testKey)
         #expect(afterDelete == nil)
+    }
+    
+    @Test func testPasswordSetupStatus() async throws {
+        // Test password setup status update
+        let authState = AuthState()
+        let testUser = User(id: "test-123", email: "test@example.com", isVerified: true, createdAt: "2026-01-31T00:00:00Z")
+        
+        // Login with password setup needed
+        authState.login(user: testUser, token: "test-token", needsPasswordSetup: true)
+        #expect(authState.needsPasswordSetup == true)
+        
+        // Update password setup status
+        authState.updatePasswordSetupStatus(completed: true)
+        #expect(authState.needsPasswordSetup == false)
     }
 
 }
