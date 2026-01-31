@@ -19,9 +19,7 @@ class AuthState: ObservableObject {
         userEmail: "userEmail"
     )
     
-    private let keychainKeys = (
-        authToken: "com.anonymouswall.authToken"
-    )
+    private let keychainAuthTokenKey = "com.anonymouswall.authToken"
     
     init() {
         loadAuthState()
@@ -49,7 +47,7 @@ class AuthState: ObservableObject {
         
         // Save sensitive token to Keychain
         if let token = authToken {
-            KeychainHelper.shared.save(token, forKey: keychainKeys.authToken)
+            KeychainHelper.shared.save(token, forKey: keychainAuthTokenKey)
         }
     }
     
@@ -57,7 +55,7 @@ class AuthState: ObservableObject {
         isAuthenticated = UserDefaults.standard.bool(forKey: userDefaultsKeys.isAuthenticated)
         
         // Load token from Keychain
-        authToken = KeychainHelper.shared.get(keychainKeys.authToken)
+        authToken = KeychainHelper.shared.get(keychainAuthTokenKey)
         
         if let userId = UserDefaults.standard.string(forKey: userDefaultsKeys.userId),
            let userEmail = UserDefaults.standard.string(forKey: userDefaultsKeys.userEmail) {
@@ -72,6 +70,6 @@ class AuthState: ObservableObject {
         UserDefaults.standard.removeObject(forKey: userDefaultsKeys.userEmail)
         
         // Clear Keychain
-        KeychainHelper.shared.delete(keychainKeys.authToken)
+        KeychainHelper.shared.delete(keychainAuthTokenKey)
     }
 }
