@@ -10,13 +10,21 @@ import SwiftUI
 struct LoginView: View {
     @EnvironmentObject var authState: AuthState
     @State private var email = ""
+    @State private var password = ""
     @State private var verificationCode = ""
     @State private var isLoading = false
     @State private var isSendingCode = false
     @State private var errorMessage: String?
     @State private var successMessage: String?
+    @State private var loginMethod: LoginMethod = .password
+    @State private var showForgotPassword = false
     
     var prefillEmail: String?
+    
+    enum LoginMethod {
+        case password
+        case verificationCode
+    }
     
     init(prefillEmail: String? = nil) {
         self.prefillEmail = prefillEmail
@@ -35,13 +43,21 @@ struct LoginView: View {
                     .font(.largeTitle)
                     .fontWeight(.bold)
                 
-                Text("Login with your email and verification code")
+                Text("Login to your account")
                     .font(.subheadline)
                     .foregroundColor(.gray)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal)
             }
             .padding(.top, 40)
+            
+            // Login method selector
+            Picker("Login Method", selection: $loginMethod) {
+                Text("Password").tag(LoginMethod.password)
+                Text("Verification Code").tag(LoginMethod.verificationCode)
+            }
+            .pickerStyle(SegmentedPickerStyle())
+            .padding(.horizontal)
             
             Spacer()
             
@@ -51,48 +67,75 @@ struct LoginView: View {
                     .font(.headline)
                     .foregroundColor(.primary)
                 
-                HStack {
-                    TextField("Enter your email", text: $email)
-                        .textInputAutocapitalization(.never)
-                        .keyboardType(.emailAddress)
-                        .autocorrectionDisabled()
-                        .padding()
-                        .background(Color(.systemGray6))
-                        .cornerRadius(10)
-                    
-                    Button(action: requestVerificationCode) {
-                        if isSendingCode {
-                            ProgressView()
-                                .progressViewStyle(CircularProgressViewStyle())
-                        } else {
-                            Text("Get Code")
-                                .fontWeight(.semibold)
-                        }
-                    }
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 12)
-                    .background(email.isEmpty ? Color.gray : Color.blue)
-                    .foregroundColor(.white)
-                    .cornerRadius(10)
-                    .disabled(email.isEmpty || isSendingCode)
-                }
-            }
-            .padding(.horizontal)
-            
-            // Verification code input
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Verification Code")
-                    .font(.headline)
-                    .foregroundColor(.primary)
-                
-                TextField("Enter 6-digit code", text: $verificationCode)
-                    .keyboardType(.numberPad)
+                TextField("Enter your email", text: $email)
+                    .textInputAutocapitalization(.never)
+                    .keyboardType(.emailAddress)
                     .autocorrectionDisabled()
                     .padding()
                     .background(Color(.systemGray6))
                     .cornerRadius(10)
             }
             .padding(.horizontal)
+            
+            // Password or Verification Code based on selected method
+            if loginMethod == .password {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Password")
+                        .font(.headline)
+                        .foregroundColor(.primary)
+                    
+                    SecureField("Enter your password", text: $password)
+                        .autocorrectionDisabled()
+                        .padding()
+                        .background(Color(.systemGray6))
+                        .cornerRadius(10)
+                }
+                .padding(.horizontal)
+                
+                // Forgot password link
+                HStack {
+                    Spacer()
+                    Button(action: { showForgotPassword = true }) {
+                        Text("Forgot Password?")
+                            .font(.caption)
+                            .foregroundColor(.blue)
+                    }
+                }
+                .padding(.horizontal)
+            } else {
+                // Verification code input
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Verification Code")
+                        .font(.headline)
+                        .foregroundColor(.primary)
+                    
+                    HStack {
+                        TextField("Enter 6-digit code", text: $verificationCode)
+                            .keyboardType(.numberPad)
+                            .autocorrectionDisabled()
+                            .padding()
+                            .background(Color(.systemGray6))
+                            .cornerRadius(10)
+                        
+                        Button(action: requestVerificationCode) {
+                            if isSendingCode {
+                                ProgressView()
+                                    .progressViewStyle(CircularProgressViewStyle())
+                            } else {
+                                Text("Get Code")
+                                    .fontWeight(.semibold)
+                            }
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 12)
+                        .background(email.isEmpty ? Color.gray : Color.blue)
+                        .foregroundColor(.white)
+                        .cornerRadius(10)
+                        .disabled(email.isEmpty || isSendingCode)
+                    }
+                }
+                .padding(.horizontal)
+            }
             
             // Success message
             if let successMessage = successMessage {
@@ -146,10 +189,17 @@ struct LoginView: View {
                 email = prefillEmail
             }
         }
+        .sheet(isPresented: $showForgotPassword) {
+            ForgotPasswordView()
+        }
     }
     
     private var isLoginButtonDisabled: Bool {
-        email.isEmpty || verificationCode.isEmpty || isLoading
+        if loginMethod == .password {
+            return email.isEmpty || password.isEmpty || isLoading
+        } else {
+            return email.isEmpty || verificationCode.isEmpty || isLoading
+        }
     }
     
     private func requestVerificationCode() {
@@ -167,14 +217,10 @@ struct LoginView: View {
         
         Task {
             do {
-                let response = try await AuthService.shared.requestVerificationCode(email: email)
+                _ = try await AuthService.shared.sendEmailVerificationCode(email: email, purpose: "login")
                 await MainActor.run {
                     isSendingCode = false
-                    if response.success {
-                        successMessage = "Verification code sent to your email!"
-                    } else {
-                        errorMessage = response.message
-                    }
+                    successMessage = "Verification code sent to your email!"
                 }
             } catch {
                 await MainActor.run {
@@ -186,7 +232,7 @@ struct LoginView: View {
     }
     
     private func loginUser() {
-        guard !email.isEmpty && !verificationCode.isEmpty else { return }
+        guard !email.isEmpty else { return }
         
         isLoading = true
         errorMessage = nil
@@ -194,14 +240,17 @@ struct LoginView: View {
         
         Task {
             do {
-                let response = try await AuthService.shared.login(email: email, verificationCode: verificationCode)
+                let response: AuthResponse
+                
+                if loginMethod == .password {
+                    response = try await AuthService.shared.loginWithPassword(email: email, password: password)
+                } else {
+                    response = try await AuthService.shared.loginWithEmailCode(email: email, code: verificationCode)
+                }
+                
                 await MainActor.run {
                     isLoading = false
-                    if response.success, let user = response.user, let token = response.token {
-                        authState.login(user: user, token: token)
-                    } else {
-                        errorMessage = response.message
-                    }
+                    authState.login(user: response.user, token: response.accessToken, needsPasswordSetup: false)
                 }
             } catch {
                 await MainActor.run {

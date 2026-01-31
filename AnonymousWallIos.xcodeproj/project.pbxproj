@@ -24,6 +24,9 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		0476EB80E1BE4AD9B33DB61D /* SetPasswordView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetPasswordView.swift; sourceTree = "<group>"; };
+		548A2654C11949D78138D48A /* ForgotPasswordView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ForgotPasswordView.swift; sourceTree = "<group>"; };
+		5A698F294B7A4212B82A3C8B /* ChangePasswordView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChangePasswordView.swift; sourceTree = "<group>"; };
 		EC0757A70238462CBAA0B0F4 /* ValidationUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ValidationUtils.swift; sourceTree = "<group>"; };
 		2C273AE2E8CA4C2CBD41C5DA /* KeychainHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainHelper.swift; sourceTree = "<group>"; };
 		53502B71F93F40C080F637E7 /* User.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = User.swift; sourceTree = "<group>"; };
@@ -114,7 +117,10 @@
 				4C5CB64D3ED4483D884F292D /* RegistrationView.swift */,
 				CE5E491052D542828CE9DEB8 /* LoginView.swift */,
 				F445C7AB8ECE4A22AF765BA0 /* WallView.swift */,
-			);
+			
+				0476EB80E1BE4AD9B33DB61D /* SetPasswordView.swift */,
+				548A2654C11949D78138D48A /* ForgotPasswordView.swift */,
+				5A698F294B7A4212B82A3C8B /* ChangePasswordView.swift */,);
 			path = Views;
 			sourceTree = "<group>";
 		};
@@ -282,6 +288,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				3B4C89173668470C9231DB40 /* SetPasswordView.swift in Sources */,
+				7E88795289F3410FBE7F8EA2 /* ForgotPasswordView.swift in Sources */,
+				AD279A6B8DB5400AA718BE5D /* ChangePasswordView.swift in Sources */,
 				571883650DB94FDDAD392C53 /* ValidationUtils.swift in Sources */,
 				AF15FA38C1454F258DF6FE69 /* KeychainHelper.swift in Sources */,
 				7834920BCCDA411D96FBB277 /* User.swift in Sources */,
