@@ -141,7 +141,8 @@ struct RegistrationView: View {
                 }
                 .padding(.bottom, 20)
             }
-            .navigationBarHidden(true)
+            .navigationBarTitleDisplayMode(.inline)
+            .navigationTitle("Create Account")
             .alert("Registration Successful", isPresented: $showingSuccess) {
                 Button("OK") {}
             } message: {

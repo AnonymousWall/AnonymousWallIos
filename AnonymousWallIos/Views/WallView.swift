@@ -68,41 +68,31 @@ struct WallView: View {
                     .foregroundColor(.gray)
                 
                 Spacer()
-                
-                // Change password button (if password is already set)
-                if !authState.needsPasswordSetup {
-                    Button(action: { showChangePassword = true }) {
-                        HStack {
-                            Image(systemName: "lock.shield")
-                            Text("Change Password")
-                        }
-                        .fontWeight(.semibold)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 50)
-                        .background(Color.blue.opacity(0.1))
-                        .foregroundColor(.blue)
-                        .cornerRadius(10)
-                    }
-                    .padding(.horizontal)
-                }
-                
-                // Logout button
-                Button(action: {
-                    authState.logout()
-                }) {
-                    Text("Logout")
-                        .fontWeight(.semibold)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 50)
-                        .background(Color.red)
-                        .foregroundColor(.white)
-                        .cornerRadius(10)
-                }
-                .padding(.horizontal)
-                .padding(.bottom, 40)
             }
             .navigationTitle("Wall")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Menu {
+                        // Change password option (only if password is set)
+                        if !authState.needsPasswordSetup {
+                            Button(action: { showChangePassword = true }) {
+                                Label("Change Password", systemImage: "lock.shield")
+                            }
+                        }
+                        
+                        // Logout option
+                        Button(role: .destructive, action: {
+                            authState.logout()
+                        }) {
+                            Label("Logout", systemImage: "rectangle.portrait.and.arrow.right")
+                        }
+                    } label: {
+                        Image(systemName: "line.3.horizontal")
+                            .font(.title3)
+                    }
+                }
+            }
         }
         .sheet(isPresented: $showSetPassword) {
             SetPasswordView()
