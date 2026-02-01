@@ -12,6 +12,7 @@ struct ProfileView: View {
     @State private var selectedSegment = 0
     @State private var myPosts: [Post] = []
     @State private var myComments: [Comment] = []
+    @State private var commentPostMap: [String: Post] = [:] // Map comment postId to Post
     @State private var isLoading = false
     @State private var errorMessage: String?
     @State private var showChangePassword = false
@@ -131,7 +132,14 @@ struct ProfileView: View {
                         } else {
                             LazyVStack(spacing: 12) {
                                 ForEach(myComments) { comment in
-                                    ProfileCommentRowView(comment: comment)
+                                    if let post = commentPostMap[comment.postId] {
+                                        NavigationLink(destination: PostDetailView(post: post)) {
+                                            ProfileCommentRowView(comment: comment)
+                                        }
+                                        .buttonStyle(PlainButtonStyle())
+                                    } else {
+                                        ProfileCommentRowView(comment: comment)
+                                    }
                                 }
                             }
                             .padding()
@@ -270,6 +278,7 @@ struct ProfileView: View {
             // Fetch comments for all posts and filter user's comments
             let allPosts = campusResponse.data + nationalResponse.data
             var allComments: [Comment] = []
+            var postMap: [String: Post] = [:]
             
             for post in allPosts {
                 do {
@@ -280,6 +289,8 @@ struct ProfileView: View {
                         limit: 100
                     )
                     allComments.append(contentsOf: commentResponse.data)
+                    // Store the post for each comment's postId
+                    postMap[post.id] = post
                 } catch {
                     // Continue even if some comment fetches fail
                     continue
@@ -289,6 +300,9 @@ struct ProfileView: View {
             // Filter to only show user's own comments
             myComments = allComments.filter { $0.author.id == userId }
                 .sorted { $0.createdAt > $1.createdAt }
+            
+            // Update the comment-to-post mapping
+            commentPostMap = postMap
         } catch {
             errorMessage = error.localizedDescription
         }
