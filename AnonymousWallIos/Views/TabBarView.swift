@@ -27,31 +27,31 @@ struct TabBarView: View {
                 }
                 .tag(1)
             
-            // Tab 3: Internship (dummy)
-            InternshipView()
-                .tabItem {
-                    Label("Internship", systemImage: "briefcase.fill")
-                }
-                .tag(2)
-            
-            // Tab 4: Market (dummy)
-            MarketView()
-                .tabItem {
-                    Label("Market", systemImage: "cart.fill")
-                }
-                .tag(3)
-            
-            // Tab 5: Create
+            // Tab 3: Create
             CreatePostTabView()
                 .tabItem {
                     Label("Create", systemImage: "plus.circle.fill")
                 }
-                .tag(4)
+                .tag(2)
             
-            // Tab 6: Profile
+            // Tab 4: Profile
             ProfileView()
                 .tabItem {
                     Label("Profile", systemImage: "person.fill")
+                }
+                .tag(3)
+            
+            // Tab 5: Market (dummy)
+            MarketView()
+                .tabItem {
+                    Label("Market", systemImage: "cart.fill")
+                }
+                .tag(4)
+            
+            // Tab 6: Internship (dummy)
+            InternshipView()
+                .tabItem {
+                    Label("Internship", systemImage: "briefcase.fill")
                 }
                 .tag(5)
         }
