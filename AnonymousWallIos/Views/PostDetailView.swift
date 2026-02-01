@@ -194,6 +194,12 @@ struct PostDetailView: View {
                 userId: userId
             )
             comments = response.data
+        } catch is CancellationError {
+            // Silently handle cancellation - this is expected behavior
+            return
+        } catch NetworkError.cancelled {
+            // Silently handle network cancellation - this is expected behavior during refresh
+            return
         } catch {
             errorMessage = "Failed to load comments: \(error.localizedDescription)"
         }
@@ -226,6 +232,11 @@ struct PostDetailView: View {
                 
                 // Reload comments
                 await loadComments()
+            } catch is CancellationError {
+                // Silently handle cancellation - user likely navigated away
+                await MainActor.run {
+                    isSubmitting = false
+                }
             } catch {
                 await MainActor.run {
                     isSubmitting = false
@@ -252,6 +263,9 @@ struct PostDetailView: View {
                 )
                 // Reload comments
                 await loadComments()
+            } catch is CancellationError {
+                // Silently handle cancellation - user likely navigated away
+                return
             } catch {
                 await MainActor.run {
                     if let networkError = error as? NetworkError {
