@@ -28,6 +28,7 @@
 		D6119483DD8F4807AAD99A04 /* PostService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PostService.swift; sourceTree = "<group>"; };
 		06CD3270308F4C1997CE254B /* CreatePostView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreatePostView.swift; sourceTree = "<group>"; };
 		70A75B17C3134F13A1563A70 /* PostRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PostRowView.swift; sourceTree = "<group>"; };
+		26B4614742DE4B053DAB735F /* PostDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PostDetailView.swift; sourceTree = "<group>"; };
 		0476EB80E1BE4AD9B33DB61D /* SetPasswordView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetPasswordView.swift; sourceTree = "<group>"; };
 		548A2654C11949D78138D48A /* ForgotPasswordView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ForgotPasswordView.swift; sourceTree = "<group>"; };
 		5A698F294B7A4212B82A3C8B /* ChangePasswordView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChangePasswordView.swift; sourceTree = "<group>"; };
@@ -128,7 +129,8 @@
 				548A2654C11949D78138D48A /* ForgotPasswordView.swift */,
 				5A698F294B7A4212B82A3C8B /* ChangePasswordView.swift */,
 				06CD3270308F4C1997CE254B /* CreatePostView.swift */,
-				70A75B17C3134F13A1563A70 /* PostRowView.swift */,);
+				70A75B17C3134F13A1563A70 /* PostRowView.swift */,
+				26B4614742DE4B053DAB735F /* PostDetailView.swift */,);
 			path = Views;
 			sourceTree = "<group>";
 		};
@@ -300,6 +302,7 @@
 				3B27DD8C04C946BBA820EA16 /* PostService.swift in Sources */,
 				FD454F78F48E4E1A9ACDCC3E /* CreatePostView.swift in Sources */,
 				8B093C7FEE1844838049EC3C /* PostRowView.swift in Sources */,
+				E178A81D1916BDC969905CAC /* PostDetailView.swift in Sources */,
 				3B4C89173668470C9231DB40 /* SetPasswordView.swift in Sources */,
 				7E88795289F3410FBE7F8EA2 /* ForgotPasswordView.swift in Sources */,
 				AD279A6B8DB5400AA718BE5D /* ChangePasswordView.swift in Sources */,

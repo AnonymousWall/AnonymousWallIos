@@ -43,6 +43,15 @@ struct PostRowView: View {
                     }
                 }
                 
+                // Comment count indicator
+                HStack(spacing: 4) {
+                    Image(systemName: "bubble.left")
+                        .foregroundColor(.gray)
+                    Text("\(post.comments)")
+                        .font(.caption)
+                        .foregroundColor(.gray)
+                }
+                
                 // Delete button (only for own posts)
                 if isOwnPost {
                     Button(action: { showDeleteConfirmation = true }) {
