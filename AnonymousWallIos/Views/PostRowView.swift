@@ -26,7 +26,7 @@ struct PostRowView: View {
             // Footer with time and actions
             HStack {
                 // Timestamp
-                Text(formatDate(post.createdAt))
+                Text(DateFormatting.formatRelativeTime(post.createdAt))
                     .font(.caption)
                     .foregroundColor(.gray)
                 
@@ -77,45 +77,6 @@ struct PostRowView: View {
         .background(Color(.systemBackground))
         .cornerRadius(10)
         .shadow(color: Color.black.opacity(0.1), radius: 2, x: 0, y: 1)
-    }
-    
-    private func formatDate(_ dateString: String) -> String {
-        // Try to parse ISO 8601 date
-        let formatter = ISO8601DateFormatter()
-        if let date = formatter.date(from: dateString) {
-            let now = Date()
-            let timeInterval = now.timeIntervalSince(date)
-            
-            // Less than a minute
-            if timeInterval < 60 {
-                return "Just now"
-            }
-            // Less than an hour
-            else if timeInterval < 3600 {
-                let minutes = Int(timeInterval / 60)
-                return "\(minutes)m ago"
-            }
-            // Less than a day
-            else if timeInterval < 86400 {
-                let hours = Int(timeInterval / 3600)
-                return "\(hours)h ago"
-            }
-            // Less than a week
-            else if timeInterval < 604800 {
-                let days = Int(timeInterval / 86400)
-                return "\(days)d ago"
-            }
-            // More than a week
-            else {
-                let dateFormatter = DateFormatter()
-                dateFormatter.dateStyle = .medium
-                dateFormatter.timeStyle = .none
-                return dateFormatter.string(from: date)
-            }
-        }
-        
-        // Fallback if date parsing fails
-        return dateString
     }
 }
 

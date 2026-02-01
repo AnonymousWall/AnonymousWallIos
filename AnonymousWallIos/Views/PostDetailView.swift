@@ -33,7 +33,7 @@ struct PostDetailView: View {
                             .fixedSize(horizontal: false, vertical: true)
                         
                         HStack {
-                            Text(formatDate(post.createdAt))
+                            Text(DateFormatting.formatRelativeTime(post.createdAt))
                                 .font(.caption)
                                 .foregroundColor(.gray)
                             
@@ -269,34 +269,6 @@ struct PostDetailView: View {
             }
         }
     }
-    
-    private func formatDate(_ dateString: String) -> String {
-        let formatter = ISO8601DateFormatter()
-        if let date = formatter.date(from: dateString) {
-            let now = Date()
-            let timeInterval = now.timeIntervalSince(date)
-            
-            if timeInterval < 60 {
-                return "Just now"
-            } else if timeInterval < 3600 {
-                let minutes = Int(timeInterval / 60)
-                return "\(minutes)m ago"
-            } else if timeInterval < 86400 {
-                let hours = Int(timeInterval / 3600)
-                return "\(hours)h ago"
-            } else if timeInterval < 604800 {
-                let days = Int(timeInterval / 86400)
-                return "\(days)d ago"
-            } else {
-                let dateFormatter = DateFormatter()
-                dateFormatter.dateStyle = .medium
-                dateFormatter.timeStyle = .none
-                return dateFormatter.string(from: date)
-            }
-        }
-        
-        return dateString
-    }
 }
 
 // MARK: - Comment Row View
@@ -315,7 +287,7 @@ struct CommentRowView: View {
                     .foregroundColor(.primary)
                     .fixedSize(horizontal: false, vertical: true)
                 
-                Text(formatDate(comment.createdAt))
+                Text(DateFormatting.formatRelativeTime(comment.createdAt))
                     .font(.caption2)
                     .foregroundColor(.gray)
             }
@@ -335,34 +307,6 @@ struct CommentRowView: View {
         .background(Color(.secondarySystemBackground))
         .cornerRadius(8)
         .padding(.horizontal)
-    }
-    
-    private func formatDate(_ dateString: String) -> String {
-        let formatter = ISO8601DateFormatter()
-        if let date = formatter.date(from: dateString) {
-            let now = Date()
-            let timeInterval = now.timeIntervalSince(date)
-            
-            if timeInterval < 60 {
-                return "Just now"
-            } else if timeInterval < 3600 {
-                let minutes = Int(timeInterval / 60)
-                return "\(minutes)m ago"
-            } else if timeInterval < 86400 {
-                let hours = Int(timeInterval / 3600)
-                return "\(hours)h ago"
-            } else if timeInterval < 604800 {
-                let days = Int(timeInterval / 86400)
-                return "\(days)d ago"
-            } else {
-                let dateFormatter = DateFormatter()
-                dateFormatter.dateStyle = .medium
-                dateFormatter.timeStyle = .none
-                return dateFormatter.string(from: date)
-            }
-        }
-        
-        return dateString
     }
 }
 

@@ -33,6 +33,7 @@
 		548A2654C11949D78138D48A /* ForgotPasswordView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ForgotPasswordView.swift; sourceTree = "<group>"; };
 		5A698F294B7A4212B82A3C8B /* ChangePasswordView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChangePasswordView.swift; sourceTree = "<group>"; };
 		EC0757A70238462CBAA0B0F4 /* ValidationUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ValidationUtils.swift; sourceTree = "<group>"; };
+		3F403B0F832D86C891753382 /* DateFormatting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DateFormatting.swift; sourceTree = "<group>"; };
 		2C273AE2E8CA4C2CBD41C5DA /* KeychainHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainHelper.swift; sourceTree = "<group>"; };
 		53502B71F93F40C080F637E7 /* User.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = User.swift; sourceTree = "<group>"; };
 		0B1EC382A6854A589AEADF7E /* AuthState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthState.swift; sourceTree = "<group>"; };
@@ -93,6 +94,7 @@
 			isa = PBXGroup;
 			children = (
 				EC0757A70238462CBAA0B0F4 /* ValidationUtils.swift */,
+				3F403B0F832D86C891753382 /* DateFormatting.swift */,
 				2C273AE2E8CA4C2CBD41C5DA /* KeychainHelper.swift */,
 			);
 			path = Utils;
@@ -307,6 +309,7 @@
 				7E88795289F3410FBE7F8EA2 /* ForgotPasswordView.swift in Sources */,
 				AD279A6B8DB5400AA718BE5D /* ChangePasswordView.swift in Sources */,
 				571883650DB94FDDAD392C53 /* ValidationUtils.swift in Sources */,
+				7DEDAAAEE3F21C643FB17113 /* DateFormatting.swift in Sources */,
 				AF15FA38C1454F258DF6FE69 /* KeychainHelper.swift in Sources */,
 				7834920BCCDA411D96FBB277 /* User.swift in Sources */,
 				F12F96226BD44D7685F52AFA /* AuthState.swift in Sources */,
