@@ -157,10 +157,14 @@ struct WallView: View {
     private func refreshPosts() async {
         // Cancel any existing load task
         loadTask?.cancel()
-        loadTask = nil
         
-        // Load posts - don't reset isLoadingPosts, let loadPosts handle it
-        await loadPosts()
+        // Create a new task that won't be cancelled by the refreshable gesture
+        loadTask = Task {
+            await loadPosts()
+        }
+        
+        // Wait for the task to complete
+        await loadTask?.value
     }
     
     @MainActor
@@ -174,18 +178,23 @@ struct WallView: View {
         isLoadingPosts = true
         errorMessage = nil
         
+        // Ensure loading state is always reset
+        defer {
+            isLoadingPosts = false
+        }
+        
         do {
             let response = try await PostService.shared.fetchPosts(token: token, userId: userId)
-            // Only update if task wasn't cancelled
-            if !Task.isCancelled {
-                posts = response.data
-            }
-            isLoadingPosts = false
+            // Always update posts if request succeeded, even if task was cancelled
+            // This ensures refresh works correctly when user releases before completion
+            posts = response.data
         } catch is CancellationError {
             // Silently handle cancellation - this is expected behavior
-            isLoadingPosts = false
+            return
+        } catch NetworkError.cancelled {
+            // Silently handle network cancellation - this is expected behavior during refresh
+            return
         } catch {
-            isLoadingPosts = false
             errorMessage = error.localizedDescription
         }
     }

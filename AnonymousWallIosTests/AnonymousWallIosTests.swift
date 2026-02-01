@@ -146,6 +146,18 @@ struct AnonymousWallIosTests {
         authState.updatePasswordSetupStatus(completed: true)
         #expect(authState.needsPasswordSetup == false)
     }
+    
+    @Test func testNetworkErrorDescriptions() async throws {
+        // Test that all NetworkError cases have error descriptions
+        #expect(NetworkError.invalidURL.errorDescription == "Invalid URL")
+        #expect(NetworkError.invalidResponse.errorDescription == "Invalid response from server")
+        #expect(NetworkError.unauthorized.errorDescription == "Unauthorized - please login again")
+        #expect(NetworkError.forbidden.errorDescription == "Access forbidden")
+        #expect(NetworkError.notFound.errorDescription == "Resource not found")
+        #expect(NetworkError.timeout.errorDescription == "Request timeout")
+        #expect(NetworkError.noConnection.errorDescription == "No internet connection")
+        #expect(NetworkError.cancelled.errorDescription == "Request cancelled")
+    }
 
 }
 

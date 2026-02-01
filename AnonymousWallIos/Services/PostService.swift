@@ -47,6 +47,9 @@ class PostService {
         // Try to decode as PostListResponse with pagination structure
         do {
             return try await networkClient.performRequest(request)
+        } catch NetworkError.cancelled {
+            // Re-throw cancellation errors without logging
+            throw NetworkError.cancelled
         } catch {
             // If backend returns a different structure, try to handle gracefully
             // This can happen if backend hasn't been updated yet
