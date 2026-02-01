@@ -18,6 +18,7 @@ struct WallView: View {
     @State private var loadTask: Task<Void, Never>?
     
     // Minimum height for scrollable content when list is empty
+    // 300 points provides sufficient height to enable pull-to-refresh gesture on all device sizes
     private let minimumScrollableHeight: CGFloat = 300
     
     var body: some View {
