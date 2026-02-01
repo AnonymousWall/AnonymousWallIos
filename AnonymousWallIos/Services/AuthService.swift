@@ -36,7 +36,7 @@ enum AuthError: Error, LocalizedError {
 class AuthService {
     static let shared = AuthService()
     
-    private let baseURL = "http://localhost:8080"
+    private let config = AppConfiguration.shared
     
     private init() {}
     
@@ -47,7 +47,7 @@ class AuthService {
     ///   - email: User's email address
     ///   - purpose: "register" or "login"
     func sendEmailVerificationCode(email: String, purpose: String) async throws -> VerificationCodeResponse {
-        guard let url = URL(string: "\(baseURL)/api/v1/auth/email/send-code") else {
+        guard let url = URL(string: "\(config.fullAPIBaseURL)/auth/email/send-code") else {
             throw AuthError.invalidURL
         }
         
@@ -68,7 +68,7 @@ class AuthService {
     
     /// Register with email and verification code
     func registerWithEmail(email: String, code: String) async throws -> AuthResponse {
-        guard let url = URL(string: "\(baseURL)/api/v1/auth/register/email") else {
+        guard let url = URL(string: "\(config.fullAPIBaseURL)/auth/register/email") else {
             throw AuthError.invalidURL
         }
         
@@ -89,7 +89,7 @@ class AuthService {
     
     /// Login with email and verification code
     func loginWithEmailCode(email: String, code: String) async throws -> AuthResponse {
-        guard let url = URL(string: "\(baseURL)/api/v1/auth/login/email") else {
+        guard let url = URL(string: "\(config.fullAPIBaseURL)/auth/login/email") else {
             throw AuthError.invalidURL
         }
         
@@ -108,7 +108,7 @@ class AuthService {
     
     /// Login with email and password
     func loginWithPassword(email: String, password: String) async throws -> AuthResponse {
-        guard let url = URL(string: "\(baseURL)/api/v1/auth/login/password") else {
+        guard let url = URL(string: "\(config.fullAPIBaseURL)/auth/login/password") else {
             throw AuthError.invalidURL
         }
         
@@ -129,7 +129,7 @@ class AuthService {
     
     /// Set initial password after registration and login
     func setPassword(password: String, token: String, userId: String) async throws {
-        guard let url = URL(string: "\(baseURL)/api/v1/auth/password/set") else {
+        guard let url = URL(string: "\(config.fullAPIBaseURL)/auth/password/set") else {
             throw AuthError.invalidURL
         }
         
@@ -149,7 +149,7 @@ class AuthService {
     
     /// Change password when already logged in
     func changePassword(oldPassword: String, newPassword: String, token: String, userId: String) async throws {
-        guard let url = URL(string: "\(baseURL)/api/v1/auth/password/change") else {
+        guard let url = URL(string: "\(config.fullAPIBaseURL)/auth/password/change") else {
             throw AuthError.invalidURL
         }
         
@@ -170,7 +170,7 @@ class AuthService {
     
     /// Request password reset (forgot password)
     func requestPasswordReset(email: String) async throws {
-        guard let url = URL(string: "\(baseURL)/api/v1/auth/password/reset-request") else {
+        guard let url = URL(string: "\(config.fullAPIBaseURL)/auth/password/reset-request") else {
             throw AuthError.invalidURL
         }
         
@@ -188,7 +188,7 @@ class AuthService {
     
     /// Reset password with verification code
     func resetPassword(email: String, code: String, newPassword: String) async throws -> AuthResponse {
-        guard let url = URL(string: "\(baseURL)/api/v1/auth/password/reset") else {
+        guard let url = URL(string: "\(config.fullAPIBaseURL)/auth/password/reset") else {
             throw AuthError.invalidURL
         }
         

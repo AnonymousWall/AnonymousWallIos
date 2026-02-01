@@ -10,7 +10,7 @@ import Foundation
 class PostService {
     static let shared = PostService()
     
-    private let baseURL = "http://localhost:8080"
+    private let config = AppConfiguration.shared
     
     private init() {}
     
@@ -18,7 +18,7 @@ class PostService {
     
     /// Fetch list of posts
     func fetchPosts(token: String, userId: String, page: Int = 1, limit: Int = 20) async throws -> [Post] {
-        guard let url = URL(string: "\(baseURL)/api/v1/posts?page=\(page)&limit=\(limit)") else {
+        guard let url = URL(string: "\(config.fullAPIBaseURL)/posts?page=\(page)&limit=\(limit)") else {
             throw AuthError.invalidURL
         }
         
@@ -56,7 +56,7 @@ class PostService {
     
     /// Create a new post
     func createPost(content: String, token: String, userId: String) async throws -> Post {
-        guard let url = URL(string: "\(baseURL)/api/v1/posts") else {
+        guard let url = URL(string: "\(config.fullAPIBaseURL)/posts") else {
             throw AuthError.invalidURL
         }
         
@@ -97,7 +97,7 @@ class PostService {
     
     /// Delete a post
     func deletePost(postId: String, token: String, userId: String) async throws {
-        guard let url = URL(string: "\(baseURL)/api/v1/posts/\(postId)") else {
+        guard let url = URL(string: "\(config.fullAPIBaseURL)/posts/\(postId)") else {
             throw AuthError.invalidURL
         }
         
@@ -123,7 +123,7 @@ class PostService {
     
     /// Like a post
     func likePost(postId: String, token: String, userId: String) async throws {
-        guard let url = URL(string: "\(baseURL)/api/v1/posts/\(postId)/like") else {
+        guard let url = URL(string: "\(config.fullAPIBaseURL)/posts/\(postId)/like") else {
             throw AuthError.invalidURL
         }
         
@@ -149,7 +149,7 @@ class PostService {
     
     /// Unlike a post
     func unlikePost(postId: String, token: String, userId: String) async throws {
-        guard let url = URL(string: "\(baseURL)/api/v1/posts/\(postId)/like") else {
+        guard let url = URL(string: "\(config.fullAPIBaseURL)/posts/\(postId)/like") else {
             throw AuthError.invalidURL
         }
         

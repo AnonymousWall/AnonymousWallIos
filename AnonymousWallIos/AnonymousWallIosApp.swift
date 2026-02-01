@@ -6,24 +6,10 @@
 //
 
 import SwiftUI
-import SwiftData
 
 @main
 struct AnonymousWallIosApp: App {
     @StateObject private var authState = AuthState()
-    
-    var sharedModelContainer: ModelContainer = {
-        let schema = Schema([
-            Item.self,
-        ])
-        let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
-
-        do {
-            return try ModelContainer(for: schema, configurations: [modelConfiguration])
-        } catch {
-            fatalError("Could not create ModelContainer: \(error)")
-        }
-    }()
 
     var body: some Scene {
         WindowGroup {
@@ -35,6 +21,5 @@ struct AnonymousWallIosApp: App {
                     .environmentObject(authState)
             }
         }
-        .modelContainer(sharedModelContainer)
     }
 }
