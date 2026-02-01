@@ -54,7 +54,8 @@ struct CampusView: View {
                 .padding(.horizontal)
                 .padding(.vertical, 8)
                 .onChange(of: selectedSortOrder) { _, _ in
-                    Task {
+                    loadTask?.cancel()
+                    loadTask = Task {
                         await loadPosts()
                     }
                 }
@@ -132,6 +133,10 @@ struct CampusView: View {
             loadTask = Task {
                 await loadPosts()
             }
+        }
+        .onDisappear {
+            // Cancel any ongoing load task when view disappears
+            loadTask?.cancel()
         }
     }
     
