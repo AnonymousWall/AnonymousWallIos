@@ -11,12 +11,14 @@ struct User: Codable, Identifiable {
     let id: String
     let email: String
     let isVerified: Bool
+    let passwordSet: Bool?
     let createdAt: String
     
     enum CodingKeys: String, CodingKey {
         case id
         case email
         case isVerified
+        case passwordSet
         case createdAt
     }
 }

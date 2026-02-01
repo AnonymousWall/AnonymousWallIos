@@ -66,9 +66,9 @@ struct WallView: View {
                             ForEach(posts) { post in
                                 PostRowView(
                                     post: post,
-                                    isOwnPost: post.authorId == authState.currentUser?.id,
+                                    isOwnPost: post.author.id == authState.currentUser?.id,
                                     onLike: { toggleLike(for: post) },
-                                    onDelete: { deletePost(post) }
+                                    onDelete: { /* Delete not supported by API */ }
                                 )
                             }
                         }
@@ -163,8 +163,8 @@ struct WallView: View {
         errorMessage = nil
         
         do {
-            let fetchedPosts = try await PostService.shared.fetchPosts(token: token, userId: userId)
-            posts = fetchedPosts
+            let response = try await PostService.shared.fetchPosts(token: token, userId: userId)
+            posts = response.data
             isLoadingPosts = false
         } catch {
             isLoadingPosts = false
@@ -180,31 +180,8 @@ struct WallView: View {
         
         Task {
             do {
-                if post.isLikedByCurrentUser == true {
-                    try await PostService.shared.unlikePost(postId: post.id, token: token, userId: userId)
-                } else {
-                    try await PostService.shared.likePost(postId: post.id, token: token, userId: userId)
-                }
+                _ = try await PostService.shared.toggleLike(postId: post.id, token: token, userId: userId)
                 // Reload posts to get updated like status
-                await loadPosts()
-            } catch {
-                await MainActor.run {
-                    errorMessage = error.localizedDescription
-                }
-            }
-        }
-    }
-    
-    private func deletePost(_ post: Post) {
-        guard let token = authState.authToken,
-              let userId = authState.currentUser?.id else {
-            return
-        }
-        
-        Task {
-            do {
-                try await PostService.shared.deletePost(postId: post.id, token: token, userId: userId)
-                // Reload posts after deletion
                 await loadPosts()
             } catch {
                 await MainActor.run {

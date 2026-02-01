@@ -35,9 +35,9 @@ struct PostRowView: View {
                 // Like button
                 Button(action: onLike) {
                     HStack(spacing: 4) {
-                        Image(systemName: post.isLikedByCurrentUser == true ? "heart.fill" : "heart")
-                            .foregroundColor(post.isLikedByCurrentUser == true ? .red : .gray)
-                        Text("\(post.likesCount)")
+                        Image(systemName: post.liked ? "heart.fill" : "heart")
+                            .foregroundColor(post.liked ? .red : .gray)
+                        Text("\(post.likes)")
                             .font(.caption)
                             .foregroundColor(.gray)
                     }
@@ -115,10 +115,13 @@ struct PostRowView: View {
         post: Post(
             id: "1",
             content: "This is a sample anonymous post on the wall!",
-            authorId: "user123",
+            wall: "CAMPUS",
+            likes: 5,
+            comments: 2,
+            liked: false,
+            author: Post.Author(id: "user123", isAnonymous: true),
             createdAt: ISO8601DateFormatter().string(from: Date()),
-            likesCount: 5,
-            isLikedByCurrentUser: false
+            updatedAt: ISO8601DateFormatter().string(from: Date())
         ),
         isOwnPost: false,
         onLike: {},
