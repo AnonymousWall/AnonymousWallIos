@@ -28,4 +28,22 @@ enum SortOrder: String, Codable, CaseIterable {
     case oldest = "OLDEST"
     case mostLiked = "MOST_LIKED"
     case leastLiked = "LEAST_LIKED"
+    
+    var displayName: String {
+        switch self {
+        case .newest:
+            return "Recent"
+        case .oldest:
+            return "Oldest"
+        case .mostLiked:
+            return "Most Likes"
+        case .leastLiked:
+            return "Least Likes"
+        }
+    }
+    
+    /// Sorting options suitable for the main feed segmented control
+    static var feedOptions: [SortOrder] {
+        return [.newest, .mostLiked, .oldest]
+    }
 }
