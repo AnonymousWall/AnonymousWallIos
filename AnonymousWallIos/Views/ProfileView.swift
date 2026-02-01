@@ -251,6 +251,12 @@ struct ProfileView: View {
             let allPosts = campusResponse.data + nationalResponse.data
             myPosts = allPosts.filter { $0.author.id == userId }
                 .sorted { $0.createdAt > $1.createdAt }
+        } catch is CancellationError {
+            // Silently handle cancellation - this is expected behavior during refresh
+            return
+        } catch NetworkError.cancelled {
+            // Silently handle network cancellation - this is expected behavior during refresh
+            return
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -295,6 +301,12 @@ struct ProfileView: View {
                         limit: 100
                     )
                     allComments.append(contentsOf: commentResponse.data)
+                } catch is CancellationError {
+                    // Silently handle cancellation
+                    continue
+                } catch NetworkError.cancelled {
+                    // Silently handle network cancellation
+                    continue
                 } catch {
                     // Continue even if some comment fetches fail
                     continue
@@ -307,6 +319,12 @@ struct ProfileView: View {
             
             // Update the comment-to-post mapping
             commentPostMap = tempPostMap
+        } catch is CancellationError {
+            // Silently handle cancellation - this is expected behavior during refresh
+            return
+        } catch NetworkError.cancelled {
+            // Silently handle network cancellation - this is expected behavior during refresh
+            return
         } catch {
             errorMessage = error.localizedDescription
         }
