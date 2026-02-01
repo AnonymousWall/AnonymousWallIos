@@ -20,11 +20,11 @@ struct PostRowView: View {
     }
     
     private var wallDisplayName: String {
-        if post.wall.uppercased() == WallType.campus.rawValue.uppercased() {
-            return WallType.campus.displayName
-        } else {
-            return WallType.national.displayName
-        }
+        isCampusPost ? WallType.campus.displayName : WallType.national.displayName
+    }
+    
+    private var wallColor: Color {
+        isCampusPost ? .blue : .green
     }
     
     var body: some View {
@@ -34,13 +34,10 @@ struct PostRowView: View {
                 Text(wallDisplayName)
                     .font(.caption2)
                     .fontWeight(.semibold)
-                    .foregroundColor(isCampusPost ? .blue : .green)
+                    .foregroundColor(wallColor)
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
-                    .background(
-                        (isCampusPost ? Color.blue : Color.green)
-                            .opacity(0.15)
-                    )
+                    .background(wallColor.opacity(0.15))
                     .cornerRadius(4)
                 Spacer()
             }
