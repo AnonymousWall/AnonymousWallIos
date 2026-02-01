@@ -10,7 +10,6 @@ import SwiftUI
 struct CampusView: View {
     @EnvironmentObject var authState: AuthState
     @State private var showSetPassword = false
-    @State private var showChangePassword = false
     @State private var posts: [Post] = []
     @State private var isLoadingPosts = false
     @State private var errorMessage: String?
@@ -101,35 +100,9 @@ struct CampusView: View {
             }
             .navigationTitle("Campus")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                // Menu button
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Menu {
-                        // Change password option (only if password is set)
-                        if !authState.needsPasswordSetup {
-                            Button(action: { showChangePassword = true }) {
-                                Label("Change Password", systemImage: "lock.shield")
-                            }
-                        }
-                        
-                        // Logout option
-                        Button(role: .destructive, action: {
-                            authState.logout()
-                        }) {
-                            Label("Logout", systemImage: "rectangle.portrait.and.arrow.right")
-                        }
-                    } label: {
-                        Image(systemName: "line.3.horizontal")
-                            .font(.title3)
-                    }
-                }
-            }
         }
         .sheet(isPresented: $showSetPassword) {
             SetPasswordView()
-        }
-        .sheet(isPresented: $showChangePassword) {
-            ChangePasswordView()
         }
         .onAppear {
             // Show password setup if needed
