@@ -241,7 +241,23 @@ struct WallView: View {
                 await loadPosts()
             } catch {
                 await MainActor.run {
-                    errorMessage = error.localizedDescription
+                    // Provide user-friendly error message
+                    if let networkError = error as? NetworkError {
+                        switch networkError {
+                        case .unauthorized:
+                            errorMessage = "Session expired. Please log in again."
+                        case .forbidden:
+                            errorMessage = "You don't have permission to delete this post."
+                        case .notFound:
+                            errorMessage = "Post not found."
+                        case .noConnection:
+                            errorMessage = "No internet connection. Please check your network."
+                        default:
+                            errorMessage = "Failed to delete post. Please try again."
+                        }
+                    } else {
+                        errorMessage = "Failed to delete post. Please try again."
+                    }
                 }
             }
         }
