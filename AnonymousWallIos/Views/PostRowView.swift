@@ -16,14 +16,22 @@ struct PostRowView: View {
     @State private var showDeleteConfirmation = false
     
     private var isCampusPost: Bool {
-        post.wall.uppercased() == "CAMPUS"
+        post.wall.uppercased() == WallType.campus.rawValue.uppercased()
+    }
+    
+    private var wallDisplayName: String {
+        if post.wall.uppercased() == WallType.campus.rawValue.uppercased() {
+            return WallType.campus.displayName
+        } else {
+            return WallType.national.displayName
+        }
     }
     
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             // Wall type badge
             HStack {
-                Text(isCampusPost ? "Campus" : "National")
+                Text(wallDisplayName)
                     .font(.caption2)
                     .fontWeight(.semibold)
                     .foregroundColor(isCampusPost ? .blue : .green)

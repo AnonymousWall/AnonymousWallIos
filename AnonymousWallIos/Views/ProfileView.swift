@@ -278,11 +278,11 @@ struct ProfileView: View {
             // Fetch comments for all posts and filter user's comments
             let allPosts = campusResponse.data + nationalResponse.data
             var allComments: [Comment] = []
-            var postMap: [String: Post] = [:]
+            var tempPostMap: [String: Post] = [:]
             
             // First, populate the post map with all posts
             for post in allPosts {
-                postMap[post.id] = post
+                tempPostMap[post.id] = post
             }
             
             // Then fetch comments
@@ -306,7 +306,7 @@ struct ProfileView: View {
                 .sorted { $0.createdAt > $1.createdAt }
             
             // Update the comment-to-post mapping
-            commentPostMap = postMap
+            commentPostMap = tempPostMap
         } catch {
             errorMessage = error.localizedDescription
         }
