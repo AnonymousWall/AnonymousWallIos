@@ -109,6 +109,9 @@ struct PostDetailView: View {
                 }
                 .padding()
             }
+            .refreshable {
+                await refreshComments()
+            }
             
             // Error message
             if let errorMessage = errorMessage {
@@ -194,6 +197,13 @@ struct PostDetailView: View {
         } catch {
             errorMessage = "Failed to load comments: \(error.localizedDescription)"
         }
+    }
+    
+    @MainActor
+    private func refreshComments() async {
+        // Simply reload comments - no need for task management like WallView
+        // since we don't have a loadTask state variable
+        await loadComments()
     }
     
     private func submitComment() {
