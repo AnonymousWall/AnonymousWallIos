@@ -22,11 +22,13 @@ class AuthState: ObservableObject {
         loadAuthState()
     }
     
-    func login(user: User, token: String, needsPasswordSetup: Bool = false) {
+    func login(user: User, token: String) {
         self.currentUser = user
         self.authToken = token
         self.isAuthenticated = true
-        self.needsPasswordSetup = needsPasswordSetup
+        // needsPasswordSetup is the inverse of passwordSet from the API
+        // If passwordSet is nil or false, then we need password setup
+        self.needsPasswordSetup = !(user.passwordSet ?? false)
         saveAuthState()
     }
     
@@ -67,7 +69,9 @@ class AuthState: ObservableObject {
         if let userId = UserDefaults.standard.string(forKey: AppConfiguration.UserDefaultsKeys.userId),
            let userEmail = UserDefaults.standard.string(forKey: AppConfiguration.UserDefaultsKeys.userEmail) {
             let isVerified = UserDefaults.standard.bool(forKey: AppConfiguration.UserDefaultsKeys.userIsVerified)
-            currentUser = User(id: userId, email: userEmail, isVerified: isVerified, passwordSet: nil, createdAt: "")
+            // passwordSet is the inverse of needsPasswordSetup
+            let passwordSet = !needsPasswordSetup
+            currentUser = User(id: userId, email: userEmail, isVerified: isVerified, passwordSet: passwordSet, createdAt: "")
         }
     }
     
