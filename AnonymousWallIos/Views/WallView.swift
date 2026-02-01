@@ -79,7 +79,7 @@ struct WallView: View {
                                     post: post,
                                     isOwnPost: post.author.id == authState.currentUser?.id,
                                     onLike: { toggleLike(for: post) },
-                                    onDelete: { /* Delete not supported by API */ }
+                                    onDelete: { deletePost(post) }
                                 )
                             }
                         }
@@ -223,6 +223,42 @@ struct WallView: View {
             } catch {
                 await MainActor.run {
                     errorMessage = error.localizedDescription
+                }
+            }
+        }
+    }
+    
+    private func deletePost(_ post: Post) {
+        guard let token = authState.authToken,
+              let userId = authState.currentUser?.id else {
+            errorMessage = "Authentication required to delete post."
+            return
+        }
+        
+        Task {
+            do {
+                _ = try await PostService.shared.hidePost(postId: post.id, token: token, userId: userId)
+                // Reload posts to remove the deleted post from the list
+                await loadPosts()
+            } catch {
+                await MainActor.run {
+                    // Provide user-friendly error message
+                    if let networkError = error as? NetworkError {
+                        switch networkError {
+                        case .unauthorized:
+                            errorMessage = "Session expired. Please log in again."
+                        case .forbidden:
+                            errorMessage = "You don't have permission to delete this post."
+                        case .notFound:
+                            errorMessage = "Post not found."
+                        case .noConnection:
+                            errorMessage = "No internet connection. Please check your network."
+                        default:
+                            errorMessage = "Failed to delete post. Please try again."
+                        }
+                    } else {
+                        errorMessage = "Failed to delete post. Please try again."
+                    }
                 }
             }
         }

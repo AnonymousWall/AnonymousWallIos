@@ -91,6 +91,21 @@ class PostService {
         return try await networkClient.performRequest(request)
     }
     
+    /// Hide/delete a post (soft delete)
+    func hidePost(postId: String, token: String, userId: String) async throws -> HidePostResponse {
+        guard let url = URL(string: "\(config.fullAPIBaseURL)/posts/\(postId)/hide") else {
+            throw NetworkError.invalidURL
+        }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "PATCH"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        request.setValue(userId, forHTTPHeaderField: "X-User-Id")
+        
+        return try await networkClient.performRequest(request)
+    }
+    
     // MARK: - Comment Operations
     
     /// Add a comment to a post
