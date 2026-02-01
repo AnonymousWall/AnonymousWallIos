@@ -237,6 +237,11 @@ struct PostDetailView: View {
                 await MainActor.run {
                     isSubmitting = false
                 }
+            } catch NetworkError.cancelled {
+                // Silently handle network cancellation
+                await MainActor.run {
+                    isSubmitting = false
+                }
             } catch {
                 await MainActor.run {
                     isSubmitting = false
@@ -265,6 +270,9 @@ struct PostDetailView: View {
                 await loadComments()
             } catch is CancellationError {
                 // Silently handle cancellation - user likely navigated away
+                return
+            } catch NetworkError.cancelled {
+                // Silently handle network cancellation
                 return
             } catch {
                 await MainActor.run {
