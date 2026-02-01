@@ -15,6 +15,7 @@ struct WallView: View {
     @State private var posts: [Post] = []
     @State private var isLoadingPosts = false
     @State private var errorMessage: String?
+    @State private var loadTask: Task<Void, Never>?
     
     var body: some View {
         NavigationStack {
@@ -75,7 +76,7 @@ struct WallView: View {
                         .padding()
                     }
                     .refreshable {
-                        await loadPosts()
+                        await refreshPosts()
                     }
                 }
                 
@@ -144,7 +145,7 @@ struct WallView: View {
             }
             
             // Load posts
-            Task {
+            loadTask = Task {
                 await loadPosts()
             }
         }
@@ -153,9 +154,24 @@ struct WallView: View {
     // MARK: - Functions
     
     @MainActor
+    private func refreshPosts() async {
+        // Cancel any existing load task
+        loadTask?.cancel()
+        loadTask = nil
+        
+        // Load posts
+        await loadPosts()
+    }
+    
+    @MainActor
     private func loadPosts() async {
         guard let token = authState.authToken,
               let userId = authState.currentUser?.id else {
+            return
+        }
+        
+        // Don't start a new load if one is already in progress
+        guard !isLoadingPosts else {
             return
         }
         
@@ -164,7 +180,15 @@ struct WallView: View {
         
         do {
             let response = try await PostService.shared.fetchPosts(token: token, userId: userId)
+            // Check if task was cancelled
+            if Task.isCancelled {
+                isLoadingPosts = false
+                return
+            }
             posts = response.data
+            isLoadingPosts = false
+        } catch is CancellationError {
+            // Silently handle cancellation - this is expected behavior
             isLoadingPosts = false
         } catch {
             isLoadingPosts = false
