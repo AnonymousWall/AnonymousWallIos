@@ -45,6 +45,14 @@
 		4A8BB21B2F2DDF2C00DD2A08 /* AnonymousWallIos.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AnonymousWallIos.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		4A8BB22D2F2DDF2E00DD2A08 /* AnonymousWallIosTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AnonymousWallIosTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		4A8BB2372F2DDF2E00DD2A08 /* AnonymousWallIosUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AnonymousWallIosUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		F90996A7F598455F8C16EB97 /* TabBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabBarView.swift; sourceTree = "<group>"; };
+		1FA61319FC3D4DDFB8895C54 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
+		142235876D914D76AD1C4967 /* CampusView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CampusView.swift; sourceTree = "<group>"; };
+		34AEA25B259744AE8ABF3D60 /* InternshipView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InternshipView.swift; sourceTree = "<group>"; };
+		06BB00DF1C1E46A296BD60C1 /* MarketView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarketView.swift; sourceTree = "<group>"; };
+		4E8A761255D74ECF80639568 /* CreatePostTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreatePostTabView.swift; sourceTree = "<group>"; };
+		5CA4C2AA1C0C409E973B45FD /* ProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileView.swift; sourceTree = "<group>"; };
+		ECE140B1CD5849C4991B2C15 /* PostEnums.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PostEnums.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -106,7 +114,8 @@
 				53502B71F93F40C080F637E7 /* User.swift */,
 				0B1EC382A6854A589AEADF7E /* AuthState.swift */,
 			
-				10411F1757944F6BAEAC177F /* Post.swift */,);
+				10411F1757944F6BAEAC177F /* Post.swift */,
+				ECE140B1CD5849C4991B2C15 /* PostEnums.swift */,);
 			path = Models;
 			sourceTree = "<group>";
 		};
@@ -132,7 +141,14 @@
 				5A698F294B7A4212B82A3C8B /* ChangePasswordView.swift */,
 				06CD3270308F4C1997CE254B /* CreatePostView.swift */,
 				70A75B17C3134F13A1563A70 /* PostRowView.swift */,
-				26B4614742DE4B053DAB735F /* PostDetailView.swift */,);
+				26B4614742DE4B053DAB735F /* PostDetailView.swift */,
+				F90996A7F598455F8C16EB97 /* TabBarView.swift */,
+				1FA61319FC3D4DDFB8895C54 /* HomeView.swift */,
+				142235876D914D76AD1C4967 /* CampusView.swift */,
+				34AEA25B259744AE8ABF3D60 /* InternshipView.swift */,
+				06BB00DF1C1E46A296BD60C1 /* MarketView.swift */,
+				4E8A761255D74ECF80639568 /* CreatePostTabView.swift */,
+				5CA4C2AA1C0C409E973B45FD /* ProfileView.swift */,);
 			path = Views;
 			sourceTree = "<group>";
 		};
@@ -301,6 +317,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				1D20204075664DBDB555EF52 /* Post.swift in Sources */,
+				8CB9F954488749328AB72CB1 /* PostEnums.swift in Sources */,
 				3B27DD8C04C946BBA820EA16 /* PostService.swift in Sources */,
 				FD454F78F48E4E1A9ACDCC3E /* CreatePostView.swift in Sources */,
 				8B093C7FEE1844838049EC3C /* PostRowView.swift in Sources */,
@@ -318,6 +335,13 @@
 				14AA7721757643D28E4E374C /* RegistrationView.swift in Sources */,
 				19C82E23141648E888CAB099 /* LoginView.swift in Sources */,
 				4D1F15E325244527B8F4013E /* WallView.swift in Sources */,
+				9FC81EDEB9F64AC889358F6F /* TabBarView.swift in Sources */,
+				86E36EB37667448D8C2408DE /* HomeView.swift in Sources */,
+				66C1BE86ABB64C4CA547BA0B /* CampusView.swift in Sources */,
+				226AF2FF1296400A94CF4AAD /* InternshipView.swift in Sources */,
+				757F41CD2F734F0199914235 /* MarketView.swift in Sources */,
+				CAD4DEB24D214B44B6C141D5 /* CreatePostTabView.swift in Sources */,
+				E1811D2EE3D042ACB8611BD7 /* ProfileView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

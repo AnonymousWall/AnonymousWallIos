@@ -14,7 +14,7 @@ struct AnonymousWallIosApp: App {
     var body: some Scene {
         WindowGroup {
             if authState.isAuthenticated {
-                WallView()
+                TabBarView()
                     .environmentObject(authState)
             } else {
                 AuthenticationView()
