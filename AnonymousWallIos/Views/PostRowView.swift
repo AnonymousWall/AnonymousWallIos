@@ -15,8 +15,33 @@ struct PostRowView: View {
     
     @State private var showDeleteConfirmation = false
     
+    private var isCampusPost: Bool {
+        post.wall.uppercased() == WallType.campus.rawValue.uppercased()
+    }
+    
+    private var wallDisplayName: String {
+        isCampusPost ? WallType.campus.displayName : WallType.national.displayName
+    }
+    
+    private var wallColor: Color {
+        isCampusPost ? .blue : .green
+    }
+    
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
+            // Wall type badge
+            HStack {
+                Text(wallDisplayName)
+                    .font(.caption2)
+                    .fontWeight(.semibold)
+                    .foregroundColor(wallColor)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(wallColor.opacity(0.15))
+                    .cornerRadius(4)
+                Spacer()
+            }
+            
             // Post content
             Text(post.content)
                 .font(.body)
