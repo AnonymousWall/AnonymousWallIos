@@ -10,6 +10,8 @@ import SwiftData
 
 @main
 struct AnonymousWallIosApp: App {
+    @StateObject private var authState = AuthState()
+    
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
             Item.self,
@@ -25,7 +27,13 @@ struct AnonymousWallIosApp: App {
 
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            if authState.isAuthenticated {
+                WallView()
+                    .environmentObject(authState)
+            } else {
+                AuthenticationView()
+                    .environmentObject(authState)
+            }
         }
         .modelContainer(sharedModelContainer)
     }
