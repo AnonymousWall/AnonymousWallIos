@@ -7,12 +7,12 @@
 
 import Foundation
 
-enum Environment {
+enum AppEnvironment {
     case development
     case staging
     case production
     
-    static var current: Environment {
+    static var current: AppEnvironment {
         #if DEBUG
         return .development
         #else
@@ -30,8 +30,8 @@ struct AppConfiguration {
     
     // MARK: - Environment
     
-    var environment: Environment {
-        return Environment.current
+    var environment: AppEnvironment {
+        return AppEnvironment.current
     }
     
     // MARK: - API Configuration

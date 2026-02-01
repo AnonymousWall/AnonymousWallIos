@@ -208,7 +208,7 @@ All API calls go through service classes:
 
 ### Development (DEBUG)
 ```swift
-Environment.current = .development
+AppEnvironment.current = .development
 API URL: http://localhost:8080
 Logging: Enabled
 HTTPS: Not required
@@ -216,7 +216,7 @@ HTTPS: Not required
 
 ### Staging
 ```swift
-Environment.current = .staging
+AppEnvironment.current = .staging
 API URL: https://staging-api.anonymouswall.com
 Logging: Enabled
 HTTPS: Required
@@ -224,7 +224,7 @@ HTTPS: Required
 
 ### Production (RELEASE)
 ```swift
-Environment.current = .production
+AppEnvironment.current = .production
 API URL: https://api.anonymouswall.com
 Logging: Disabled
 HTTPS: Required
