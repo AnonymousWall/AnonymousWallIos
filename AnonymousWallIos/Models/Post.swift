@@ -77,3 +77,7 @@ struct CreateCommentRequest: Codable {
 struct LikeResponse: Codable {
     let liked: Bool
 }
+
+struct HidePostResponse: Codable {
+    let message: String
+}
