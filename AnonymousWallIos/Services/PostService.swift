@@ -11,6 +11,7 @@ class PostService {
     static let shared = PostService()
     
     private let config = AppConfiguration.shared
+    private let networkClient = NetworkClient.shared
     
     private init() {}
     
@@ -19,7 +20,7 @@ class PostService {
     /// Fetch list of posts
     func fetchPosts(token: String, userId: String, page: Int = 1, limit: Int = 20) async throws -> [Post] {
         guard let url = URL(string: "\(config.fullAPIBaseURL)/posts?page=\(page)&limit=\(limit)") else {
-            throw AuthError.invalidURL
+            throw NetworkError.invalidURL
         }
         
         var request = URLRequest(url: url)
@@ -28,36 +29,21 @@ class PostService {
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         request.setValue(userId, forHTTPHeaderField: "X-User-ID")
         
-        let (data, response) = try await URLSession.shared.data(for: request)
-        
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw AuthError.invalidResponse
-        }
-        
-        if (200...299).contains(httpResponse.statusCode) {
-            // Try to decode as PostListResponse first, fall back to array
-            if let listResponse = try? JSONDecoder().decode(PostListResponse.self, from: data) {
-                return listResponse.posts
-            } else if let posts = try? JSONDecoder().decode([Post].self, from: data) {
-                return posts
-            } else {
-                throw AuthError.decodingError
-            }
-        } else if httpResponse.statusCode == 401 {
-            throw AuthError.unauthorized
-        } else {
-            if let errorResponse = try? JSONDecoder().decode(ErrorResponse.self, from: data),
-               let errorMessage = errorResponse.error ?? errorResponse.message {
-                throw AuthError.serverError(errorMessage)
-            }
-            throw AuthError.serverError("Failed to fetch posts")
+        // Try to decode as PostListResponse first, fall back to array
+        do {
+            let listResponse: PostListResponse = try await networkClient.performRequest(request)
+            return listResponse.posts
+        } catch {
+            // Fallback to array
+            let posts: [Post] = try await networkClient.performRequest(request)
+            return posts
         }
     }
     
     /// Create a new post
     func createPost(content: String, token: String, userId: String) async throws -> Post {
         guard let url = URL(string: "\(config.fullAPIBaseURL)/posts") else {
-            throw AuthError.invalidURL
+            throw NetworkError.invalidURL
         }
         
         var request = URLRequest(url: url)
@@ -69,36 +55,21 @@ class PostService {
         let body = CreatePostRequest(content: content)
         request.httpBody = try JSONEncoder().encode(body)
         
-        let (data, response) = try await URLSession.shared.data(for: request)
-        
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw AuthError.invalidResponse
-        }
-        
-        if (200...299).contains(httpResponse.statusCode) {
-            // Try to decode as CreatePostResponse first, fall back to Post
-            if let createResponse = try? JSONDecoder().decode(CreatePostResponse.self, from: data) {
-                return createResponse.post
-            } else if let post = try? JSONDecoder().decode(Post.self, from: data) {
-                return post
-            } else {
-                throw AuthError.decodingError
-            }
-        } else if httpResponse.statusCode == 401 {
-            throw AuthError.unauthorized
-        } else {
-            if let errorResponse = try? JSONDecoder().decode(ErrorResponse.self, from: data),
-               let errorMessage = errorResponse.error ?? errorResponse.message {
-                throw AuthError.serverError(errorMessage)
-            }
-            throw AuthError.serverError("Failed to create post")
+        // Try to decode as CreatePostResponse first, fall back to Post
+        do {
+            let createResponse: CreatePostResponse = try await networkClient.performRequest(request)
+            return createResponse.post
+        } catch {
+            // Fallback to Post
+            let post: Post = try await networkClient.performRequest(request)
+            return post
         }
     }
     
     /// Delete a post
     func deletePost(postId: String, token: String, userId: String) async throws {
         guard let url = URL(string: "\(config.fullAPIBaseURL)/posts/\(postId)") else {
-            throw AuthError.invalidURL
+            throw NetworkError.invalidURL
         }
         
         var request = URLRequest(url: url)
@@ -107,24 +78,13 @@ class PostService {
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         request.setValue(userId, forHTTPHeaderField: "X-User-ID")
         
-        let (_, response) = try await URLSession.shared.data(for: request)
-        
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw AuthError.invalidResponse
-        }
-        
-        if !(200...299).contains(httpResponse.statusCode) {
-            if httpResponse.statusCode == 401 {
-                throw AuthError.unauthorized
-            }
-            throw AuthError.serverError("Failed to delete post")
-        }
+        try await networkClient.performRequestWithoutResponse(request)
     }
     
     /// Like a post
     func likePost(postId: String, token: String, userId: String) async throws {
         guard let url = URL(string: "\(config.fullAPIBaseURL)/posts/\(postId)/like") else {
-            throw AuthError.invalidURL
+            throw NetworkError.invalidURL
         }
         
         var request = URLRequest(url: url)
@@ -133,24 +93,13 @@ class PostService {
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         request.setValue(userId, forHTTPHeaderField: "X-User-ID")
         
-        let (_, response) = try await URLSession.shared.data(for: request)
-        
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw AuthError.invalidResponse
-        }
-        
-        if !(200...299).contains(httpResponse.statusCode) {
-            if httpResponse.statusCode == 401 {
-                throw AuthError.unauthorized
-            }
-            throw AuthError.serverError("Failed to like post")
-        }
+        try await networkClient.performRequestWithoutResponse(request)
     }
     
     /// Unlike a post
     func unlikePost(postId: String, token: String, userId: String) async throws {
         guard let url = URL(string: "\(config.fullAPIBaseURL)/posts/\(postId)/like") else {
-            throw AuthError.invalidURL
+            throw NetworkError.invalidURL
         }
         
         var request = URLRequest(url: url)
@@ -159,17 +108,6 @@ class PostService {
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         request.setValue(userId, forHTTPHeaderField: "X-User-ID")
         
-        let (_, response) = try await URLSession.shared.data(for: request)
-        
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw AuthError.invalidResponse
-        }
-        
-        if !(200...299).contains(httpResponse.statusCode) {
-            if httpResponse.statusCode == 401 {
-                throw AuthError.unauthorized
-            }
-            throw AuthError.serverError("Failed to unlike post")
-        }
+        try await networkClient.performRequestWithoutResponse(request)
     }
 }
