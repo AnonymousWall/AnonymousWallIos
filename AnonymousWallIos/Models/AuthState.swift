@@ -67,7 +67,7 @@ class AuthState: ObservableObject {
         if let userId = UserDefaults.standard.string(forKey: AppConfiguration.UserDefaultsKeys.userId),
            let userEmail = UserDefaults.standard.string(forKey: AppConfiguration.UserDefaultsKeys.userEmail) {
             let isVerified = UserDefaults.standard.bool(forKey: AppConfiguration.UserDefaultsKeys.userIsVerified)
-            currentUser = User(id: userId, email: userEmail, isVerified: isVerified, createdAt: "")
+            currentUser = User(id: userId, email: userEmail, isVerified: isVerified, passwordSet: nil, createdAt: "")
         }
     }
     
