@@ -316,6 +316,12 @@ struct ProfileView: View {
         
         // Fetch comments for all posts and filter user's comments
         let allPosts = campusPosts + nationalPosts
+        
+        // Skip comment fetching if we have no posts
+        guard !allPosts.isEmpty else {
+            return
+        }
+        
         var allComments: [Comment] = []
         var tempPostMap: [String: Post] = [:]
         
