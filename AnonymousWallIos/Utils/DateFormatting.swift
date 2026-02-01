@@ -25,8 +25,12 @@ struct DateFormatting {
             let now = Date()
             let timeInterval = now.timeIntervalSince(date)
             
+            // Handle future dates (clock skew or incorrect timestamps)
+            if timeInterval < 0 {
+                return "Just now"
+            }
             // Less than a minute
-            if timeInterval < 60 {
+            else if timeInterval < 60 {
                 return "Just now"
             }
             // Less than an hour

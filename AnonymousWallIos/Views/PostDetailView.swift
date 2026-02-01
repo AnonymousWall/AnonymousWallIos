@@ -127,6 +127,7 @@ struct PostDetailView: View {
                     .textFieldStyle(.roundedBorder)
                     .lineLimit(1...4)
                     .disabled(isSubmitting)
+                    .accessibilityLabel("Comment text field")
                 
                 Button(action: submitComment) {
                     if isSubmitting {
@@ -172,6 +173,7 @@ struct PostDetailView: View {
     private func loadComments() async {
         guard let token = authState.authToken,
               let userId = authState.currentUser?.id else {
+            errorMessage = "Authentication required to load comments."
             return
         }
         
