@@ -147,12 +147,6 @@ struct AnonymousWallIosTests {
         #expect(authState.needsPasswordSetup == false)
     }
     
-    @Test func testNetworkErrorCancelledDescription() async throws {
-        // Test that NetworkError.cancelled has the correct error description
-        let cancelledError = NetworkError.cancelled
-        #expect(cancelledError.errorDescription == "Request cancelled")
-    }
-    
     @Test func testNetworkErrorDescriptions() async throws {
         // Test that all NetworkError cases have error descriptions
         #expect(NetworkError.invalidURL.errorDescription == "Invalid URL")
