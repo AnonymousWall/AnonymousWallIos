@@ -24,10 +24,15 @@ iOS app for college student anonymous posting platform (similar to Blind).
 
 1. Clone the repository
 2. Open `AnonymousWallIos.xcodeproj` in Xcode
-3. The app is configured to use `http://localhost:8080` as the base URL (for local development)
+3. The app is configured to use `http://localhost:8080` in DEBUG mode (for local development)
 4. Build and run on iOS Simulator or device
 
-**⚠️ Important**: For production deployment, update the base URL in `AuthService.swift` and `PostService.swift` to use HTTPS to protect authentication tokens in transit.
+**Environment Configuration:**
+- **DEBUG mode**: Uses `http://localhost:8080` for local development
+- **RELEASE mode**: Uses production HTTPS URLs (update in `AppConfiguration.swift`)
+- API endpoints are centrally managed in `Configuration/AppConfiguration.swift`
+
+**⚠️ Important**: For production deployment, update the production URL in `AppConfiguration.swift` to use your production backend.
 
 ## Authentication Flows
 
@@ -90,6 +95,22 @@ See [API_DOCUMENTATION.md](API_DOCUMENTATION.md) and [POST_FEED_DOCUMENTATION.md
 
 ## Architecture
 
+The app follows a clean, industry-standard iOS architecture with clear separation of concerns:
+
+### Configuration
+- `AppConfiguration` - Environment-based configuration manager
+  - Manages API URLs for development, staging, and production
+  - Controls feature flags and logging
+  - Centralizes security settings and API keys
+
+### Networking
+- `NetworkClient` - Network layer abstraction
+  - Handles all HTTP communication
+  - Implements proper error handling
+  - Provides request/response logging for debugging
+  - Supports environment-based configuration
+- `NetworkError` - Standardized error types for network operations
+
 ### Models
 - `User` - User data with id, email, verification status
 - `AuthState` - Observable authentication state manager
@@ -98,7 +119,11 @@ See [API_DOCUMENTATION.md](API_DOCUMENTATION.md) and [POST_FEED_DOCUMENTATION.md
 
 ### Services
 - `AuthService` - Handles all authentication API calls
+  - Uses NetworkClient for API communication
+  - Supports environment-based endpoints
 - `PostService` - Handles all post-related API calls
+  - Uses NetworkClient for API communication
+  - Implements proper error handling
 
 ### Views
 - `AuthenticationView` - Landing page
@@ -111,11 +136,17 @@ See [API_DOCUMENTATION.md](API_DOCUMENTATION.md) and [POST_FEED_DOCUMENTATION.md
 - `CreatePostView` - Create new anonymous post
 - `PostRowView` - Display individual post
 
+### Utils
+- `KeychainHelper` - Secure storage for sensitive data
+- `ValidationUtils` - Input validation utilities
+
 ### Security
 - JWT tokens stored in iOS Keychain (encrypted)
 - Password validation (min 8 characters)
 - Email format validation
 - Secure session persistence
+- Environment-based HTTPS enforcement
+- Centralized configuration management
 
 ## Testing
 
