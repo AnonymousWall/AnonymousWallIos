@@ -292,6 +292,28 @@ Response: 200 OK
 - `limit` (default: 20) - Comments per page (max: 100)
 - `sort` (default: "NEWEST") - Sort order: NEWEST, OLDEST
 
+
+#### 6. Hide your own post (soft delete)
+```http
+POST /api/v1/posts/{postId}/hide
+Authorization: Bearer {jwt-token}
+
+{
+    "message": "Post hidden successfully"
+}
+```
+
+#### 7. Hide your own comment (soft delete)
+```http
+POST /api/v1/posts/{postId}/comments/{commentId}/hide
+Authorization: Bearer {jwt-token}
+
+{
+    "message": "Comment hidden successfully"
+}
+```
+
+
 ---
 
 ## Authentication & Authorization
