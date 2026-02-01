@@ -24,6 +24,10 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		10411F1757944F6BAEAC177F /* Post.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Post.swift; sourceTree = "<group>"; };
+		D6119483DD8F4807AAD99A04 /* PostService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PostService.swift; sourceTree = "<group>"; };
+		06CD3270308F4C1997CE254B /* CreatePostView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreatePostView.swift; sourceTree = "<group>"; };
+		70A75B17C3134F13A1563A70 /* PostRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PostRowView.swift; sourceTree = "<group>"; };
 		0476EB80E1BE4AD9B33DB61D /* SetPasswordView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetPasswordView.swift; sourceTree = "<group>"; };
 		548A2654C11949D78138D48A /* ForgotPasswordView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ForgotPasswordView.swift; sourceTree = "<group>"; };
 		5A698F294B7A4212B82A3C8B /* ChangePasswordView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChangePasswordView.swift; sourceTree = "<group>"; };
@@ -98,7 +102,8 @@
 			children = (
 				53502B71F93F40C080F637E7 /* User.swift */,
 				0B1EC382A6854A589AEADF7E /* AuthState.swift */,
-			);
+			
+				10411F1757944F6BAEAC177F /* Post.swift */,);
 			path = Models;
 			sourceTree = "<group>";
 		};
@@ -106,7 +111,8 @@
 			isa = PBXGroup;
 			children = (
 				F0D3BB04711740B68D19221B /* AuthService.swift */,
-			);
+			
+				D6119483DD8F4807AAD99A04 /* PostService.swift */,);
 			path = Services;
 			sourceTree = "<group>";
 		};
@@ -120,7 +126,9 @@
 			
 				0476EB80E1BE4AD9B33DB61D /* SetPasswordView.swift */,
 				548A2654C11949D78138D48A /* ForgotPasswordView.swift */,
-				5A698F294B7A4212B82A3C8B /* ChangePasswordView.swift */,);
+				5A698F294B7A4212B82A3C8B /* ChangePasswordView.swift */,
+				06CD3270308F4C1997CE254B /* CreatePostView.swift */,
+				70A75B17C3134F13A1563A70 /* PostRowView.swift */,);
 			path = Views;
 			sourceTree = "<group>";
 		};
@@ -288,6 +296,10 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				1D20204075664DBDB555EF52 /* Post.swift in Sources */,
+				3B27DD8C04C946BBA820EA16 /* PostService.swift in Sources */,
+				FD454F78F48E4E1A9ACDCC3E /* CreatePostView.swift in Sources */,
+				8B093C7FEE1844838049EC3C /* PostRowView.swift in Sources */,
 				3B4C89173668470C9231DB40 /* SetPasswordView.swift in Sources */,
 				7E88795289F3410FBE7F8EA2 /* ForgotPasswordView.swift in Sources */,
 				AD279A6B8DB5400AA718BE5D /* ChangePasswordView.swift in Sources */,

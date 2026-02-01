@@ -11,10 +11,14 @@ struct WallView: View {
     @EnvironmentObject var authState: AuthState
     @State private var showSetPassword = false
     @State private var showChangePassword = false
+    @State private var showCreatePost = false
+    @State private var posts: [Post] = []
+    @State private var isLoadingPosts = false
+    @State private var errorMessage: String?
     
     var body: some View {
         NavigationStack {
-            VStack {
+            VStack(spacing: 0) {
                 // Password setup alert banner
                 if authState.needsPasswordSetup {
                     HStack {
@@ -37,41 +41,64 @@ struct WallView: View {
                     .padding()
                 }
                 
-                Text("Welcome to Anonymous Wall!")
-                    .font(.title)
-                    .padding()
-                
-                if let user = authState.currentUser {
-                    VStack(spacing: 8) {
-                        Text("Logged in as: \(user.email)")
+                // Post list
+                if isLoadingPosts && posts.isEmpty {
+                    Spacer()
+                    ProgressView("Loading posts...")
+                    Spacer()
+                } else if posts.isEmpty && !isLoadingPosts {
+                    Spacer()
+                    VStack(spacing: 16) {
+                        Image(systemName: "bubble.left.and.bubble.right")
+                            .font(.system(size: 60))
+                            .foregroundColor(.gray)
+                        Text("No posts yet")
+                            .font(.headline)
+                            .foregroundColor(.gray)
+                        Text("Be the first to post!")
                             .font(.subheadline)
                             .foregroundColor(.gray)
-                        
-                        if user.isVerified {
-                            HStack(spacing: 4) {
-                                Image(systemName: "checkmark.circle.fill")
-                                    .foregroundColor(.green)
-                                    .font(.caption)
-                                Text("Verified")
-                                    .font(.caption)
-                                    .foregroundColor(.green)
+                    }
+                    Spacer()
+                } else {
+                    ScrollView {
+                        LazyVStack(spacing: 12) {
+                            ForEach(posts) { post in
+                                PostRowView(
+                                    post: post,
+                                    isOwnPost: post.authorId == authState.currentUser?.id,
+                                    onLike: { toggleLike(for: post) },
+                                    onDelete: { deletePost(post) }
+                                )
                             }
                         }
+                        .padding()
                     }
-                    .padding()
+                    .refreshable {
+                        await loadPosts()
+                    }
                 }
                 
-                Spacer()
-                
-                Text("Post Feed Coming Soon...")
-                    .font(.headline)
-                    .foregroundColor(.gray)
-                
-                Spacer()
+                // Error message
+                if let errorMessage = errorMessage {
+                    Text(errorMessage)
+                        .foregroundColor(.red)
+                        .font(.caption)
+                        .padding()
+                }
             }
             .navigationTitle("Wall")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
+                // Create post button
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button(action: { showCreatePost = true }) {
+                        Image(systemName: "square.and.pencil")
+                            .font(.title3)
+                    }
+                }
+                
+                // Menu button
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Menu {
                         // Change password option (only if password is set)
@@ -100,12 +127,88 @@ struct WallView: View {
         .sheet(isPresented: $showChangePassword) {
             ChangePasswordView()
         }
+        .sheet(isPresented: $showCreatePost) {
+            CreatePostView(onPostCreated: {
+                Task {
+                    await loadPosts()
+                }
+            })
+        }
         .onAppear {
             // Show password setup if needed
             // Small delay to allow view to fully load before presenting sheet
             if authState.needsPasswordSetup {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                     showSetPassword = true
+                }
+            }
+            
+            // Load posts
+            Task {
+                await loadPosts()
+            }
+        }
+    }
+    
+    // MARK: - Functions
+    
+    @MainActor
+    private func loadPosts() async {
+        guard let token = authState.authToken,
+              let userId = authState.currentUser?.id else {
+            return
+        }
+        
+        isLoadingPosts = true
+        errorMessage = nil
+        
+        do {
+            let fetchedPosts = try await PostService.shared.fetchPosts(token: token, userId: userId)
+            posts = fetchedPosts
+            isLoadingPosts = false
+        } catch {
+            isLoadingPosts = false
+            errorMessage = error.localizedDescription
+        }
+    }
+    
+    private func toggleLike(for post: Post) {
+        guard let token = authState.authToken,
+              let userId = authState.currentUser?.id else {
+            return
+        }
+        
+        Task {
+            do {
+                if post.isLikedByCurrentUser == true {
+                    try await PostService.shared.unlikePost(postId: post.id, token: token, userId: userId)
+                } else {
+                    try await PostService.shared.likePost(postId: post.id, token: token, userId: userId)
+                }
+                // Reload posts to get updated like status
+                await loadPosts()
+            } catch {
+                await MainActor.run {
+                    errorMessage = error.localizedDescription
+                }
+            }
+        }
+    }
+    
+    private func deletePost(_ post: Post) {
+        guard let token = authState.authToken,
+              let userId = authState.currentUser?.id else {
+            return
+        }
+        
+        Task {
+            do {
+                try await PostService.shared.deletePost(postId: post.id, token: token, userId: userId)
+                // Reload posts after deletion
+                await loadPosts()
+            } catch {
+                await MainActor.run {
+                    errorMessage = error.localizedDescription
                 }
             }
         }
