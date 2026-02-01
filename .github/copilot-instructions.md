@@ -295,7 +295,7 @@ Response: 200 OK
 
 #### 6. Hide your own post (soft delete)
 ```http
-POST /api/v1/posts/{postId}/hide
+PATCH /api/v1/posts/{postId}/hide
 Authorization: Bearer {jwt-token}
 
 {
@@ -305,7 +305,7 @@ Authorization: Bearer {jwt-token}
 
 #### 7. Hide your own comment (soft delete)
 ```http
-POST /api/v1/posts/{postId}/comments/{commentId}/hide
+PATCH /api/v1/posts/{postId}/comments/{commentId}/hide
 Authorization: Bearer {jwt-token}
 
 {
