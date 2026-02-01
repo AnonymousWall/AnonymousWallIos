@@ -44,7 +44,15 @@ class PostService {
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         request.setValue(userId, forHTTPHeaderField: "X-User-Id")
         
-        return try await networkClient.performRequest(request)
+        // Try to decode as PostListResponse with pagination structure
+        do {
+            return try await networkClient.performRequest(request)
+        } catch {
+            // If backend returns a different structure, try to handle gracefully
+            // This can happen if backend hasn't been updated yet
+            print("⚠️ Failed to decode PostListResponse: \(error.localizedDescription)")
+            throw error
+        }
     }
     
     /// Create a new post
