@@ -262,6 +262,33 @@ struct AnonymousWallIosTests {
         let response = try decoder.decode(HidePostResponse.self, from: data)
         #expect(response.message == "Comment hidden successfully")
     }
+    
+    // MARK: - SortOrder Tests
+    
+    @Test func testSortOrderDisplayNames() async throws {
+        // Test that all sort orders have correct display names
+        #expect(SortOrder.newest.displayName == "Recent")
+        #expect(SortOrder.oldest.displayName == "Oldest")
+        #expect(SortOrder.mostLiked.displayName == "Most Likes")
+        #expect(SortOrder.leastLiked.displayName == "Least Likes")
+    }
+    
+    @Test func testSortOrderFeedOptions() async throws {
+        // Test that feed options contain the correct sort orders
+        let feedOptions = SortOrder.feedOptions
+        #expect(feedOptions.count == 3)
+        #expect(feedOptions.contains(.newest))
+        #expect(feedOptions.contains(.mostLiked))
+        #expect(feedOptions.contains(.oldest))
+        #expect(!feedOptions.contains(.leastLiked)) // Should not be included
+    }
+    
+    @Test func testSortOrderRawValues() async throws {
+        // Test that sort order raw values match backend API expectations
+        #expect(SortOrder.newest.rawValue == "NEWEST")
+        #expect(SortOrder.oldest.rawValue == "OLDEST")
+        #expect(SortOrder.mostLiked.rawValue == "MOST_LIKED")
+        #expect(SortOrder.leastLiked.rawValue == "LEAST_LIKED")
+    }
 
 }
-
