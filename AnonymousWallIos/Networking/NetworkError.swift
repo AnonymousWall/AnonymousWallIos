@@ -18,6 +18,7 @@ enum NetworkError: Error, LocalizedError {
     case notFound
     case timeout
     case noConnection
+    case cancelled
     
     var errorDescription: String? {
         switch self {
@@ -41,6 +42,8 @@ enum NetworkError: Error, LocalizedError {
             return "Request timeout"
         case .noConnection:
             return "No internet connection"
+        case .cancelled:
+            return "Request cancelled"
         }
     }
 }

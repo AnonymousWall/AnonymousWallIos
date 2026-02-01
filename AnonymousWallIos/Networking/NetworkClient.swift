@@ -77,7 +77,9 @@ class NetworkClient: NetworkClientProtocol {
             throw error
         } catch let error as URLError {
             // Handle URL errors
-            if error.code == .notConnectedToInternet || error.code == .networkConnectionLost {
+            if error.code == .cancelled {
+                throw NetworkError.cancelled
+            } else if error.code == .notConnectedToInternet || error.code == .networkConnectionLost {
                 throw NetworkError.noConnection
             } else if error.code == .timedOut {
                 throw NetworkError.timeout

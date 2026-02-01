@@ -184,6 +184,9 @@ struct WallView: View {
         } catch is CancellationError {
             // Silently handle cancellation - this is expected behavior
             isLoadingPosts = false
+        } catch NetworkError.cancelled {
+            // Silently handle network cancellation - this is expected behavior during refresh
+            isLoadingPosts = false
         } catch {
             isLoadingPosts = false
             errorMessage = error.localizedDescription
