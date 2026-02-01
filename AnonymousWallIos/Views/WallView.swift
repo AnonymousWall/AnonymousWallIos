@@ -174,20 +174,23 @@ struct WallView: View {
         isLoadingPosts = true
         errorMessage = nil
         
+        // Ensure loading state is always reset
+        defer {
+            isLoadingPosts = false
+        }
+        
         do {
             let response = try await PostService.shared.fetchPosts(token: token, userId: userId)
             // Always update posts if request succeeded, even if task was cancelled
             // This ensures refresh works correctly when user releases before completion
             posts = response.data
-            isLoadingPosts = false
         } catch is CancellationError {
             // Silently handle cancellation - this is expected behavior
-            isLoadingPosts = false
+            return
         } catch NetworkError.cancelled {
             // Silently handle network cancellation - this is expected behavior during refresh
-            isLoadingPosts = false
+            return
         } catch {
-            isLoadingPosts = false
             errorMessage = error.localizedDescription
         }
     }
