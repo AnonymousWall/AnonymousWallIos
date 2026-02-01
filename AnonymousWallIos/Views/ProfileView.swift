@@ -280,6 +280,12 @@ struct ProfileView: View {
             var allComments: [Comment] = []
             var postMap: [String: Post] = [:]
             
+            // First, populate the post map with all posts
+            for post in allPosts {
+                postMap[post.id] = post
+            }
+            
+            // Then fetch comments
             for post in allPosts {
                 do {
                     let commentResponse = try await PostService.shared.getComments(
@@ -289,8 +295,6 @@ struct ProfileView: View {
                         limit: 100
                     )
                     allComments.append(contentsOf: commentResponse.data)
-                    // Store the post for each comment's postId
-                    postMap[post.id] = post
                 } catch {
                     // Continue even if some comment fetches fail
                     continue

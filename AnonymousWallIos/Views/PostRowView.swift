@@ -15,18 +15,22 @@ struct PostRowView: View {
     
     @State private var showDeleteConfirmation = false
     
+    private var isCampusPost: Bool {
+        post.wall.uppercased() == "CAMPUS"
+    }
+    
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             // Wall type badge
             HStack {
-                Text(post.wall.uppercased() == "CAMPUS" ? "Campus" : "National")
+                Text(isCampusPost ? "Campus" : "National")
                     .font(.caption2)
                     .fontWeight(.semibold)
-                    .foregroundColor(post.wall.uppercased() == "CAMPUS" ? .blue : .green)
+                    .foregroundColor(isCampusPost ? .blue : .green)
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
                     .background(
-                        (post.wall.uppercased() == "CAMPUS" ? Color.blue : Color.green)
+                        (isCampusPost ? Color.blue : Color.green)
                             .opacity(0.15)
                     )
                     .cornerRadius(4)
