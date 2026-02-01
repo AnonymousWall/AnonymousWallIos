@@ -158,6 +158,110 @@ struct AnonymousWallIosTests {
         #expect(NetworkError.noConnection.errorDescription == "No internet connection")
         #expect(NetworkError.cancelled.errorDescription == "Request cancelled")
     }
+    
+    // MARK: - Comment Model Tests
+    
+    @Test func testCommentDecoding() async throws {
+        // Test that Comment model can be decoded from JSON
+        let json = """
+        {
+            "id": "comment-123",
+            "postId": "post-456",
+            "text": "This is a test comment",
+            "author": {
+                "id": "user-789",
+                "isAnonymous": true
+            },
+            "createdAt": "2026-01-31T12:00:00Z"
+        }
+        """
+        
+        let data = json.data(using: .utf8)!
+        let decoder = JSONDecoder()
+        
+        let comment = try decoder.decode(Comment.self, from: data)
+        #expect(comment.id == "comment-123")
+        #expect(comment.postId == "post-456")
+        #expect(comment.text == "This is a test comment")
+        #expect(comment.author.id == "user-789")
+        #expect(comment.author.isAnonymous == true)
+        #expect(comment.createdAt == "2026-01-31T12:00:00Z")
+    }
+    
+    @Test func testCommentListResponseDecoding() async throws {
+        // Test that CommentListResponse can be decoded from JSON
+        let json = """
+        {
+            "data": [
+                {
+                    "id": "comment-1",
+                    "postId": "post-1",
+                    "text": "First comment",
+                    "author": {
+                        "id": "user-1",
+                        "isAnonymous": true
+                    },
+                    "createdAt": "2026-01-31T10:00:00Z"
+                },
+                {
+                    "id": "comment-2",
+                    "postId": "post-1",
+                    "text": "Second comment",
+                    "author": {
+                        "id": "user-2",
+                        "isAnonymous": true
+                    },
+                    "createdAt": "2026-01-31T11:00:00Z"
+                }
+            ],
+            "pagination": {
+                "page": 1,
+                "limit": 20,
+                "total": 2,
+                "totalPages": 1
+            }
+        }
+        """
+        
+        let data = json.data(using: .utf8)!
+        let decoder = JSONDecoder()
+        
+        let response = try decoder.decode(CommentListResponse.self, from: data)
+        #expect(response.data.count == 2)
+        #expect(response.data[0].id == "comment-1")
+        #expect(response.data[0].text == "First comment")
+        #expect(response.data[1].id == "comment-2")
+        #expect(response.data[1].text == "Second comment")
+        #expect(response.pagination.page == 1)
+        #expect(response.pagination.total == 2)
+    }
+    
+    @Test func testCreateCommentRequestEncoding() async throws {
+        // Test that CreateCommentRequest can be encoded to JSON
+        let request = CreateCommentRequest(text: "New test comment")
+        let encoder = JSONEncoder()
+        
+        let data = try encoder.encode(request)
+        let json = String(data: data, encoding: .utf8)!
+        
+        #expect(json.contains("\"text\""))
+        #expect(json.contains("New test comment"))
+    }
+    
+    @Test func testHidePostResponseDecoding() async throws {
+        // Test that HidePostResponse can be decoded (used for hide comment too)
+        let json = """
+        {
+            "message": "Comment hidden successfully"
+        }
+        """
+        
+        let data = json.data(using: .utf8)!
+        let decoder = JSONDecoder()
+        
+        let response = try decoder.decode(HidePostResponse.self, from: data)
+        #expect(response.message == "Comment hidden successfully")
+    }
 
 }
 
