@@ -230,103 +230,130 @@ struct ProfileView: View {
     
     @MainActor
     private func loadMyPosts(token: String, userId: String) async {
+        var campusPosts: [Post] = []
+        var nationalPosts: [Post] = []
+        
+        // Fetch campus posts
         do {
-            // Fetch campus posts
             let campusResponse = try await PostService.shared.fetchPosts(
                 token: token,
                 userId: userId,
                 wall: .campus,
                 limit: 100
             )
-            
-            // Fetch national posts
+            campusPosts = campusResponse.data
+        } catch is CancellationError {
+            // Silently handle cancellation
+        } catch NetworkError.cancelled {
+            // Silently handle network cancellation
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+        
+        // Fetch national posts
+        do {
             let nationalResponse = try await PostService.shared.fetchPosts(
                 token: token,
                 userId: userId,
                 wall: .national,
                 limit: 100
             )
-            
-            // Filter to only show user's own posts
-            let allPosts = campusResponse.data + nationalResponse.data
-            myPosts = allPosts.filter { $0.author.id == userId }
-                .sorted { $0.createdAt > $1.createdAt }
+            nationalPosts = nationalResponse.data
         } catch is CancellationError {
-            // Silently handle cancellation - this is expected behavior during refresh
-            return
+            // Silently handle cancellation
         } catch NetworkError.cancelled {
-            // Silently handle network cancellation - this is expected behavior during refresh
-            return
+            // Silently handle network cancellation
         } catch {
             errorMessage = error.localizedDescription
+        }
+        
+        // Update posts if we have any data (even if one fetch was cancelled)
+        if !campusPosts.isEmpty || !nationalPosts.isEmpty {
+            let allPosts = campusPosts + nationalPosts
+            myPosts = allPosts.filter { $0.author.id == userId }
+                .sorted { $0.createdAt > $1.createdAt }
         }
     }
     
     @MainActor
     private func loadMyComments(token: String, userId: String) async {
+        var campusPosts: [Post] = []
+        var nationalPosts: [Post] = []
+        
+        // Fetch campus posts
         do {
-            // Fetch campus posts
             let campusResponse = try await PostService.shared.fetchPosts(
                 token: token,
                 userId: userId,
                 wall: .campus,
                 limit: 100
             )
-            
-            // Fetch national posts
+            campusPosts = campusResponse.data
+        } catch is CancellationError {
+            // Silently handle cancellation
+        } catch NetworkError.cancelled {
+            // Silently handle network cancellation
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+        
+        // Fetch national posts
+        do {
             let nationalResponse = try await PostService.shared.fetchPosts(
                 token: token,
                 userId: userId,
                 wall: .national,
                 limit: 100
             )
-            
-            // Fetch comments for all posts and filter user's comments
-            let allPosts = campusResponse.data + nationalResponse.data
-            var allComments: [Comment] = []
-            var tempPostMap: [String: Post] = [:]
-            
-            // First, populate the post map with all posts
-            for post in allPosts {
-                tempPostMap[post.id] = post
+            nationalPosts = nationalResponse.data
+        } catch is CancellationError {
+            // Silently handle cancellation
+        } catch NetworkError.cancelled {
+            // Silently handle network cancellation
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+        
+        // Fetch comments for all posts and filter user's comments
+        let allPosts = campusPosts + nationalPosts
+        var allComments: [Comment] = []
+        var tempPostMap: [String: Post] = [:]
+        
+        // First, populate the post map with all posts
+        for post in allPosts {
+            tempPostMap[post.id] = post
+        }
+        
+        // Then fetch comments
+        for post in allPosts {
+            do {
+                let commentResponse = try await PostService.shared.getComments(
+                    postId: post.id,
+                    token: token,
+                    userId: userId,
+                    limit: 100
+                )
+                allComments.append(contentsOf: commentResponse.data)
+            } catch is CancellationError {
+                // Silently handle cancellation
+                continue
+            } catch NetworkError.cancelled {
+                // Silently handle network cancellation
+                continue
+            } catch {
+                // Continue even if some comment fetches fail
+                continue
             }
-            
-            // Then fetch comments
-            for post in allPosts {
-                do {
-                    let commentResponse = try await PostService.shared.getComments(
-                        postId: post.id,
-                        token: token,
-                        userId: userId,
-                        limit: 100
-                    )
-                    allComments.append(contentsOf: commentResponse.data)
-                } catch is CancellationError {
-                    // Silently handle cancellation
-                    continue
-                } catch NetworkError.cancelled {
-                    // Silently handle network cancellation
-                    continue
-                } catch {
-                    // Continue even if some comment fetches fail
-                    continue
-                }
-            }
-            
+        }
+        
+        // Update UI with any data we successfully fetched
+        if !allComments.isEmpty || !tempPostMap.isEmpty {
             // Filter to only show user's own comments
             myComments = allComments.filter { $0.author.id == userId }
                 .sorted { $0.createdAt > $1.createdAt }
             
             // Update the comment-to-post mapping
             commentPostMap = tempPostMap
-        } catch is CancellationError {
-            // Silently handle cancellation - this is expected behavior during refresh
-            return
-        } catch NetworkError.cancelled {
-            // Silently handle network cancellation - this is expected behavior during refresh
-            return
-        } catch {
-            errorMessage = error.localizedDescription
         }
     }
     
