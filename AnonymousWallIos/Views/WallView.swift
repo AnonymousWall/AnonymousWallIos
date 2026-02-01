@@ -15,6 +15,7 @@ struct WallView: View {
     @State private var posts: [Post] = []
     @State private var isLoadingPosts = false
     @State private var errorMessage: String?
+    @State private var loadTask: Task<Void, Never>?
     
     var body: some View {
         NavigationStack {
@@ -66,16 +67,16 @@ struct WallView: View {
                             ForEach(posts) { post in
                                 PostRowView(
                                     post: post,
-                                    isOwnPost: post.authorId == authState.currentUser?.id,
+                                    isOwnPost: post.author.id == authState.currentUser?.id,
                                     onLike: { toggleLike(for: post) },
-                                    onDelete: { deletePost(post) }
+                                    onDelete: { /* Delete not supported by API */ }
                                 )
                             }
                         }
                         .padding()
                     }
                     .refreshable {
-                        await loadPosts()
+                        await refreshPosts()
                     }
                 }
                 
@@ -144,7 +145,7 @@ struct WallView: View {
             }
             
             // Load posts
-            Task {
+            loadTask = Task {
                 await loadPosts()
             }
         }
@@ -153,18 +154,35 @@ struct WallView: View {
     // MARK: - Functions
     
     @MainActor
+    private func refreshPosts() async {
+        // Cancel any existing load task
+        loadTask?.cancel()
+        loadTask = nil
+        
+        // Load posts - don't reset isLoadingPosts, let loadPosts handle it
+        await loadPosts()
+    }
+    
+    @MainActor
     private func loadPosts() async {
         guard let token = authState.authToken,
               let userId = authState.currentUser?.id else {
             return
         }
         
+        // Set loading state
         isLoadingPosts = true
         errorMessage = nil
         
         do {
-            let fetchedPosts = try await PostService.shared.fetchPosts(token: token, userId: userId)
-            posts = fetchedPosts
+            let response = try await PostService.shared.fetchPosts(token: token, userId: userId)
+            // Only update if task wasn't cancelled
+            if !Task.isCancelled {
+                posts = response.data
+            }
+            isLoadingPosts = false
+        } catch is CancellationError {
+            // Silently handle cancellation - this is expected behavior
             isLoadingPosts = false
         } catch {
             isLoadingPosts = false
@@ -180,31 +198,8 @@ struct WallView: View {
         
         Task {
             do {
-                if post.isLikedByCurrentUser == true {
-                    try await PostService.shared.unlikePost(postId: post.id, token: token, userId: userId)
-                } else {
-                    try await PostService.shared.likePost(postId: post.id, token: token, userId: userId)
-                }
+                _ = try await PostService.shared.toggleLike(postId: post.id, token: token, userId: userId)
                 // Reload posts to get updated like status
-                await loadPosts()
-            } catch {
-                await MainActor.run {
-                    errorMessage = error.localizedDescription
-                }
-            }
-        }
-    }
-    
-    private func deletePost(_ post: Post) {
-        guard let token = authState.authToken,
-              let userId = authState.currentUser?.id else {
-            return
-        }
-        
-        Task {
-            do {
-                try await PostService.shared.deletePost(postId: post.id, token: token, userId: userId)
-                // Reload posts after deletion
                 await loadPosts()
             } catch {
                 await MainActor.run {

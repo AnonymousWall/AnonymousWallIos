@@ -11,6 +11,7 @@ struct CreatePostView: View {
     @EnvironmentObject var authState: AuthState
     @Environment(\.dismiss) var dismiss
     @State private var postContent = ""
+    @State private var selectedWall: WallType = .campus
     @State private var isPosting = false
     @State private var errorMessage: String?
     
@@ -21,6 +22,16 @@ struct CreatePostView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 20) {
+                // Wall selection
+                Picker("Wall", selection: $selectedWall) {
+                    ForEach(WallType.allCases, id: \.self) { wallType in
+                        Text(wallType.displayName).tag(wallType)
+                    }
+                }
+                .pickerStyle(SegmentedPickerStyle())
+                .padding(.horizontal)
+                .padding(.top, 10)
+                
                 // Character count
                 HStack {
                     Spacer()
@@ -29,7 +40,6 @@ struct CreatePostView: View {
                         .foregroundColor(postContent.count > maxCharacters ? .red : .gray)
                 }
                 .padding(.horizontal)
-                .padding(.top, 10)
                 
                 // Text editor
                 TextEditor(text: $postContent)
@@ -111,7 +121,7 @@ struct CreatePostView: View {
         
         Task {
             do {
-                _ = try await PostService.shared.createPost(content: trimmedContent, token: token, userId: userId)
+                _ = try await PostService.shared.createPost(content: trimmedContent, wall: selectedWall, token: token, userId: userId)
                 await MainActor.run {
                     isPosting = false
                     onPostCreated()

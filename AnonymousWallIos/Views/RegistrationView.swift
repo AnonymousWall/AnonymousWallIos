@@ -191,8 +191,8 @@ struct RegistrationView: View {
                 await MainActor.run {
                     isLoading = false
                     // User is now logged in after registration
-                    // Password setup is required for new registrations
-                    authState.login(user: response.user, token: response.accessToken, needsPasswordSetup: true)
+                    // passwordSet from API will indicate if password setup is required
+                    authState.login(user: response.user, token: response.accessToken)
                     showingSuccess = true
                 }
             } catch {

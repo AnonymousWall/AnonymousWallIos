@@ -112,7 +112,7 @@ class AuthService {
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        request.setValue(userId, forHTTPHeaderField: "X-User-ID")
+        request.setValue(userId, forHTTPHeaderField: "X-User-Id")
         
         let body: [String: String] = [
             "password": password
@@ -132,7 +132,7 @@ class AuthService {
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        request.setValue(userId, forHTTPHeaderField: "X-User-ID")
+        request.setValue(userId, forHTTPHeaderField: "X-User-Id")
         
         let body: [String: String] = [
             "oldPassword": oldPassword,

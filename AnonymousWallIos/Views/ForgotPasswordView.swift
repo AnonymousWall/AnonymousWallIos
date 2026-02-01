@@ -233,7 +233,7 @@ struct ForgotPasswordView: View {
                 await MainActor.run {
                     isLoading = false
                     // User is now logged in with new password
-                    authState.login(user: response.user, token: response.accessToken, needsPasswordSetup: false)
+                    authState.login(user: response.user, token: response.accessToken)
                     showSuccess = true
                 }
             } catch {

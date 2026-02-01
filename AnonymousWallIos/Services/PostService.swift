@@ -18,8 +18,23 @@ class PostService {
     // MARK: - Post Operations
     
     /// Fetch list of posts
-    func fetchPosts(token: String, userId: String, page: Int = 1, limit: Int = 20) async throws -> [Post] {
-        guard let url = URL(string: "\(config.fullAPIBaseURL)/posts?page=\(page)&limit=\(limit)") else {
+    func fetchPosts(
+        token: String,
+        userId: String,
+        wall: WallType = .campus,
+        page: Int = 1,
+        limit: Int = 20,
+        sort: SortOrder = .newest
+    ) async throws -> PostListResponse {
+        var components = URLComponents(string: "\(config.fullAPIBaseURL)/posts")
+        components?.queryItems = [
+            URLQueryItem(name: "wall", value: wall.rawValue),
+            URLQueryItem(name: "page", value: "\(page)"),
+            URLQueryItem(name: "limit", value: "\(limit)"),
+            URLQueryItem(name: "sort", value: sort.rawValue)
+        ]
+        
+        guard let url = components?.url else {
             throw NetworkError.invalidURL
         }
         
@@ -27,21 +42,21 @@ class PostService {
         request.httpMethod = "GET"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        request.setValue(userId, forHTTPHeaderField: "X-User-ID")
+        request.setValue(userId, forHTTPHeaderField: "X-User-Id")
         
-        // Try to decode as PostListResponse first, fall back to array
+        // Try to decode as PostListResponse with pagination structure
         do {
-            let listResponse: PostListResponse = try await networkClient.performRequest(request)
-            return listResponse.posts
+            return try await networkClient.performRequest(request)
         } catch {
-            // Fallback to array
-            let posts: [Post] = try await networkClient.performRequest(request)
-            return posts
+            // If backend returns a different structure, try to handle gracefully
+            // This can happen if backend hasn't been updated yet
+            print("⚠️ Failed to decode PostListResponse: \(error.localizedDescription)")
+            throw error
         }
     }
     
     /// Create a new post
-    func createPost(content: String, token: String, userId: String) async throws -> Post {
+    func createPost(content: String, wall: WallType = .campus, token: String, userId: String) async throws -> Post {
         guard let url = URL(string: "\(config.fullAPIBaseURL)/posts") else {
             throw NetworkError.invalidURL
         }
@@ -50,40 +65,17 @@ class PostService {
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        request.setValue(userId, forHTTPHeaderField: "X-User-ID")
+        request.setValue(userId, forHTTPHeaderField: "X-User-Id")
         
-        let body = CreatePostRequest(content: content)
+        let body = CreatePostRequest(content: content, wall: wall.rawValue)
         request.httpBody = try JSONEncoder().encode(body)
         
-        // Try to decode as CreatePostResponse first, fall back to Post
-        do {
-            let createResponse: CreatePostResponse = try await networkClient.performRequest(request)
-            return createResponse.post
-        } catch {
-            // Fallback to Post
-            let post: Post = try await networkClient.performRequest(request)
-            return post
-        }
+        return try await networkClient.performRequest(request)
     }
     
-    /// Delete a post
-    func deletePost(postId: String, token: String, userId: String) async throws {
-        guard let url = URL(string: "\(config.fullAPIBaseURL)/posts/\(postId)") else {
-            throw NetworkError.invalidURL
-        }
-        
-        var request = URLRequest(url: url)
-        request.httpMethod = "DELETE"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        request.setValue(userId, forHTTPHeaderField: "X-User-ID")
-        
-        try await networkClient.performRequestWithoutResponse(request)
-    }
-    
-    /// Like a post
-    func likePost(postId: String, token: String, userId: String) async throws {
-        guard let url = URL(string: "\(config.fullAPIBaseURL)/posts/\(postId)/like") else {
+    /// Toggle like on a post
+    func toggleLike(postId: String, token: String, userId: String) async throws -> LikeResponse {
+        guard let url = URL(string: "\(config.fullAPIBaseURL)/posts/\(postId)/likes") else {
             throw NetworkError.invalidURL
         }
         
@@ -91,23 +83,57 @@ class PostService {
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        request.setValue(userId, forHTTPHeaderField: "X-User-ID")
+        request.setValue(userId, forHTTPHeaderField: "X-User-Id")
         
-        try await networkClient.performRequestWithoutResponse(request)
+        return try await networkClient.performRequest(request)
     }
     
-    /// Unlike a post
-    func unlikePost(postId: String, token: String, userId: String) async throws {
-        guard let url = URL(string: "\(config.fullAPIBaseURL)/posts/\(postId)/like") else {
+    // MARK: - Comment Operations
+    
+    /// Add a comment to a post
+    func addComment(postId: String, text: String, token: String, userId: String) async throws -> Comment {
+        guard let url = URL(string: "\(config.fullAPIBaseURL)/posts/\(postId)/comments") else {
             throw NetworkError.invalidURL
         }
         
         var request = URLRequest(url: url)
-        request.httpMethod = "DELETE"
+        request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        request.setValue(userId, forHTTPHeaderField: "X-User-ID")
+        request.setValue(userId, forHTTPHeaderField: "X-User-Id")
         
-        try await networkClient.performRequestWithoutResponse(request)
+        let body = CreateCommentRequest(text: text)
+        request.httpBody = try JSONEncoder().encode(body)
+        
+        return try await networkClient.performRequest(request)
+    }
+    
+    /// Get comments for a post
+    func getComments(
+        postId: String,
+        token: String,
+        userId: String,
+        page: Int = 1,
+        limit: Int = 20,
+        sort: SortOrder = .newest
+    ) async throws -> CommentListResponse {
+        var components = URLComponents(string: "\(config.fullAPIBaseURL)/posts/\(postId)/comments")
+        components?.queryItems = [
+            URLQueryItem(name: "page", value: "\(page)"),
+            URLQueryItem(name: "limit", value: "\(limit)"),
+            URLQueryItem(name: "sort", value: sort.rawValue)
+        ]
+        
+        guard let url = components?.url else {
+            throw NetworkError.invalidURL
+        }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        request.setValue(userId, forHTTPHeaderField: "X-User-Id")
+        
+        return try await networkClient.performRequest(request)
     }
 }
