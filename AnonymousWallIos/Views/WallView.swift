@@ -231,6 +231,7 @@ struct WallView: View {
     private func deletePost(_ post: Post) {
         guard let token = authState.authToken,
               let userId = authState.currentUser?.id else {
+            errorMessage = "Authentication required to delete post."
             return
         }
         
