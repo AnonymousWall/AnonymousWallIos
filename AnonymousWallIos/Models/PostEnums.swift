@@ -1,0 +1,31 @@
+//
+//  PostEnums.swift
+//  AnonymousWallIos
+//
+//  Enums for post-related constants
+//
+
+import Foundation
+
+/// Wall type for posts
+enum WallType: String, Codable, CaseIterable {
+    case campus = "campus"
+    case national = "national"
+    
+    var displayName: String {
+        switch self {
+        case .campus:
+            return "Campus"
+        case .national:
+            return "National"
+        }
+    }
+}
+
+/// Sort order for posts and comments
+enum SortOrder: String, Codable, CaseIterable {
+    case newest = "NEWEST"
+    case oldest = "OLDEST"
+    case mostLiked = "MOST_LIKED"
+    case leastLiked = "LEAST_LIKED"
+}

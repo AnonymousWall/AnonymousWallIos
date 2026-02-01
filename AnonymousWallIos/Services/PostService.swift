@@ -21,17 +21,17 @@ class PostService {
     func fetchPosts(
         token: String,
         userId: String,
-        wall: String = "campus",
+        wall: WallType = .campus,
         page: Int = 1,
         limit: Int = 20,
-        sort: String = "NEWEST"
+        sort: SortOrder = .newest
     ) async throws -> PostListResponse {
         var components = URLComponents(string: "\(config.fullAPIBaseURL)/posts")
         components?.queryItems = [
-            URLQueryItem(name: "wall", value: wall),
+            URLQueryItem(name: "wall", value: wall.rawValue),
             URLQueryItem(name: "page", value: "\(page)"),
             URLQueryItem(name: "limit", value: "\(limit)"),
-            URLQueryItem(name: "sort", value: sort)
+            URLQueryItem(name: "sort", value: sort.rawValue)
         ]
         
         guard let url = components?.url else {
@@ -48,7 +48,7 @@ class PostService {
     }
     
     /// Create a new post
-    func createPost(content: String, wall: String = "campus", token: String, userId: String) async throws -> Post {
+    func createPost(content: String, wall: WallType = .campus, token: String, userId: String) async throws -> Post {
         guard let url = URL(string: "\(config.fullAPIBaseURL)/posts") else {
             throw NetworkError.invalidURL
         }
@@ -59,7 +59,7 @@ class PostService {
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         request.setValue(userId, forHTTPHeaderField: "X-User-Id")
         
-        let body = CreatePostRequest(content: content, wall: wall)
+        let body = CreatePostRequest(content: content, wall: wall.rawValue)
         request.httpBody = try JSONEncoder().encode(body)
         
         return try await networkClient.performRequest(request)
@@ -107,13 +107,13 @@ class PostService {
         userId: String,
         page: Int = 1,
         limit: Int = 20,
-        sort: String = "NEWEST"
+        sort: SortOrder = .newest
     ) async throws -> CommentListResponse {
         var components = URLComponents(string: "\(config.fullAPIBaseURL)/posts/\(postId)/comments")
         components?.queryItems = [
             URLQueryItem(name: "page", value: "\(page)"),
             URLQueryItem(name: "limit", value: "\(limit)"),
-            URLQueryItem(name: "sort", value: sort)
+            URLQueryItem(name: "sort", value: sort.rawValue)
         ]
         
         guard let url = components?.url else {

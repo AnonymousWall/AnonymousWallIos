@@ -11,7 +11,7 @@ struct CreatePostView: View {
     @EnvironmentObject var authState: AuthState
     @Environment(\.dismiss) var dismiss
     @State private var postContent = ""
-    @State private var selectedWall = "campus"
+    @State private var selectedWall: WallType = .campus
     @State private var isPosting = false
     @State private var errorMessage: String?
     
@@ -24,8 +24,9 @@ struct CreatePostView: View {
             VStack(spacing: 20) {
                 // Wall selection
                 Picker("Wall", selection: $selectedWall) {
-                    Text("Campus").tag("campus")
-                    Text("National").tag("national")
+                    ForEach(WallType.allCases, id: \.self) { wallType in
+                        Text(wallType.displayName).tag(wallType)
+                    }
                 }
                 .pickerStyle(SegmentedPickerStyle())
                 .padding(.horizontal)
