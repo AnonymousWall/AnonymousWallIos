@@ -176,10 +176,9 @@ struct WallView: View {
         
         do {
             let response = try await PostService.shared.fetchPosts(token: token, userId: userId)
-            // Only update if task wasn't cancelled
-            if !Task.isCancelled {
-                posts = response.data
-            }
+            // Always update posts if request succeeded, even if task was cancelled
+            // This ensures refresh works correctly when user releases before completion
+            posts = response.data
             isLoadingPosts = false
         } catch is CancellationError {
             // Silently handle cancellation - this is expected behavior
