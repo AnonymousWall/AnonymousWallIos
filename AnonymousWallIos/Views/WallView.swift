@@ -75,12 +75,15 @@ struct WallView: View {
                     } else {
                         LazyVStack(spacing: 12) {
                             ForEach(posts) { post in
-                                PostRowView(
-                                    post: post,
-                                    isOwnPost: post.author.id == authState.currentUser?.id,
-                                    onLike: { toggleLike(for: post) },
-                                    onDelete: { deletePost(post) }
-                                )
+                                NavigationLink(destination: PostDetailView(post: post)) {
+                                    PostRowView(
+                                        post: post,
+                                        isOwnPost: post.author.id == authState.currentUser?.id,
+                                        onLike: { toggleLike(for: post) },
+                                        onDelete: { deletePost(post) }
+                                    )
+                                }
+                                .buttonStyle(PlainButtonStyle())
                             }
                         }
                         .padding()
