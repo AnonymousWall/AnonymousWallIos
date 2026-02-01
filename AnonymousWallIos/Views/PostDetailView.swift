@@ -110,7 +110,7 @@ struct PostDetailView: View {
                 .padding()
             }
             .refreshable {
-                await loadComments()
+                await refreshComments()
             }
             
             // Error message
@@ -203,6 +203,18 @@ struct PostDetailView: View {
         } catch {
             errorMessage = "Failed to load comments: \(error.localizedDescription)"
         }
+    }
+    
+    @MainActor
+    private func refreshComments() async {
+        // Create a new task that won't be cancelled by the refreshable gesture
+        // This ensures refresh works correctly when user releases before completion
+        let task = Task {
+            await loadComments()
+        }
+        
+        // Wait for the task to complete
+        await task.value
     }
     
     private func submitComment() {
