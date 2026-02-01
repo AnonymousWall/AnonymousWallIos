@@ -159,6 +159,10 @@ struct WallView: View {
         loadTask?.cancel()
         loadTask = nil
         
+        // Force a reload even if one is in progress
+        // Reset the loading state first
+        isLoadingPosts = false
+        
         // Load posts
         await loadPosts()
     }
@@ -181,7 +185,7 @@ struct WallView: View {
         do {
             let response = try await PostService.shared.fetchPosts(token: token, userId: userId)
             // Check if task was cancelled
-            if Task.isCancelled {
+            guard !Task.isCancelled else {
                 isLoadingPosts = false
                 return
             }
