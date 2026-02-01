@@ -17,6 +17,10 @@ struct WallView: View {
     @State private var errorMessage: String?
     @State private var loadTask: Task<Void, Never>?
     
+    // Minimum height for scrollable content when list is empty
+    // 300 points provides sufficient height to enable pull-to-refresh gesture on all device sizes
+    private let minimumScrollableHeight: CGFloat = 300
+    
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
@@ -43,26 +47,32 @@ struct WallView: View {
                 }
                 
                 // Post list
-                if isLoadingPosts && posts.isEmpty {
-                    Spacer()
-                    ProgressView("Loading posts...")
-                    Spacer()
-                } else if posts.isEmpty && !isLoadingPosts {
-                    Spacer()
-                    VStack(spacing: 16) {
-                        Image(systemName: "bubble.left.and.bubble.right")
-                            .font(.system(size: 60))
-                            .foregroundColor(.gray)
-                        Text("No posts yet")
-                            .font(.headline)
-                            .foregroundColor(.gray)
-                        Text("Be the first to post!")
-                            .font(.subheadline)
-                            .foregroundColor(.gray)
-                    }
-                    Spacer()
-                } else {
-                    ScrollView {
+                ScrollView {
+                    if isLoadingPosts && posts.isEmpty {
+                        VStack {
+                            Spacer()
+                            ProgressView("Loading posts...")
+                            Spacer()
+                        }
+                        .frame(maxWidth: .infinity, minHeight: minimumScrollableHeight)
+                    } else if posts.isEmpty && !isLoadingPosts {
+                        VStack {
+                            Spacer()
+                            VStack(spacing: 16) {
+                                Image(systemName: "bubble.left.and.bubble.right")
+                                    .font(.system(size: 60))
+                                    .foregroundColor(.gray)
+                                Text("No posts yet")
+                                    .font(.headline)
+                                    .foregroundColor(.gray)
+                                Text("Be the first to post!")
+                                    .font(.subheadline)
+                                    .foregroundColor(.gray)
+                            }
+                            Spacer()
+                        }
+                        .frame(maxWidth: .infinity, minHeight: minimumScrollableHeight)
+                    } else {
                         LazyVStack(spacing: 12) {
                             ForEach(posts) { post in
                                 PostRowView(
@@ -75,9 +85,9 @@ struct WallView: View {
                         }
                         .padding()
                     }
-                    .refreshable {
-                        await refreshPosts()
-                    }
+                }
+                .refreshable {
+                    await refreshPosts()
                 }
                 
                 // Error message
