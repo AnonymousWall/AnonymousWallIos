@@ -157,10 +157,14 @@ struct WallView: View {
     private func refreshPosts() async {
         // Cancel any existing load task
         loadTask?.cancel()
-        loadTask = nil
         
-        // Load posts - don't reset isLoadingPosts, let loadPosts handle it
-        await loadPosts()
+        // Create a new task that won't be cancelled by the refreshable gesture
+        loadTask = Task {
+            await loadPosts()
+        }
+        
+        // Wait for the task to complete
+        await loadTask?.value
     }
     
     @MainActor
