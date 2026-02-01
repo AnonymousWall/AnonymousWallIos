@@ -17,6 +17,9 @@ struct WallView: View {
     @State private var errorMessage: String?
     @State private var loadTask: Task<Void, Never>?
     
+    // Minimum height for scrollable content when list is empty
+    private let minimumScrollableHeight: CGFloat = 300
+    
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
@@ -50,7 +53,7 @@ struct WallView: View {
                             ProgressView("Loading posts...")
                             Spacer()
                         }
-                        .frame(maxWidth: .infinity, minHeight: 300)
+                        .frame(maxWidth: .infinity, minHeight: minimumScrollableHeight)
                     } else if posts.isEmpty && !isLoadingPosts {
                         VStack {
                             Spacer()
@@ -67,7 +70,7 @@ struct WallView: View {
                             }
                             Spacer()
                         }
-                        .frame(maxWidth: .infinity, minHeight: 300)
+                        .frame(maxWidth: .infinity, minHeight: minimumScrollableHeight)
                     } else {
                         LazyVStack(spacing: 12) {
                             ForEach(posts) { post in
