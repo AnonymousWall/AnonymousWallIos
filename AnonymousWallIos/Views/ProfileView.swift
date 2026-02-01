@@ -131,7 +131,7 @@ struct ProfileView: View {
                         } else {
                             LazyVStack(spacing: 12) {
                                 ForEach(myComments) { comment in
-                                    CommentRowView(comment: comment)
+                                    ProfileCommentRowView(comment: comment)
                                 }
                             }
                             .padding()
@@ -347,8 +347,8 @@ struct ProfileView: View {
     }
 }
 
-// Simple comment row view component
-struct CommentRowView: View {
+// Simple comment row view component for profile
+struct ProfileCommentRowView: View {
     let comment: Comment
     
     var body: some View {
