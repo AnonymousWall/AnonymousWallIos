@@ -148,7 +148,8 @@
 				34AEA25B259744AE8ABF3D60 /* InternshipView.swift */,
 				06BB00DF1C1E46A296BD60C1 /* MarketView.swift */,
 				4E8A761255D74ECF80639568 /* CreatePostTabView.swift */,
-				5CA4C2AA1C0C409E973B45FD /* ProfileView.swift */,);
+				5CA4C2AA1C0C409E973B45FD /* ProfileView.swift */,
+				36F69F587A4E476BB5394A3F /* EditProfileNameView.swift */,);
 			path = Views;
 			sourceTree = "<group>";
 		};
@@ -342,21 +343,24 @@
 				757F41CD2F734F0199914235 /* MarketView.swift in Sources */,
 				CAD4DEB24D214B44B6C141D5 /* CreatePostTabView.swift in Sources */,
 				E1811D2EE3D042ACB8611BD7 /* ProfileView.swift in Sources */,
-			);
+			
+				CF9021BEF0674235BBA9D292 /* EditProfileNameView.swift in Sources */,);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		4A8BB2292F2DDF2E00DD2A08 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-			);
+			
+				CF9021BEF0674235BBA9D292 /* EditProfileNameView.swift in Sources */,);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		4A8BB2332F2DDF2E00DD2A08 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-			);
+			
+				CF9021BEF0674235BBA9D292 /* EditProfileNameView.swift in Sources */,);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */

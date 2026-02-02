@@ -37,6 +37,19 @@ class AuthState: ObservableObject {
         UserDefaults.standard.set(needsPasswordSetup, forKey: AppConfiguration.UserDefaultsKeys.needsPasswordSetup)
     }
     
+    func updateUser(_ user: User) {
+        self.currentUser = user
+        // Update stored user data
+        UserDefaults.standard.set(user.id, forKey: AppConfiguration.UserDefaultsKeys.userId)
+        UserDefaults.standard.set(user.email, forKey: AppConfiguration.UserDefaultsKeys.userEmail)
+        UserDefaults.standard.set(user.isVerified, forKey: AppConfiguration.UserDefaultsKeys.userIsVerified)
+        UserDefaults.standard.set(user.profileName, forKey: AppConfiguration.UserDefaultsKeys.userProfileName)
+        // Update password setup status
+        let passwordSet = user.passwordSet ?? false
+        self.needsPasswordSetup = !passwordSet
+        UserDefaults.standard.set(needsPasswordSetup, forKey: AppConfiguration.UserDefaultsKeys.needsPasswordSetup)
+    }
+    
     func logout() {
         self.currentUser = nil
         self.authToken = nil
@@ -50,6 +63,7 @@ class AuthState: ObservableObject {
         UserDefaults.standard.set(isAuthenticated, forKey: AppConfiguration.UserDefaultsKeys.isAuthenticated)
         UserDefaults.standard.set(currentUser?.id, forKey: AppConfiguration.UserDefaultsKeys.userId)
         UserDefaults.standard.set(currentUser?.email, forKey: AppConfiguration.UserDefaultsKeys.userEmail)
+        UserDefaults.standard.set(currentUser?.profileName, forKey: AppConfiguration.UserDefaultsKeys.userProfileName)
         UserDefaults.standard.set(currentUser?.isVerified, forKey: AppConfiguration.UserDefaultsKeys.userIsVerified)
         UserDefaults.standard.set(needsPasswordSetup, forKey: AppConfiguration.UserDefaultsKeys.needsPasswordSetup)
         
@@ -69,9 +83,10 @@ class AuthState: ObservableObject {
         if let userId = UserDefaults.standard.string(forKey: AppConfiguration.UserDefaultsKeys.userId),
            let userEmail = UserDefaults.standard.string(forKey: AppConfiguration.UserDefaultsKeys.userEmail) {
             let isVerified = UserDefaults.standard.bool(forKey: AppConfiguration.UserDefaultsKeys.userIsVerified)
+            let profileName = UserDefaults.standard.string(forKey: AppConfiguration.UserDefaultsKeys.userProfileName) ?? "Anonymous"
             // passwordSet is the inverse of needsPasswordSetup
             let passwordSet = !needsPasswordSetup
-            currentUser = User(id: userId, email: userEmail, isVerified: isVerified, passwordSet: passwordSet, createdAt: "")
+            currentUser = User(id: userId, email: userEmail, profileName: profileName, isVerified: isVerified, passwordSet: passwordSet, createdAt: "")
         }
     }
     
@@ -82,6 +97,7 @@ class AuthState: ObservableObject {
         UserDefaults.standard.removeObject(forKey: AppConfiguration.UserDefaultsKeys.userEmail)
         UserDefaults.standard.removeObject(forKey: AppConfiguration.UserDefaultsKeys.userIsVerified)
         UserDefaults.standard.removeObject(forKey: AppConfiguration.UserDefaultsKeys.needsPasswordSetup)
+        UserDefaults.standard.removeObject(forKey: AppConfiguration.UserDefaultsKeys.userProfileName)
         
         // Clear Keychain
         KeychainHelper.shared.delete(keychainAuthTokenKey)

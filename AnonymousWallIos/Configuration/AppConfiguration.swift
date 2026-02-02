@@ -104,5 +104,6 @@ struct AppConfiguration {
         static let userEmail = "userEmail"
         static let userIsVerified = "userIsVerified"
         static let needsPasswordSetup = "needsPasswordSetup"
+        static let userProfileName = "userProfileName"
     }
 }

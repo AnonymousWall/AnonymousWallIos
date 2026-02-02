@@ -22,25 +22,26 @@ struct AnonymousWallIosTests {
     @Test func testAuthStateLogin() async throws {
         // Test that login updates authentication state
         let authState = AuthState()
-        let testUser = User(id: "test-123", email: "test@example.com", isVerified: true, createdAt: "2026-01-31T00:00:00Z")
+        let testUser = User(id: "test-123", email: "test@example.com", profileName: "Test User", isVerified: true, passwordSet: false, createdAt: "2026-01-31T00:00:00Z")
         let testToken = "test-token-abc"
         
-        authState.login(user: testUser, token: testToken, needsPasswordSetup: true)
+        authState.login(user: testUser, token: testToken)
         
         #expect(authState.isAuthenticated == true)
         #expect(authState.currentUser?.id == "test-123")
         #expect(authState.currentUser?.email == "test@example.com")
+        #expect(authState.currentUser?.profileName == "Test User")
         #expect(authState.authToken == "test-token-abc")
-        #expect(authState.needsPasswordSetup == true)
+        #expect(authState.needsPasswordSetup == true) // passwordSet is false
     }
     
     @Test func testAuthStateLogout() async throws {
         // Test that logout clears authentication state
         let authState = AuthState()
-        let testUser = User(id: "test-123", email: "test@example.com", isVerified: true, createdAt: "2026-01-31T00:00:00Z")
+        let testUser = User(id: "test-123", email: "test@example.com", profileName: "Anonymous", isVerified: true, passwordSet: true, createdAt: "2026-01-31T00:00:00Z")
         
         // Login first
-        authState.login(user: testUser, token: "test-token", needsPasswordSetup: false)
+        authState.login(user: testUser, token: "test-token")
         #expect(authState.isAuthenticated == true)
         
         // Then logout
@@ -52,12 +53,14 @@ struct AnonymousWallIosTests {
     }
     
     @Test func testUserModelDecoding() async throws {
-        // Test that User model can be decoded from JSON (new format)
+        // Test that User model can be decoded from JSON (new format with profileName)
         let json = """
         {
             "id": "user-456",
             "email": "user@test.com",
+            "profileName": "John Doe",
             "isVerified": true,
+            "passwordSet": false,
             "createdAt": "2026-01-31T00:00:00Z"
         }
         """
@@ -68,19 +71,23 @@ struct AnonymousWallIosTests {
         let user = try decoder.decode(User.self, from: data)
         #expect(user.id == "user-456")
         #expect(user.email == "user@test.com")
+        #expect(user.profileName == "John Doe")
         #expect(user.isVerified == true)
+        #expect(user.passwordSet == false)
         #expect(user.createdAt == "2026-01-31T00:00:00Z")
     }
     
     @Test func testAuthResponseDecoding() async throws {
-        // Test that AuthResponse can be decoded from JSON (new format)
+        // Test that AuthResponse can be decoded from JSON (new format with profileName)
         let json = """
         {
             "accessToken": "jwt-token-here",
             "user": {
                 "id": "user-789",
                 "email": "success@test.com",
+                "profileName": "Anonymous",
                 "isVerified": true,
+                "passwordSet": true,
                 "createdAt": "2026-01-31T00:00:00Z"
             }
         }
@@ -93,6 +100,7 @@ struct AnonymousWallIosTests {
         #expect(response.accessToken == "jwt-token-here")
         #expect(response.user.id == "user-789")
         #expect(response.user.email == "success@test.com")
+        #expect(response.user.profileName == "Anonymous")
     }
     
     @Test func testEmailValidation() async throws {
@@ -136,10 +144,10 @@ struct AnonymousWallIosTests {
     @Test func testPasswordSetupStatus() async throws {
         // Test password setup status update
         let authState = AuthState()
-        let testUser = User(id: "test-123", email: "test@example.com", isVerified: true, createdAt: "2026-01-31T00:00:00Z")
+        let testUser = User(id: "test-123", email: "test@example.com", profileName: "Test User", isVerified: true, passwordSet: false, createdAt: "2026-01-31T00:00:00Z")
         
-        // Login with password setup needed
-        authState.login(user: testUser, token: "test-token", needsPasswordSetup: true)
+        // Login with password setup needed (passwordSet is false)
+        authState.login(user: testUser, token: "test-token")
         #expect(authState.needsPasswordSetup == true)
         
         // Update password setup status
@@ -170,6 +178,7 @@ struct AnonymousWallIosTests {
             "text": "This is a test comment",
             "author": {
                 "id": "user-789",
+                "profileName": "Test User",
                 "isAnonymous": true
             },
             "createdAt": "2026-01-31T12:00:00Z"
@@ -184,6 +193,7 @@ struct AnonymousWallIosTests {
         #expect(comment.postId == "post-456")
         #expect(comment.text == "This is a test comment")
         #expect(comment.author.id == "user-789")
+        #expect(comment.author.profileName == "Test User")
         #expect(comment.author.isAnonymous == true)
         #expect(comment.createdAt == "2026-01-31T12:00:00Z")
     }
@@ -199,6 +209,7 @@ struct AnonymousWallIosTests {
                     "text": "First comment",
                     "author": {
                         "id": "user-1",
+                        "profileName": "User One",
                         "isAnonymous": true
                     },
                     "createdAt": "2026-01-31T10:00:00Z"
@@ -209,6 +220,7 @@ struct AnonymousWallIosTests {
                     "text": "Second comment",
                     "author": {
                         "id": "user-2",
+                        "profileName": "Anonymous",
                         "isAnonymous": true
                     },
                     "createdAt": "2026-01-31T11:00:00Z"
@@ -230,8 +242,10 @@ struct AnonymousWallIosTests {
         #expect(response.data.count == 2)
         #expect(response.data[0].id == "comment-1")
         #expect(response.data[0].text == "First comment")
+        #expect(response.data[0].author.profileName == "User One")
         #expect(response.data[1].id == "comment-2")
         #expect(response.data[1].text == "Second comment")
+        #expect(response.data[1].author.profileName == "Anonymous")
         #expect(response.pagination.page == 1)
         #expect(response.pagination.total == 2)
     }
@@ -289,6 +303,75 @@ struct AnonymousWallIosTests {
         #expect(SortOrder.oldest.rawValue == "OLDEST")
         #expect(SortOrder.mostLiked.rawValue == "MOST_LIKED")
         #expect(SortOrder.leastLiked.rawValue == "LEAST_LIKED")
+    }
+    
+    // MARK: - Profile Name Tests
+    
+    @Test func testUpdateUserMethod() async throws {
+        // Test that updateUser updates the current user and persists changes
+        let authState = AuthState()
+        let initialUser = User(id: "test-123", email: "test@example.com", profileName: "Anonymous", isVerified: true, passwordSet: true, createdAt: "2026-01-31T00:00:00Z")
+        
+        // Login first
+        authState.login(user: initialUser, token: "test-token")
+        #expect(authState.currentUser?.profileName == "Anonymous")
+        #expect(authState.needsPasswordSetup == false)
+        
+        // Update user with new profile name
+        let updatedUser = User(id: "test-123", email: "test@example.com", profileName: "John Doe", isVerified: true, passwordSet: true, createdAt: "2026-01-31T00:00:00Z")
+        authState.updateUser(updatedUser)
+        
+        #expect(authState.currentUser?.profileName == "John Doe")
+        #expect(authState.currentUser?.id == "test-123")
+        #expect(authState.currentUser?.email == "test@example.com")
+        #expect(authState.needsPasswordSetup == false) // Verify password status is updated from API
+    }
+    
+    @Test func testUserWithProfileName() async throws {
+        // Test that User model with profileName can be properly initialized
+        let user = User(id: "user-123", email: "user@example.com", profileName: "Test Name", isVerified: true, passwordSet: true, createdAt: "2026-01-31T00:00:00Z")
+        
+        #expect(user.id == "user-123")
+        #expect(user.email == "user@example.com")
+        #expect(user.profileName == "Test Name")
+        #expect(user.isVerified == true)
+        #expect(user.passwordSet == true)
+    }
+    
+    @Test func testUserWithAnonymousProfileName() async throws {
+        // Test that default profile name is properly handled
+        let user = User(id: "user-456", email: "user2@example.com", profileName: "Anonymous", isVerified: true, passwordSet: false, createdAt: "2026-01-31T00:00:00Z")
+        
+        #expect(user.profileName == "Anonymous")
+    }
+    
+    @Test func testPostAuthorWithProfileName() async throws {
+        // Test that Post.Author includes profileName
+        let json = """
+        {
+            "id": "1",
+            "content": "Test post content",
+            "wall": "CAMPUS",
+            "likes": 5,
+            "comments": 2,
+            "liked": false,
+            "author": {
+                "id": "user-123",
+                "profileName": "John Doe",
+                "isAnonymous": true
+            },
+            "createdAt": "2026-01-31T12:00:00Z",
+            "updatedAt": "2026-01-31T12:00:00Z"
+        }
+        """
+        
+        let data = json.data(using: .utf8)!
+        let decoder = JSONDecoder()
+        
+        let post = try decoder.decode(Post.self, from: data)
+        #expect(post.author.id == "user-123")
+        #expect(post.author.profileName == "John Doe")
+        #expect(post.author.isAnonymous == true)
     }
 
 }
