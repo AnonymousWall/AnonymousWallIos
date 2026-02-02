@@ -17,6 +17,7 @@ struct ProfileView: View {
     @State private var errorMessage: String?
     @State private var showChangePassword = false
     @State private var showSetPassword = false
+    @State private var loadTask: Task<Void, Never>?
     
     var body: some View {
         NavigationStack {
@@ -69,7 +70,8 @@ struct ProfileView: View {
                 .padding(.horizontal)
                 .padding(.bottom, 10)
                 .onChange(of: selectedSegment) { _, _ in
-                    Task {
+                    loadTask?.cancel()
+                    loadTask = Task {
                         await loadContent()
                     }
                 }
@@ -147,7 +149,7 @@ struct ProfileView: View {
                     }
                 }
                 .refreshable {
-                    await loadContent()
+                    await refreshContent()
                 }
                 
                 // Error message
@@ -197,13 +199,27 @@ struct ProfileView: View {
                 }
             }
             
-            Task {
+            // Load content
+            loadTask = Task {
                 await loadContent()
             }
+        }
+        .onDisappear {
+            // Cancel any ongoing load task when view disappears
+            loadTask?.cancel()
         }
     }
     
     // MARK: - Functions
+    
+    @MainActor
+    private func refreshContent() async {
+        loadTask?.cancel()
+        loadTask = Task {
+            await loadContent()
+        }
+        await loadTask?.value
+    }
     
     @MainActor
     private func loadContent() async {
