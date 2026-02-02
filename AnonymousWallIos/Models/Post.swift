@@ -20,6 +20,7 @@ struct Post: Codable, Identifiable {
     
     struct Author: Codable {
         let id: String
+        let profileName: String
         let isAnonymous: Bool
     }
     

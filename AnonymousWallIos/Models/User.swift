@@ -10,6 +10,7 @@ import Foundation
 struct User: Codable, Identifiable {
     let id: String
     let email: String
+    let profileName: String
     let isVerified: Bool
     let passwordSet: Bool?
     let createdAt: String
@@ -17,6 +18,7 @@ struct User: Codable, Identifiable {
     enum CodingKeys: String, CodingKey {
         case id
         case email
+        case profileName
         case isVerified
         case passwordSet
         case createdAt

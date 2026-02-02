@@ -17,6 +17,7 @@ struct ProfileView: View {
     @State private var errorMessage: String?
     @State private var showChangePassword = false
     @State private var showSetPassword = false
+    @State private var showEditProfileName = false
     @State private var loadTask: Task<Void, Never>?
     
     var body: some View {
@@ -55,9 +56,11 @@ struct ProfileView: View {
                             .font(.headline)
                     }
                     
-                    Text("Anonymous User")
-                        .font(.subheadline)
-                        .foregroundColor(.gray)
+                    if let profileName = authState.currentUser?.profileName {
+                        Text(profileName)
+                            .font(.subheadline)
+                            .foregroundColor(.gray)
+                    }
                 }
                 .padding()
                 
@@ -165,6 +168,11 @@ struct ProfileView: View {
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Menu {
+                        // Edit profile name option
+                        Button(action: { showEditProfileName = true }) {
+                            Label("Edit Profile Name", systemImage: "person.text.rectangle")
+                        }
+                        
                         // Change password option (only if password is set)
                         if !authState.needsPasswordSetup {
                             Button(action: { showChangePassword = true }) {
@@ -190,6 +198,9 @@ struct ProfileView: View {
         }
         .sheet(isPresented: $showChangePassword) {
             ChangePasswordView()
+        }
+        .sheet(isPresented: $showEditProfileName) {
+            EditProfileNameView()
         }
         .onAppear {
             // Show password setup if needed
@@ -462,7 +473,15 @@ struct ProfileCommentRowView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
-                Text("Comment on Post #\(comment.postId)")
+                Text("Comment by \(comment.author.profileName)")
+                    .font(.caption)
+                    .foregroundColor(.blue)
+                    .fontWeight(.semibold)
+                Spacer()
+            }
+            
+            HStack {
+                Text("on Post #\(comment.postId)")
                     .font(.caption)
                     .foregroundColor(.gray)
                 Spacer()

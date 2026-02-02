@@ -29,7 +29,7 @@ struct PostRowView: View {
     
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            // Wall type badge
+            // Wall type badge and author name
             HStack {
                 Text(wallDisplayName)
                     .font(.caption2)
@@ -39,6 +39,11 @@ struct PostRowView: View {
                     .padding(.vertical, 4)
                     .background(wallColor.opacity(0.15))
                     .cornerRadius(4)
+                
+                Text("by \(post.author.profileName)")
+                    .font(.caption)
+                    .foregroundColor(.gray)
+                
                 Spacer()
             }
             
@@ -114,7 +119,7 @@ struct PostRowView: View {
             likes: 5,
             comments: 2,
             liked: false,
-            author: Post.Author(id: "user123", isAnonymous: true),
+            author: Post.Author(id: "user123", profileName: "Anonymous", isAnonymous: true),
             createdAt: ISO8601DateFormatter().string(from: Date()),
             updatedAt: ISO8601DateFormatter().string(from: Date())
         ),

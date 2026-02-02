@@ -321,6 +321,12 @@ struct CommentRowView: View {
         HStack(alignment: .top, spacing: 12) {
             // Comment content
             VStack(alignment: .leading, spacing: 4) {
+                // Author name
+                Text(comment.author.profileName)
+                    .font(.caption)
+                    .fontWeight(.semibold)
+                    .foregroundColor(.blue)
+                
                 Text(comment.text)
                     .font(.body)
                     .foregroundColor(.primary)
@@ -359,7 +365,7 @@ struct CommentRowView: View {
                 likes: 5,
                 comments: 2,
                 liked: false,
-                author: Post.Author(id: "user123", isAnonymous: true),
+                author: Post.Author(id: "user123", profileName: "Anonymous", isAnonymous: true),
                 createdAt: ISO8601DateFormatter().string(from: Date()),
                 updatedAt: ISO8601DateFormatter().string(from: Date())
             )
