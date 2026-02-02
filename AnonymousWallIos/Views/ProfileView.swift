@@ -286,11 +286,11 @@ struct ProfileView: View {
         }
         
         // Determine if we should update posts:
-        // - At least one fetch completed successfully (not cancelled)
+        // - At least one fetch was not cancelled (may have succeeded or failed with error)
         // - AND we have actual data from at least one fetch
-        let atLeastOneFetchCompleted = !campusCancelled || !nationalCancelled
+        let atLeastOneFetchNotCancelled = !campusCancelled || !nationalCancelled
         let hasActualData = !campusPosts.isEmpty || !nationalPosts.isEmpty
-        let shouldUpdatePosts = atLeastOneFetchCompleted && hasActualData
+        let shouldUpdatePosts = atLeastOneFetchNotCancelled && hasActualData
         
         if shouldUpdatePosts {
             let allPosts = campusPosts + nationalPosts
@@ -389,11 +389,12 @@ struct ProfileView: View {
             }
         }
         
-        // Only update UI if we successfully fetched comments
-        // Always update commentPostMap since we have the post data
-        commentPostMap = tempPostMap
+        // Only update UI if we successfully fetched data
+        // Preserve existing state when no new data is available
+        if !tempPostMap.isEmpty {
+            commentPostMap = tempPostMap
+        }
         
-        // Only update comments array if we have new data
         if !allComments.isEmpty {
             // Filter to only show user's own comments
             myComments = allComments.filter { $0.author.id == userId }
