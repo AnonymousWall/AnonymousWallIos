@@ -315,7 +315,6 @@ struct AnonymousWallIosTests {
         // Login first
         authState.login(user: initialUser, token: "test-token")
         #expect(authState.currentUser?.profileName == "Anonymous")
-        #expect(authState.needsPasswordSetup == false)
         
         // Update user with new profile name
         let updatedUser = User(id: "test-123", email: "test@example.com", profileName: "John Doe", isVerified: true, passwordSet: true, createdAt: "2026-01-31T00:00:00Z")
@@ -324,24 +323,6 @@ struct AnonymousWallIosTests {
         #expect(authState.currentUser?.profileName == "John Doe")
         #expect(authState.currentUser?.id == "test-123")
         #expect(authState.currentUser?.email == "test@example.com")
-        #expect(authState.needsPasswordSetup == false) // Should update password status
-    }
-    
-    @Test func testUpdateUserPreservingPasswordStatus() async throws {
-        // Test that updateUser can preserve password status when requested
-        let authState = AuthState()
-        let initialUser = User(id: "test-456", email: "test2@example.com", profileName: "Initial Name", isVerified: true, passwordSet: true, createdAt: "2026-01-31T00:00:00Z")
-        
-        // Login with password set
-        authState.login(user: initialUser, token: "test-token")
-        #expect(authState.needsPasswordSetup == false)
-        
-        // Update user with preservePasswordStatus=true (simulating profile name update)
-        let updatedUser = User(id: "test-456", email: "test2@example.com", profileName: "New Name", isVerified: true, passwordSet: false, createdAt: "2026-01-31T00:00:00Z")
-        authState.updateUser(updatedUser, preservePasswordStatus: true)
-        
-        #expect(authState.currentUser?.profileName == "New Name")
-        #expect(authState.needsPasswordSetup == false) // Should preserve original status
     }
     
     @Test func testUserWithProfileName() async throws {

@@ -37,19 +37,17 @@ class AuthState: ObservableObject {
         UserDefaults.standard.set(needsPasswordSetup, forKey: AppConfiguration.UserDefaultsKeys.needsPasswordSetup)
     }
     
-    func updateUser(_ user: User, preservePasswordStatus: Bool = false) {
+    func updateUser(_ user: User) {
         self.currentUser = user
         // Update stored user data
         UserDefaults.standard.set(user.id, forKey: AppConfiguration.UserDefaultsKeys.userId)
         UserDefaults.standard.set(user.email, forKey: AppConfiguration.UserDefaultsKeys.userEmail)
         UserDefaults.standard.set(user.isVerified, forKey: AppConfiguration.UserDefaultsKeys.userIsVerified)
         UserDefaults.standard.set(user.profileName, forKey: AppConfiguration.UserDefaultsKeys.userProfileName)
-        // Update password setup status only if not preserving
-        if !preservePasswordStatus {
-            let passwordSet = user.passwordSet ?? false
-            self.needsPasswordSetup = !passwordSet
-            UserDefaults.standard.set(needsPasswordSetup, forKey: AppConfiguration.UserDefaultsKeys.needsPasswordSetup)
-        }
+        // Update password setup status
+        let passwordSet = user.passwordSet ?? false
+        self.needsPasswordSetup = !passwordSet
+        UserDefaults.standard.set(needsPasswordSetup, forKey: AppConfiguration.UserDefaultsKeys.needsPasswordSetup)
     }
     
     func logout() {

@@ -84,8 +84,8 @@ struct EditProfileNameView: View {
                 )
                 
                 await MainActor.run {
-                    // Update the user in auth state, preserving password status
-                    authState.updateUser(updatedUser, preservePasswordStatus: true)
+                    // Update the user in auth state
+                    authState.updateUser(updatedUser)
                     isSubmitting = false
                     dismiss()
                 }
