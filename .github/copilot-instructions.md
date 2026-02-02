@@ -1,4 +1,4 @@
-## Backend API Documentation
+## API Documentation
 
 ### Authentication Endpoints
 
@@ -33,6 +33,7 @@ Response: 201 Created
     "user": {
         "id": "uuid",
         "email": "student@harvard.edu",
+        "profileName": "Anonymous",
         "isVerified": true,
         "passwordSet": false,
         "createdAt": "2026-01-28T..."
@@ -90,6 +91,7 @@ Response: 200 OK
 {
     "id": "uuid",
     "email": "student@harvard.edu",
+    "profileName": "Anonymous",
     "isVerified": true,
     "passwordSet": true,
     "createdAt": "2026-01-28T..."
@@ -112,48 +114,38 @@ Response: 200 OK
 {
     "id": "uuid",
     "email": "student@harvard.edu",
+    "profileName": "Anonymous",
     "isVerified": true,
     "passwordSet": true,
     "createdAt": "2026-01-28T..."
 }
 ```
 
-#### 7. Reset Password (Forgot password)
+#### 7. Update Profile Name (Requires Authentication)
 ```http
-POST /api/v1/auth/password/reset-request
+PATCH /api/v1/auth/profile/name
+Authorization: Bearer {jwt-token}
 Content-Type: application/json
 
 {
-    "email": "student@harvard.edu"
+    "profileName": "John Doe"
 }
 
 Response: 200 OK
 {
-    "message": "Password reset code sent to email"
+    "id": "uuid",
+    "email": "student@harvard.edu",
+    "profileName": "John Doe",
+    "isVerified": true,
+    "passwordSet": false,
+    "createdAt": "2026-01-28T..."
 }
 ```
 
-#### 8. Reset Password with Verification Code
-```http
-POST /api/v1/auth/password/reset
-Content-Type: application/json
-
-{
-    "email": "student@nyu.edu",
-    "code": "339124",
-    "newPassword": "myNewPassword789"
-}
-
-{
-    "accessToken": "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiI4NDA1ZTA4Mi0wOGNjLTQ3MTEtYmZiMC01OTQzNDc2MzgxNWIiLCJuYmYiOjE3Njk4MTQzNTIsInJvbGVzIjpbXSwiaXNzIjoiYW5vbnltb3Vzd2FsbCIsInZlcmlmaWVkIjp0cnVlLCJleHAiOjE3Njk5MDA3NTIsInBhc3N3b3JkU2V0Ijp0cnVlLCJpYXQiOjE3Njk4MTQzNTIsImVtYWlsIjoic3R1ZGVudEBueXUuZWR1In0.9gca3eDLfWdYujECxhnRS7-zNMJMkdWn8WloiSpcpRs",
-    "user": {
-        "id": "8405e082-08cc-4711-bfb0-59434763815b",
-        "email": "student@nyu.edu",
-        "isVerified": true,
-        "createdAt": "2026-01-30T15:01:22-08:00[America/Los_Angeles]"
-    }
-}
-```
+**Notes:**
+- Default profile name is "Anonymous"
+- Sending an empty string will reset the profile name to "Anonymous"
+- Profile name can be 1-255 characters
 
 ---
 
@@ -180,6 +172,7 @@ Response: 201 Created
     "liked": false,
     "author": {
         "id": "uuid",
+        "profileName": "Anonymous",
         "isAnonymous": true
     },
     "createdAt": "2026-01-28T...",
@@ -204,6 +197,7 @@ Response: 200 OK
             "liked": false,
             "author": {
                 "id": "uuid",
+                "profileName": "John Doe",
                 "isAnonymous": true
             },
             "createdAt": "2026-01-28T...",
@@ -253,6 +247,7 @@ Response: 201 Created
     "text": "Great post!",
     "author": {
         "id": "uuid",
+        "profileName": "Anonymous",
         "isAnonymous": true
     },
     "createdAt": "2026-01-28T..."
@@ -273,6 +268,7 @@ Response: 200 OK
             "text": "Great post!",
             "author": {
                 "id": "uuid",
+                "profileName": "Jane Smith",
                 "isAnonymous": true
             },
             "createdAt": "2026-01-28T..."
@@ -292,27 +288,65 @@ Response: 200 OK
 - `limit` (default: 20) - Comments per page (max: 100)
 - `sort` (default: "NEWEST") - Sort order: NEWEST, OLDEST
 
-
-#### 6. Hide your own post (soft delete)
+#### 6. Hide Post
 ```http
 PATCH /api/v1/posts/{postId}/hide
 Authorization: Bearer {jwt-token}
 
+Response: 200 OK
 {
     "message": "Post hidden successfully"
 }
 ```
 
-#### 7. Hide your own comment (soft delete)
+**Notes:**
+- Only the post author can hide their own post
+- When a post is hidden, all its comments are also hidden
+- This is a soft-delete operation; data is preserved in the database
+
+#### 7. Unhide Post
+```http
+PATCH /api/v1/posts/{postId}/unhide
+Authorization: Bearer {jwt-token}
+
+Response: 200 OK
+{
+    "message": "Post unhidden successfully"
+}
+```
+
+**Notes:**
+- Only the post author can unhide their own post
+- When a post is unhidden, all its previously hidden comments are also restored
+
+#### 8. Hide Comment
 ```http
 PATCH /api/v1/posts/{postId}/comments/{commentId}/hide
 Authorization: Bearer {jwt-token}
 
+Response: 200 OK
 {
     "message": "Comment hidden successfully"
 }
 ```
 
+**Notes:**
+- Only the comment author can hide their own comment
+- This is a soft-delete operation; data is preserved in the database
+
+#### 9. Unhide Comment
+```http
+PATCH /api/v1/posts/{postId}/comments/{commentId}/unhide
+Authorization: Bearer {jwt-token}
+
+Response: 200 OK
+{
+    "message": "Comment unhidden successfully"
+}
+```
+
+**Notes:**
+- Only the comment author can unhide their own comment
 
 ---
 
@@ -339,14 +373,10 @@ Authorization: Bearer {jwt-token}
 - Same visibility rules as posts apply
 - Users from different schools cannot like/comment on campus posts
 
+### User Authentication Flow
+1. **Registration**: Email verification → Account creation → JWT issued
+2. **Login (Email)**: Email code verification → JWT issued
+3. **Login (Password)**: Email + password → JWT issued
+4. **All Requests**: Include JWT in Authorization header
 
-
-### HTTP Status Codes
-- `200 OK` - Success
-- `201 Created` - Resource created
-- `400 Bad Request` - Invalid input
-- `401 Unauthorized` - Missing/invalid JWT token
-- `403 Forbidden` - User doesn't have access (wrong school domain)
-- `404 Not Found` - Resource not found
-- `409 Conflict` - Resource already exists (email already registered)
-- `500 Internal Server Error` - Server error
+---
