@@ -196,4 +196,100 @@ To see the actual UI:
 3. Build and run (Cmd+R)
 4. The app will show the AuthenticationView as the landing screen
 
+## Post Feed Views with Sorting
+
+The Campus and National (Home) views now include a segmented control for sorting posts.
+
+### Home View (National Posts) - With Sorting Control
+
+```
+┌─────────────────────────────────────┐
+│  ✍️              National         🏠 │
+├─────────────────────────────────────┤
+│                                     │
+│  ┌───────┬──────────┬─────────┐   │
+│  │Recent │Most Likes│ Oldest  │   │  <- Segmented Control
+│  └───────┴──────────┴─────────┘   │
+│                                     │
+│  ┌────────────────────────────────┐│
+│  │ 👤 Anonymous                   ││
+│  │                                ││
+│  │ Just posted about my new       ││
+│  │ project! Check it out...       ││
+│  │                                ││
+│  │ ❤️ 42    💬 8        5m ago    ││
+│  └────────────────────────────────┘│
+│                                     │
+│  ┌────────────────────────────────┐│
+│  │ 👤 Anonymous                   ││
+│  │                                ││
+│  │ Does anyone know where the     ││
+│  │ library is open late?          ││
+│  │                                ││
+│  │ ❤️ 15    💬 3        2h ago    ││
+│  └────────────────────────────────┘│
+│                                     │
+│  ┌────────────────────────────────┐│
+│  │ 👤 Anonymous                   ││
+│  │                                ││
+│  │ Great event last night!        ││
+│  │                                ││
+│  │ ❤️ 89    💬 21       1d ago    ││
+│  └────────────────────────────────┘│
+│                                     │
+└─────────────────────────────────────┘
+     Campus    National    Profile
+```
+
+### Campus View - With Sorting Control
+
+```
+┌─────────────────────────────────────┐
+│  ✍️              Campus           🏠 │
+├─────────────────────────────────────┤
+│                                     │
+│  ┌───────┬──────────┬─────────┐   │
+│  │Recent │Most Likes│ Oldest  │   │  <- Segmented Control
+│  └───────┴──────────┴─────────┘   │
+│                                     │
+│  ┌────────────────────────────────┐│
+│  │ 👤 Anonymous                   ││
+│  │                                ││
+│  │ Campus-specific post here...   ││
+│  │ Only visible to same school    ││
+│  │                                ││
+│  │ ❤️ 23    💬 5        15m ago   ││
+│  └────────────────────────────────┘│
+│                                     │
+│  ┌────────────────────────────────┐│
+│  │ 👤 Anonymous                   ││
+│  │                                ││
+│  │ Anyone going to the game?      ││
+│  │                                ││
+│  │ ❤️ 34    💬 12       3h ago    ││
+│  └────────────────────────────────┘│
+│                                     │
+└─────────────────────────────────────┘
+     Campus    National    Profile
+```
+
+### Sorting Options
+
+The segmented control provides three sorting options:
+
+1. **Recent** (Default) - Shows newest posts first (sorted by creation time, descending)
+2. **Most Likes** - Shows posts with the most likes first (sorted by like count, descending)
+3. **Oldest** - Shows oldest posts first (sorted by creation time, ascending)
+
+**User Interaction:**
+- Tap any segment to change sort order
+- Posts automatically reload with the selected sort order
+- Pull down to refresh maintains the current sort selection
+- Sort preference is maintained while on the same view
+
+**Visual States:**
+- Selected segment: Blue background with white text
+- Unselected segments: White background with black text
+- Smooth animation when switching between segments
+
 The UI is built entirely with SwiftUI and follows iOS Human Interface Guidelines for a native iOS experience.

@@ -14,6 +14,7 @@ struct CampusView: View {
     @State private var isLoadingPosts = false
     @State private var errorMessage: String?
     @State private var loadTask: Task<Void, Never>?
+    @State private var selectedSortOrder: SortOrder = .newest
     
     // Minimum height for scrollable content when list is empty
     private let minimumScrollableHeight: CGFloat = 300
@@ -41,6 +42,22 @@ struct CampusView: View {
                     .background(Color.orange.opacity(0.1))
                     .cornerRadius(8)
                     .padding()
+                }
+                
+                // Sorting segmented control
+                Picker("Sort Order", selection: $selectedSortOrder) {
+                    ForEach(SortOrder.feedOptions, id: \.self) { option in
+                        Text(option.displayName).tag(option)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .padding(.horizontal)
+                .padding(.vertical, 8)
+                .onChange(of: selectedSortOrder) { _, _ in
+                    loadTask?.cancel()
+                    loadTask = Task {
+                        await loadPosts()
+                    }
                 }
                 
                 // Post list
@@ -117,6 +134,10 @@ struct CampusView: View {
                 await loadPosts()
             }
         }
+        .onDisappear {
+            // Cancel any ongoing load task when view disappears
+            loadTask?.cancel()
+        }
     }
     
     // MARK: - Functions
@@ -148,7 +169,8 @@ struct CampusView: View {
             let response = try await PostService.shared.fetchPosts(
                 token: token,
                 userId: userId,
-                wall: .campus
+                wall: .campus,
+                sort: selectedSortOrder
             )
             posts = response.data
         } catch is CancellationError {
