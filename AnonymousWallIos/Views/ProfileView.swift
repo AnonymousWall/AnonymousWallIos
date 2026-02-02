@@ -285,9 +285,14 @@ struct ProfileView: View {
             errorMessage = error.localizedDescription
         }
         
-        // Only update posts if at least one fetch succeeded (not cancelled) and we have actual data
-        // If both were cancelled or both failed with no data, keep existing posts to maintain UI state
-        if (!campusCancelled || !nationalCancelled) && (!campusPosts.isEmpty || !nationalPosts.isEmpty) {
+        // Determine if we should update posts:
+        // - At least one fetch completed successfully (not cancelled)
+        // - AND we have actual data from at least one fetch
+        let atLeastOneFetchCompleted = !campusCancelled || !nationalCancelled
+        let hasActualData = !campusPosts.isEmpty || !nationalPosts.isEmpty
+        let shouldUpdatePosts = atLeastOneFetchCompleted && hasActualData
+        
+        if shouldUpdatePosts {
             let allPosts = campusPosts + nationalPosts
             myPosts = allPosts.filter { $0.author.id == userId }
                 .sorted { $0.createdAt > $1.createdAt }
@@ -384,13 +389,16 @@ struct ProfileView: View {
             }
         }
         
-        // Update UI with any data we successfully fetched
-        // Filter to only show user's own comments
-        myComments = allComments.filter { $0.author.id == userId }
-            .sorted { $0.createdAt > $1.createdAt }
-        
-        // Update the comment-to-post mapping
+        // Only update UI if we successfully fetched comments
+        // Always update commentPostMap since we have the post data
         commentPostMap = tempPostMap
+        
+        // Only update comments array if we have new data
+        if !allComments.isEmpty {
+            // Filter to only show user's own comments
+            myComments = allComments.filter { $0.author.id == userId }
+                .sorted { $0.createdAt > $1.createdAt }
+        }
     }
     
     private func toggleLike(for post: Post) {
