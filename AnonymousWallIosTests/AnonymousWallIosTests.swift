@@ -315,6 +315,7 @@ struct AnonymousWallIosTests {
         // Login first
         authState.login(user: initialUser, token: "test-token")
         #expect(authState.currentUser?.profileName == "Anonymous")
+        #expect(authState.needsPasswordSetup == false)
         
         // Update user with new profile name
         let updatedUser = User(id: "test-123", email: "test@example.com", profileName: "John Doe", isVerified: true, passwordSet: true, createdAt: "2026-01-31T00:00:00Z")
@@ -323,6 +324,7 @@ struct AnonymousWallIosTests {
         #expect(authState.currentUser?.profileName == "John Doe")
         #expect(authState.currentUser?.id == "test-123")
         #expect(authState.currentUser?.email == "test@example.com")
+        #expect(authState.needsPasswordSetup == false) // Verify password status is updated from API
     }
     
     @Test func testUserWithProfileName() async throws {
