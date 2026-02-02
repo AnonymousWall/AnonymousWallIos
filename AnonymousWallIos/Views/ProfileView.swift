@@ -248,6 +248,8 @@ struct ProfileView: View {
     private func loadMyPosts(token: String, userId: String) async {
         var campusPosts: [Post] = []
         var nationalPosts: [Post] = []
+        var campusCancelled = false
+        var nationalCancelled = false
         
         // Fetch campus posts
         do {
@@ -259,9 +261,9 @@ struct ProfileView: View {
             )
             campusPosts = campusResponse.data
         } catch is CancellationError {
-            // Silently handle cancellation
+            campusCancelled = true
         } catch NetworkError.cancelled {
-            // Silently handle network cancellation
+            campusCancelled = true
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -276,15 +278,21 @@ struct ProfileView: View {
             )
             nationalPosts = nationalResponse.data
         } catch is CancellationError {
-            // Silently handle cancellation
+            nationalCancelled = true
         } catch NetworkError.cancelled {
-            // Silently handle network cancellation
+            nationalCancelled = true
         } catch {
             errorMessage = error.localizedDescription
         }
         
-        // Update posts if we have any data (even if one fetch was cancelled)
-        if !campusPosts.isEmpty || !nationalPosts.isEmpty {
+        // Determine if we should update posts:
+        // - At least one fetch was not cancelled
+        // - AND we have actual data from at least one fetch
+        let hasAttemptedFetch = !campusCancelled || !nationalCancelled
+        let hasActualData = !campusPosts.isEmpty || !nationalPosts.isEmpty
+        let shouldUpdatePosts = hasAttemptedFetch && hasActualData
+        
+        if shouldUpdatePosts {
             let allPosts = campusPosts + nationalPosts
             myPosts = allPosts.filter { $0.author.id == userId }
                 .sorted { $0.createdAt > $1.createdAt }
@@ -295,6 +303,8 @@ struct ProfileView: View {
     private func loadMyComments(token: String, userId: String) async {
         var campusPosts: [Post] = []
         var nationalPosts: [Post] = []
+        var campusCancelled = false
+        var nationalCancelled = false
         
         // Fetch campus posts
         do {
@@ -306,9 +316,9 @@ struct ProfileView: View {
             )
             campusPosts = campusResponse.data
         } catch is CancellationError {
-            // Silently handle cancellation
+            campusCancelled = true
         } catch NetworkError.cancelled {
-            // Silently handle network cancellation
+            campusCancelled = true
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -323,18 +333,29 @@ struct ProfileView: View {
             )
             nationalPosts = nationalResponse.data
         } catch is CancellationError {
-            // Silently handle cancellation
+            nationalCancelled = true
         } catch NetworkError.cancelled {
-            // Silently handle network cancellation
+            nationalCancelled = true
         } catch {
             errorMessage = error.localizedDescription
+        }
+        
+        // If both fetches were cancelled, keep existing state
+        if campusCancelled && nationalCancelled {
+            return
         }
         
         // Fetch comments for all posts and filter user's comments
         let allPosts = campusPosts + nationalPosts
         
-        // Skip comment fetching if we have no posts
+        // Handle the case when we have no posts (could be due to cancellation, errors, or empty results)
         guard !allPosts.isEmpty else {
+            // Only clear comments if both fetches were not cancelled (meaning they completed but returned no data)
+            // Don't clear if either was cancelled, as we want to maintain existing state
+            if !campusCancelled && !nationalCancelled {
+                myComments = []
+                commentPostMap = [:]
+            }
             return
         }
         
@@ -368,14 +389,16 @@ struct ProfileView: View {
             }
         }
         
-        // Update UI with any data we successfully fetched
-        if !allComments.isEmpty || !tempPostMap.isEmpty {
+        // Only update UI when we have new data (non-empty collections)
+        // Preserve existing state when new collections are empty
+        if !tempPostMap.isEmpty {
+            commentPostMap = tempPostMap
+        }
+        
+        if !allComments.isEmpty {
             // Filter to only show user's own comments
             myComments = allComments.filter { $0.author.id == userId }
                 .sorted { $0.createdAt > $1.createdAt }
-            
-            // Update the comment-to-post mapping
-            commentPostMap = tempPostMap
         }
     }
     
