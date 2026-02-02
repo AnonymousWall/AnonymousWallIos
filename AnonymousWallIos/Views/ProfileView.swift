@@ -389,8 +389,8 @@ struct ProfileView: View {
             }
         }
         
-        // Only update UI if we successfully fetched data
-        // Preserve existing state when no new data is available
+        // Only update UI when we have new data (non-empty collections)
+        // Preserve existing state when new collections are empty
         if !tempPostMap.isEmpty {
             commentPostMap = tempPostMap
         }
