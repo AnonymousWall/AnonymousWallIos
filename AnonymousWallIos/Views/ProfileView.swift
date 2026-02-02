@@ -286,11 +286,11 @@ struct ProfileView: View {
         }
         
         // Determine if we should update posts:
-        // - At least one fetch was not cancelled (may have succeeded or failed with error)
+        // - Not both fetches were cancelled (at least one attempted to complete)
         // - AND we have actual data from at least one fetch
-        let atLeastOneFetchNotCancelled = !campusCancelled || !nationalCancelled
+        let notBothCancelled = !campusCancelled || !nationalCancelled
         let hasActualData = !campusPosts.isEmpty || !nationalPosts.isEmpty
-        let shouldUpdatePosts = atLeastOneFetchNotCancelled && hasActualData
+        let shouldUpdatePosts = notBothCancelled && hasActualData
         
         if shouldUpdatePosts {
             let allPosts = campusPosts + nationalPosts
