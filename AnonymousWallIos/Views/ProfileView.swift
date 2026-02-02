@@ -285,9 +285,9 @@ struct ProfileView: View {
             errorMessage = error.localizedDescription
         }
         
-        // Only update posts if at least one fetch succeeded
-        // If both were cancelled, keep existing posts to maintain UI state
-        if !campusCancelled || !nationalCancelled {
+        // Only update posts if at least one fetch succeeded with data
+        // If both were cancelled or both failed with no data, keep existing posts to maintain UI state
+        if (!campusCancelled && !campusPosts.isEmpty) || (!nationalCancelled && !nationalPosts.isEmpty) {
             let allPosts = campusPosts + nationalPosts
             myPosts = allPosts.filter { $0.author.id == userId }
                 .sorted { $0.createdAt > $1.createdAt }
@@ -343,11 +343,14 @@ struct ProfileView: View {
         // Fetch comments for all posts and filter user's comments
         let allPosts = campusPosts + nationalPosts
         
-        // Skip comment fetching if we have no posts
+        // Only clear comments if both fetches succeeded but returned no posts
+        // Don't clear if one was cancelled, as we want to maintain existing state
         guard !allPosts.isEmpty else {
-            // Clear comments if no posts exist
-            myComments = []
-            commentPostMap = [:]
+            // Only clear comments if at least one fetch completed successfully (not cancelled)
+            if !campusCancelled || !nationalCancelled {
+                myComments = []
+                commentPostMap = [:]
+            }
             return
         }
         
