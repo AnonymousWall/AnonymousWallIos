@@ -348,10 +348,10 @@ struct ProfileView: View {
         // Fetch comments for all posts and filter user's comments
         let allPosts = campusPosts + nationalPosts
         
-        // Only clear comments if both fetches succeeded but returned no posts
-        // Don't clear if one was cancelled, as we want to maintain existing state
+        // Handle the case when we have no posts (could be due to cancellation, errors, or empty results)
         guard !allPosts.isEmpty else {
-            // Only clear comments if both fetches completed successfully (neither was cancelled)
+            // Only clear comments if both fetches were not cancelled (meaning they completed but returned no data)
+            // Don't clear if either was cancelled, as we want to maintain existing state
             if !campusCancelled && !nationalCancelled {
                 myComments = []
                 commentPostMap = [:]
