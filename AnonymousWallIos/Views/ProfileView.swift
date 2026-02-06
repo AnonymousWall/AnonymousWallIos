@@ -81,39 +81,81 @@ struct ProfileView: View {
                     }
                 }
                 
-                // Sorting picker
-                if selectedSegment == 0 {
-                    // Posts sorting
-                    Picker("Sort Order", selection: $postSortOrder) {
-                        ForEach(SortOrder.feedOptions, id: \.self) { option in
-                            Text(option.displayName).tag(option)
+                // Sorting dropdown menu
+                HStack {
+                    Text("Sort by:")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                    
+                    Menu {
+                        if selectedSegment == 0 {
+                            // Posts sorting options
+                            ForEach(SortOrder.feedOptions, id: \.self) { option in
+                                Button {
+                                    postSortOrder = option
+                                    loadTask?.cancel()
+                                    loadTask = Task {
+                                        await loadContent()
+                                    }
+                                } label: {
+                                    HStack {
+                                        Text(option.displayName)
+                                        if postSortOrder == option {
+                                            Image(systemName: "checkmark")
+                                        }
+                                    }
+                                }
+                            }
+                        } else {
+                            // Comments sorting options - only newest/oldest supported
+                            Button {
+                                commentSortOrder = .newest
+                                loadTask?.cancel()
+                                loadTask = Task {
+                                    await loadContent()
+                                }
+                            } label: {
+                                HStack {
+                                    Text(SortOrder.newest.displayName)
+                                    if commentSortOrder == .newest {
+                                        Image(systemName: "checkmark")
+                                    }
+                                }
+                            }
+                            
+                            Button {
+                                commentSortOrder = .oldest
+                                loadTask?.cancel()
+                                loadTask = Task {
+                                    await loadContent()
+                                }
+                            } label: {
+                                HStack {
+                                    Text(SortOrder.oldest.displayName)
+                                    if commentSortOrder == .oldest {
+                                        Image(systemName: "checkmark")
+                                    }
+                                }
+                            }
                         }
-                    }
-                    .pickerStyle(.segmented)
-                    .padding(.horizontal)
-                    .padding(.vertical, 8)
-                    .onChange(of: postSortOrder) { _, _ in
-                        loadTask?.cancel()
-                        loadTask = Task {
-                            await loadContent()
+                    } label: {
+                        HStack {
+                            Text(selectedSegment == 0 ? postSortOrder.displayName : commentSortOrder.displayName)
+                                .foregroundColor(.blue)
+                            Image(systemName: "chevron.down")
+                                .font(.caption)
+                                .foregroundColor(.blue)
                         }
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 6)
+                        .background(Color(.systemGray6))
+                        .cornerRadius(8)
                     }
-                } else {
-                    // Comments sorting - only newest/oldest supported
-                    Picker("Sort Order", selection: $commentSortOrder) {
-                        Text(SortOrder.newest.displayName).tag(SortOrder.newest)
-                        Text(SortOrder.oldest.displayName).tag(SortOrder.oldest)
-                    }
-                    .pickerStyle(.segmented)
-                    .padding(.horizontal)
-                    .padding(.vertical, 8)
-                    .onChange(of: commentSortOrder) { _, _ in
-                        loadTask?.cancel()
-                        loadTask = Task {
-                            await loadContent()
-                        }
-                    }
+                    
+                    Spacer()
                 }
+                .padding(.horizontal)
+                .padding(.vertical, 8)
                 
                 // Content area
                 ScrollView {

@@ -7,7 +7,7 @@ This document describes the implementation of sorting controls in the Profile vi
 Users needed the ability to sort their posts and comments in the Profile view to find and manage their content more easily. Previously, posts and comments were only displayed in chronological order (newest first).
 
 ## Solution
-Added native iOS segmented control pickers that allow users to sort their content by:
+Added a native iOS dropdown menu that allows users to sort their content by:
 
 ### Posts Sorting Options:
 - **Recent** (default): Shows newest posts first
@@ -31,33 +31,78 @@ Added two new state variables to track the selected sort order:
 ```
 
 ### 2. UI Components
-Added conditional segmented control pickers that appear based on the selected segment (Posts or Comments):
+Added a dropdown menu using SwiftUI's Menu component that displays different options based on the selected segment (Posts or Comments):
 
 ```swift
-// Posts sorting - uses SortOrder.feedOptions (Recent, Most Likes, Oldest)
-if selectedSegment == 0 {
-    Picker("Sort Order", selection: $postSortOrder) {
-        ForEach(SortOrder.feedOptions, id: \.self) { option in
-            Text(option.displayName).tag(option)
+// Sorting dropdown menu
+HStack {
+    Text("Sort by:")
+        .font(.subheadline)
+        .foregroundColor(.secondary)
+    
+    Menu {
+        if selectedSegment == 0 {
+            // Posts sorting options
+            ForEach(SortOrder.feedOptions, id: \.self) { option in
+                Button {
+                    postSortOrder = option
+                    loadTask?.cancel()
+                    loadTask = Task {
+                        await loadContent()
+                    }
+                } label: {
+                    HStack {
+                        Text(option.displayName)
+                        if postSortOrder == option {
+                            Image(systemName: "checkmark")
+                        }
+                    }
+                }
+            }
+        } else {
+            // Comments sorting options
+            Button {
+                commentSortOrder = .newest
+                // ... load content
+            } label: {
+                HStack {
+                    Text(SortOrder.newest.displayName)
+                    if commentSortOrder == .newest {
+                        Image(systemName: "checkmark")
+                    }
+                }
+            }
+            
+            Button {
+                commentSortOrder = .oldest
+                // ... load content
+            } label: {
+                HStack {
+                    Text(SortOrder.oldest.displayName)
+                    if commentSortOrder == .oldest {
+                        Image(systemName: "checkmark")
+                    }
+                }
+            }
         }
-    }
-    .pickerStyle(.segmented)
-    .padding(.horizontal)
-    .padding(.vertical, 8)
-    .onChange(of: postSortOrder) { _, _ in
-        loadTask?.cancel()
-        loadTask = Task {
-            await loadContent()
+    } label: {
+        HStack {
+            Text(selectedSegment == 0 ? postSortOrder.displayName : commentSortOrder.displayName)
+                .foregroundColor(.blue)
+            Image(systemName: "chevron.down")
+                .font(.caption)
+                .foregroundColor(.blue)
         }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 6)
+        .background(Color(.systemGray6))
+        .cornerRadius(8)
     }
+    
+    Spacer()
 }
-
-// Comments sorting - only Recent and Oldest
-else {
-    Picker("Sort Order", selection: $commentSortOrder) {
-        Text(SortOrder.newest.displayName).tag(SortOrder.newest)
-        Text(SortOrder.oldest.displayName).tag(SortOrder.oldest)
-    }
+.padding(.horizontal)
+.padding(.vertical, 8)
     .pickerStyle(.segmented)
     .padding(.horizontal)
     .padding(.vertical, 8)
@@ -126,24 +171,35 @@ All tests pass successfully.
 ### Interaction Flow
 1. User navigates to Profile tab
 2. User selects either "Posts" or "Comments" segment
-3. A segmented control appears below showing sorting options
-4. User taps a different sort option (e.g., "Most Likes")
-5. Content automatically reloads with new sort order
-6. Sort preference persists while viewing that segment
-7. When switching between Posts/Comments segments, each maintains its own sort order
+3. A dropdown menu appears below with "Sort by:" label
+4. User taps the dropdown to see available sorting options
+5. User selects a different sort option (e.g., "Most Likes")
+6. Content automatically reloads with new sort order
+7. The dropdown shows the currently selected option
+8. Sort preference persists while viewing that segment
+9. When switching between Posts/Comments segments, each maintains its own sort order
 
 ### Visual Design
-- Native iOS segmented control for familiar UX
-- Selected segment: Blue background with white text
-- Unselected segments: White background with black text
+- Native iOS Menu component for dropdown functionality
+- "Sort by:" label with gray secondary text
+- Dropdown button with blue text and chevron-down icon
+- Light gray background for the dropdown button (Color(.systemGray6))
+- Checkmark icon appears next to the currently selected option in the menu
 - Smooth animations when switching segments
 - Consistent with iOS Human Interface Guidelines
-- Matches the sorting pattern used in HomeView and CampusView
+- Avoids confusion with the Posts/Comments segmented control above it
 
 ## Technical Decisions
 
+### Why Dropdown Menu Instead of Segmented Control?
+The dropdown menu was chosen over a segmented control to avoid UI confusion:
+- The Posts/Comments selector is already a segmented control
+- Having two rows of segmented controls would be visually confusing
+- A dropdown menu provides a cleaner, more compact interface
+- The Menu component is familiar to iOS users from other apps
+
 ### Why Separate Sort Controls?
-Posts and comments have different sorting options (posts have likes, comments don't), so separate controls make the UX clearer and more intuitive.
+Posts and comments have different sorting options (posts have likes, comments don't), so the menu dynamically shows relevant options based on the selected segment.
 
 ### Client-Side vs Server-Side Sorting
 Currently, sorting is done client-side after fetching all user posts/comments. This approach:
@@ -159,10 +215,10 @@ Currently, sorting is done client-side after fetching all user posts/comments. T
 - Could be persisted in UserDefaults if needed in future
 
 ### Code Organization
-The implementation follows the existing patterns in HomeView and CampusView for consistency:
+The implementation uses SwiftUI's Menu component:
 - Same `SortOrder` enum with `displayName` property
 - Same `feedOptions` static property for post sorting options
-- Same segmented control styling and behavior
+- Dropdown menu styling with proper padding and corner radius
 
 ## Code Quality
 
