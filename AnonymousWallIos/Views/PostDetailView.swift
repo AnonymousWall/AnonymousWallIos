@@ -75,7 +75,7 @@ struct PostDetailView: View {
                         Spacer()
                         
                         // Sort order picker for comments
-                        if !comments.isEmpty || isLoadingComments {
+                        if !comments.isEmpty {
                             Picker("Sort", selection: $selectedSortOrder) {
                                 Text("Newest").tag(SortOrder.newest)
                                 Text("Oldest").tag(SortOrder.oldest)
