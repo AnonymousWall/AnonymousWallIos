@@ -19,6 +19,8 @@ struct ProfileView: View {
     @State private var showSetPassword = false
     @State private var showEditProfileName = false
     @State private var loadTask: Task<Void, Never>?
+    @State private var postSortOrder: SortOrder = .newest
+    @State private var commentSortOrder: SortOrder = .newest
     
     var body: some View {
         NavigationStack {
@@ -78,6 +80,82 @@ struct ProfileView: View {
                         await loadContent()
                     }
                 }
+                
+                // Sorting dropdown menu
+                HStack {
+                    Text("Sort by:")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                    
+                    Menu {
+                        if selectedSegment == 0 {
+                            // Posts sorting options
+                            ForEach(SortOrder.feedOptions, id: \.self) { option in
+                                Button {
+                                    postSortOrder = option
+                                    loadTask?.cancel()
+                                    loadTask = Task {
+                                        await loadContent()
+                                    }
+                                } label: {
+                                    HStack {
+                                        Text(option.displayName)
+                                        if postSortOrder == option {
+                                            Image(systemName: "checkmark")
+                                        }
+                                    }
+                                }
+                            }
+                        } else {
+                            // Comments sorting options - only newest/oldest supported
+                            Button {
+                                commentSortOrder = .newest
+                                loadTask?.cancel()
+                                loadTask = Task {
+                                    await loadContent()
+                                }
+                            } label: {
+                                HStack {
+                                    Text(SortOrder.newest.displayName)
+                                    if commentSortOrder == .newest {
+                                        Image(systemName: "checkmark")
+                                    }
+                                }
+                            }
+                            
+                            Button {
+                                commentSortOrder = .oldest
+                                loadTask?.cancel()
+                                loadTask = Task {
+                                    await loadContent()
+                                }
+                            } label: {
+                                HStack {
+                                    Text(SortOrder.oldest.displayName)
+                                    if commentSortOrder == .oldest {
+                                        Image(systemName: "checkmark")
+                                    }
+                                }
+                            }
+                        }
+                    } label: {
+                        HStack {
+                            Text(selectedSegment == 0 ? postSortOrder.displayName : commentSortOrder.displayName)
+                                .foregroundColor(.blue)
+                            Image(systemName: "chevron.down")
+                                .font(.caption)
+                                .foregroundColor(.blue)
+                        }
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 6)
+                        .background(Color(.systemGray6))
+                        .cornerRadius(8)
+                    }
+                    
+                    Spacer()
+                }
+                .padding(.horizontal)
+                .padding(.vertical, 8)
                 
                 // Content area
                 ScrollView {
@@ -306,8 +384,21 @@ struct ProfileView: View {
         
         if shouldUpdatePosts {
             let allPosts = campusPosts + nationalPosts
-            myPosts = allPosts.filter { $0.author.id == userId }
-                .sorted { $0.createdAt > $1.createdAt }
+            let userPosts = allPosts.filter { $0.author.id == userId }
+            
+            // Apply selected sort order
+            // Note: Only feedOptions (.newest, .mostLiked, .oldest) are exposed in UI
+            switch postSortOrder {
+            case .newest:
+                myPosts = userPosts.sorted { $0.createdAt > $1.createdAt }
+            case .oldest:
+                myPosts = userPosts.sorted { $0.createdAt < $1.createdAt }
+            case .mostLiked:
+                myPosts = userPosts.sorted { $0.likes > $1.likes }
+            case .leastLiked:
+                // Not exposed in UI, but handle for completeness
+                myPosts = userPosts.sorted { $0.likes < $1.likes }
+            }
         }
     }
     
@@ -409,8 +500,19 @@ struct ProfileView: View {
         
         if !allComments.isEmpty {
             // Filter to only show user's own comments
-            myComments = allComments.filter { $0.author.id == userId }
-                .sorted { $0.createdAt > $1.createdAt }
+            let userComments = allComments.filter { $0.author.id == userId }
+            
+            // Apply selected sort order
+            // Note: Only .newest and .oldest are exposed in the UI for comments
+            switch commentSortOrder {
+            case .newest:
+                myComments = userComments.sorted { $0.createdAt > $1.createdAt }
+            case .oldest:
+                myComments = userComments.sorted { $0.createdAt < $1.createdAt }
+            case .mostLiked, .leastLiked:
+                // Not supported for comments, default to newest
+                myComments = userComments.sorted { $0.createdAt > $1.createdAt }
+            }
         }
     }
     
