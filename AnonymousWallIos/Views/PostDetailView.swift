@@ -31,6 +31,13 @@ struct PostDetailView: View {
                 VStack(alignment: .leading, spacing: 16) {
                     // Original post
                     VStack(alignment: .leading, spacing: 12) {
+                        // Post title
+                        Text(post.title)
+                            .font(.title2)
+                            .fontWeight(.bold)
+                            .foregroundColor(.primary)
+                            .fixedSize(horizontal: false, vertical: true)
+                        
                         Text(post.content)
                             .font(.body)
                             .foregroundColor(.primary)
@@ -463,6 +470,7 @@ struct CommentRowView: View {
         PostDetailView(
             post: Post(
                 id: "1",
+                title: "Sample Post Title",
                 content: "This is a sample post with some interesting content that people might want to comment on!",
                 wall: "CAMPUS",
                 likes: 5,

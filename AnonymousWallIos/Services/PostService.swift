@@ -59,7 +59,7 @@ class PostService {
     }
     
     /// Create a new post
-    func createPost(content: String, wall: WallType = .campus, token: String, userId: String) async throws -> Post {
+    func createPost(title: String, content: String, wall: WallType = .campus, token: String, userId: String) async throws -> Post {
         guard let url = URL(string: "\(config.fullAPIBaseURL)/posts") else {
             throw NetworkError.invalidURL
         }
@@ -70,7 +70,7 @@ class PostService {
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         request.setValue(userId, forHTTPHeaderField: "X-User-Id")
         
-        let body = CreatePostRequest(content: content, wall: wall.rawValue)
+        let body = CreatePostRequest(title: title, content: content, wall: wall.rawValue)
         request.httpBody = try JSONEncoder().encode(body)
         
         return try await networkClient.performRequest(request)
