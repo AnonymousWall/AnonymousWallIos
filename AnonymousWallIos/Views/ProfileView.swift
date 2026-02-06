@@ -345,6 +345,7 @@ struct ProfileView: View {
             let userPosts = allPosts.filter { $0.author.id == userId }
             
             // Apply selected sort order
+            // Note: Only feedOptions (.newest, .mostLiked, .oldest) are exposed in UI
             switch postSortOrder {
             case .newest:
                 myPosts = userPosts.sorted { $0.createdAt > $1.createdAt }
@@ -353,6 +354,7 @@ struct ProfileView: View {
             case .mostLiked:
                 myPosts = userPosts.sorted { $0.likes > $1.likes }
             case .leastLiked:
+                // Not exposed in UI, but handle for completeness
                 myPosts = userPosts.sorted { $0.likes < $1.likes }
             }
         }
@@ -459,13 +461,14 @@ struct ProfileView: View {
             let userComments = allComments.filter { $0.author.id == userId }
             
             // Apply selected sort order
+            // Note: Only .newest and .oldest are exposed in the UI for comments
             switch commentSortOrder {
             case .newest:
                 myComments = userComments.sorted { $0.createdAt > $1.createdAt }
             case .oldest:
                 myComments = userComments.sorted { $0.createdAt < $1.createdAt }
             case .mostLiked, .leastLiked:
-                // Comments don't have likes, so default to newest
+                // Not supported for comments, default to newest
                 myComments = userComments.sorted { $0.createdAt > $1.createdAt }
             }
         }
