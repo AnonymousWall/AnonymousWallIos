@@ -153,7 +153,7 @@ struct HomeView: View {
             
             // Load posts
             loadTask = Task {
-                await loadPosts(isRefresh: true)
+                await loadPosts()
             }
         }
         .onDisappear {
