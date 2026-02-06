@@ -434,7 +434,7 @@ struct CommentRowView: View {
                 Spacer()
                     .frame(minWidth: 40)
             }
-
+            
             HStack(alignment: .top, spacing: 12) {
                 // Comment content
                 VStack(alignment: .leading, spacing: 4) {
@@ -443,19 +443,19 @@ struct CommentRowView: View {
                         .font(.caption)
                         .fontWeight(.semibold)
                         .foregroundColor(isOwnComment ? .white : .blue)
-
+                    
                     Text(comment.text)
                         .font(.body)
                         .foregroundColor(isOwnComment ? .white : .primary)
                         .fixedSize(horizontal: false, vertical: true)
-
+                    
                     Text(DateFormatting.formatRelativeTime(comment.createdAt))
                         .font(.caption2)
                         .foregroundColor(isOwnComment ? Color.white.opacity(0.8) : .gray)
                 }
-
+                
                 Spacer()
-
+                
                 // Delete button (only for own comments)
                 if isOwnComment {
                     Button(action: onDelete) {
@@ -468,7 +468,7 @@ struct CommentRowView: View {
             .padding()
             .background(isOwnComment ? Color.blue : Color(.secondarySystemBackground))
             .cornerRadius(8)
-
+            
             // Add trailing spacer for other users' comments (push to left)
             if !isOwnComment {
                 Spacer()
