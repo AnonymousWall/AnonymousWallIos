@@ -9,6 +9,7 @@ import Foundation
 
 struct Post: Codable, Identifiable {
     let id: String
+    /// Post title (required, 1-255 characters)
     let title: String
     let content: String
     let wall: String
@@ -52,7 +53,9 @@ struct PostListResponse: Codable {
 }
 
 struct CreatePostRequest: Codable {
+    /// Post title (required, 1-255 characters)
     let title: String
+    /// Post content (required, 1-5000 characters)
     let content: String
     let wall: String
 }
