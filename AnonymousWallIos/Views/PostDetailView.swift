@@ -439,7 +439,7 @@ struct CommentRowView: View {
                 // Comment content
                 VStack(alignment: .leading, spacing: 4) {
                     // Author name
-                    Text(comment.author.profileName)
+                    Text(isOwnComment ? "Me" : comment.author.profileName)
                         .font(.caption)
                         .fontWeight(.semibold)
                         .foregroundColor(isOwnComment ? .white : .blue)
