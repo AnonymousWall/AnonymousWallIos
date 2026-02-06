@@ -19,6 +19,8 @@ struct ProfileView: View {
     @State private var showSetPassword = false
     @State private var showEditProfileName = false
     @State private var loadTask: Task<Void, Never>?
+    @State private var postSortOrder: SortOrder = .newest
+    @State private var commentSortOrder: SortOrder = .newest
     
     var body: some View {
         NavigationStack {
@@ -76,6 +78,40 @@ struct ProfileView: View {
                     loadTask?.cancel()
                     loadTask = Task {
                         await loadContent()
+                    }
+                }
+                
+                // Sorting picker
+                if selectedSegment == 0 {
+                    // Posts sorting
+                    Picker("Sort Order", selection: $postSortOrder) {
+                        ForEach(SortOrder.feedOptions, id: \.self) { option in
+                            Text(option.displayName).tag(option)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                    .padding(.horizontal)
+                    .padding(.vertical, 8)
+                    .onChange(of: postSortOrder) { _, _ in
+                        loadTask?.cancel()
+                        loadTask = Task {
+                            await loadContent()
+                        }
+                    }
+                } else {
+                    // Comments sorting - only newest/oldest supported
+                    Picker("Sort Order", selection: $commentSortOrder) {
+                        Text(SortOrder.newest.displayName).tag(SortOrder.newest)
+                        Text(SortOrder.oldest.displayName).tag(SortOrder.oldest)
+                    }
+                    .pickerStyle(.segmented)
+                    .padding(.horizontal)
+                    .padding(.vertical, 8)
+                    .onChange(of: commentSortOrder) { _, _ in
+                        loadTask?.cancel()
+                        loadTask = Task {
+                            await loadContent()
+                        }
                     }
                 }
                 
@@ -306,8 +342,19 @@ struct ProfileView: View {
         
         if shouldUpdatePosts {
             let allPosts = campusPosts + nationalPosts
-            myPosts = allPosts.filter { $0.author.id == userId }
-                .sorted { $0.createdAt > $1.createdAt }
+            let userPosts = allPosts.filter { $0.author.id == userId }
+            
+            // Apply selected sort order
+            switch postSortOrder {
+            case .newest:
+                myPosts = userPosts.sorted { $0.createdAt > $1.createdAt }
+            case .oldest:
+                myPosts = userPosts.sorted { $0.createdAt < $1.createdAt }
+            case .mostLiked:
+                myPosts = userPosts.sorted { $0.likes > $1.likes }
+            case .leastLiked:
+                myPosts = userPosts.sorted { $0.likes < $1.likes }
+            }
         }
     }
     
@@ -409,8 +456,18 @@ struct ProfileView: View {
         
         if !allComments.isEmpty {
             // Filter to only show user's own comments
-            myComments = allComments.filter { $0.author.id == userId }
-                .sorted { $0.createdAt > $1.createdAt }
+            let userComments = allComments.filter { $0.author.id == userId }
+            
+            // Apply selected sort order
+            switch commentSortOrder {
+            case .newest:
+                myComments = userComments.sorted { $0.createdAt > $1.createdAt }
+            case .oldest:
+                myComments = userComments.sorted { $0.createdAt < $1.createdAt }
+            case .mostLiked, .leastLiked:
+                // Comments don't have likes, so default to newest
+                myComments = userComments.sorted { $0.createdAt > $1.createdAt }
+            }
         }
     }
     
