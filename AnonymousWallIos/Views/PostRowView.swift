@@ -47,6 +47,13 @@ struct PostRowView: View {
                 Spacer()
             }
             
+            // Post title
+            Text(post.title)
+                .font(.headline)
+                .fontWeight(.semibold)
+                .foregroundColor(.primary)
+                .fixedSize(horizontal: false, vertical: true)
+            
             // Post content
             Text(post.content)
                 .font(.body)
@@ -114,6 +121,7 @@ struct PostRowView: View {
     PostRowView(
         post: Post(
             id: "1",
+            title: "Sample Post Title",
             content: "This is a sample anonymous post on the wall!",
             wall: "CAMPUS",
             likes: 5,

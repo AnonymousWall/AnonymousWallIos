@@ -350,6 +350,7 @@ struct AnonymousWallIosTests {
         let json = """
         {
             "id": "1",
+            "title": "Test Post Title",
             "content": "Test post content",
             "wall": "CAMPUS",
             "likes": 5,
@@ -369,9 +370,28 @@ struct AnonymousWallIosTests {
         let decoder = JSONDecoder()
         
         let post = try decoder.decode(Post.self, from: data)
+        #expect(post.id == "1")
+        #expect(post.title == "Test Post Title")
+        #expect(post.content == "Test post content")
         #expect(post.author.id == "user-123")
         #expect(post.author.profileName == "John Doe")
         #expect(post.author.isAnonymous == true)
+    }
+    
+    @Test func testCreatePostRequestEncoding() async throws {
+        // Test that CreatePostRequest includes title field
+        let request = CreatePostRequest(title: "Test Title", content: "Test content", wall: "campus")
+        let encoder = JSONEncoder()
+        
+        let data = try encoder.encode(request)
+        let json = String(data: data, encoding: .utf8)!
+        
+        #expect(json.contains("\"title\""))
+        #expect(json.contains("Test Title"))
+        #expect(json.contains("\"content\""))
+        #expect(json.contains("Test content"))
+        #expect(json.contains("\"wall\""))
+        #expect(json.contains("campus"))
     }
 
 }
