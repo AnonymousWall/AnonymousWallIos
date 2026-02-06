@@ -482,11 +482,8 @@ struct ProfileCommentRowView: View {
             }
             
             HStack {
-                Text("on Post #\(comment.postId)")
-                    .font(.caption)
-                    .foregroundColor(.gray)
                 Spacer()
-                Text(comment.createdAt)
+                Text(DateFormatting.formatRelativeTime(comment.createdAt))
                     .font(.caption2)
                     .foregroundColor(.gray)
             }
