@@ -274,9 +274,15 @@ struct CampusView: View {
         
         Task {
             do {
-                _ = try await PostService.shared.toggleLike(postId: post.id, token: token, userId: userId)
-                resetPagination()
-                await loadPosts()
+                let response = try await PostService.shared.toggleLike(postId: post.id, token: token, userId: userId)
+                
+                // Update the post locally without reloading the entire list
+                await MainActor.run {
+                    if let index = posts.firstIndex(where: { $0.id == post.id }) {
+                        let updatedLikes = response.liked ? posts[index].likes + 1 : posts[index].likes - 1
+                        posts[index] = posts[index].withUpdatedLike(liked: response.liked, likes: updatedLikes)
+                    }
+                }
             } catch {
                 await MainActor.run {
                     errorMessage = error.localizedDescription
