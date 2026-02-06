@@ -427,19 +427,8 @@ struct ProfileView: View {
                 // Update the post locally without reloading the entire list
                 await MainActor.run {
                     if let index = myPosts.firstIndex(where: { $0.id == post.id }) {
-                        let updatedPost = Post(
-                            id: myPosts[index].id,
-                            title: myPosts[index].title,
-                            content: myPosts[index].content,
-                            wall: myPosts[index].wall,
-                            likes: response.liked ? myPosts[index].likes + 1 : myPosts[index].likes - 1,
-                            comments: myPosts[index].comments,
-                            liked: response.liked,
-                            author: myPosts[index].author,
-                            createdAt: myPosts[index].createdAt,
-                            updatedAt: myPosts[index].updatedAt
-                        )
-                        myPosts[index] = updatedPost
+                        let updatedLikes = response.liked ? myPosts[index].likes + 1 : myPosts[index].likes - 1
+                        myPosts[index] = myPosts[index].withUpdatedLike(liked: response.liked, likes: updatedLikes)
                     }
                 }
             } catch {

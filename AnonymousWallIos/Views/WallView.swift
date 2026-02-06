@@ -322,19 +322,8 @@ struct WallView: View {
                 // Update the post locally without reloading the entire list
                 await MainActor.run {
                     if let index = posts.firstIndex(where: { $0.id == post.id }) {
-                        let updatedPost = Post(
-                            id: posts[index].id,
-                            title: posts[index].title,
-                            content: posts[index].content,
-                            wall: posts[index].wall,
-                            likes: response.liked ? posts[index].likes + 1 : posts[index].likes - 1,
-                            comments: posts[index].comments,
-                            liked: response.liked,
-                            author: posts[index].author,
-                            createdAt: posts[index].createdAt,
-                            updatedAt: posts[index].updatedAt
-                        )
-                        posts[index] = updatedPost
+                        let updatedLikes = response.liked ? posts[index].likes + 1 : posts[index].likes - 1
+                        posts[index] = posts[index].withUpdatedLike(liked: response.liked, likes: updatedLikes)
                     }
                 }
             } catch {
