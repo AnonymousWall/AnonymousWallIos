@@ -40,7 +40,7 @@ struct PostRowView: View {
                     .background(wallColor.opacity(0.15))
                     .cornerRadius(4)
                 
-                Text("by \(post.author.profileName)")
+                Text("by \(isOwnPost ? "me" : post.author.profileName)")
                     .font(.caption)
                     .foregroundColor(.gray)
                 
