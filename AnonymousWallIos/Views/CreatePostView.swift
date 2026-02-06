@@ -33,6 +33,9 @@ struct CreatePostView: View {
                 .pickerStyle(SegmentedPickerStyle())
                 .padding(.horizontal)
                 .padding(.top, 10)
+                .onChange(of: selectedWall) { _, _ in
+                    HapticFeedback.selection()
+                }
                 
                 // Title input
                 VStack(alignment: .leading, spacing: 8) {

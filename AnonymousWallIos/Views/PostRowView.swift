@@ -99,7 +99,7 @@ struct PostRowView: View {
                     .background(post.liked ? Color.pink.opacity(0.15) : Color(.systemGray6))
                     .cornerRadius(8)
                 }
-                .buttonStyle(PlainButtonStyle())
+                .buttonStyle(.bounce)
                 
                 // Comment count indicator
                 HStack(spacing: 5) {
@@ -129,7 +129,7 @@ struct PostRowView: View {
                             .background(Color.red)
                             .cornerRadius(8)
                     }
-                    .buttonStyle(PlainButtonStyle())
+                    .buttonStyle(.bounce)
                     .confirmationDialog(
                         "Delete Post",
                         isPresented: $showDeleteConfirmation,

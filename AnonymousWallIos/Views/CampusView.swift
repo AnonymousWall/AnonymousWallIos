@@ -57,6 +57,7 @@ struct CampusView: View {
                 .padding(.horizontal)
                 .padding(.vertical, 8)
                 .onChange(of: selectedSortOrder) { _, _ in
+                    HapticFeedback.selection()
                     loadTask?.cancel()
                     posts = [] // Clear posts to show loading indicator
                     resetPagination()

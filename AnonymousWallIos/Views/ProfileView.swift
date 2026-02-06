@@ -93,6 +93,7 @@ struct ProfileView: View {
                 .padding(.horizontal)
                 .padding(.bottom, 10)
                 .onChange(of: selectedSegment) { _, _ in
+                    HapticFeedback.selection()
                     loadTask?.cancel()
                     loadTask = Task {
                         await loadContent()

@@ -16,14 +16,14 @@ struct TabBarView: View {
             // Tab 1: Home (National Wall)
             HomeView()
                 .tabItem {
-                    Label("Home", systemImage: "house.fill")
+                    Label("Home", systemImage: selectedTab == 0 ? "house.fill" : "house")
                 }
                 .tag(0)
             
             // Tab 2: Campus Wall
             CampusView()
                 .tabItem {
-                    Label("Campus", systemImage: "building.2.fill")
+                    Label("Campus", systemImage: selectedTab == 1 ? "building.2.fill" : "building.2")
                 }
                 .tag(1)
             
@@ -37,23 +37,27 @@ struct TabBarView: View {
             // Tab 4: Profile
             ProfileView()
                 .tabItem {
-                    Label("Profile", systemImage: "person.fill")
+                    Label("Profile", systemImage: selectedTab == 3 ? "person.fill" : "person")
                 }
                 .tag(3)
             
             // Tab 5: Market (dummy)
             MarketView()
                 .tabItem {
-                    Label("Market", systemImage: "cart.fill")
+                    Label("Market", systemImage: selectedTab == 4 ? "cart.fill" : "cart")
                 }
                 .tag(4)
             
             // Tab 6: Internship (dummy)
             InternshipView()
                 .tabItem {
-                    Label("Internship", systemImage: "briefcase.fill")
+                    Label("Internship", systemImage: selectedTab == 5 ? "briefcase.fill" : "briefcase")
                 }
                 .tag(5)
+        }
+        .accentColor(.primaryPurple)
+        .onChange(of: selectedTab) { _, _ in
+            HapticFeedback.selection()
         }
     }
 }
