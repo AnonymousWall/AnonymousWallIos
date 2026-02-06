@@ -16,11 +16,52 @@ struct DateFormatting {
         return formatter
     }()
     
+    /// Parse a date string that may include timezone and microseconds
+    /// - Parameter dateString: Date string in various formats
+    /// - Returns: Date object or nil if parsing fails
+    private static func parseDate(_ dateString: String) -> Date? {
+        // Try standard ISO8601 first
+        if let date = iso8601Formatter.date(from: dateString) {
+            return date
+        }
+        
+        // Handle formats like: 2026-02-05T23:46:03.614917-08:00[America/Los_Angeles]
+        // Remove the timezone name in brackets if present
+        var cleanedString = dateString
+        if let bracketIndex = dateString.firstIndex(of: "[") {
+            cleanedString = String(dateString[..<bracketIndex])
+        }
+        
+        // Try parsing with fractional seconds
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = TimeZone(secondsFromGMT: 0)
+        
+        // Try different formats with fractional seconds
+        let formats = [
+            "yyyy-MM-dd'T'HH:mm:ss.SSSSSSZZZZZ",  // Microseconds with timezone
+            "yyyy-MM-dd'T'HH:mm:ss.SSSZZZZZ",     // Milliseconds with timezone
+            "yyyy-MM-dd'T'HH:mm:ssZZZZZ",         // No fractional seconds with timezone
+            "yyyy-MM-dd'T'HH:mm:ss.SSSSSS",       // Microseconds without timezone
+            "yyyy-MM-dd'T'HH:mm:ss.SSS",          // Milliseconds without timezone
+            "yyyy-MM-dd'T'HH:mm:ss"               // No fractional seconds
+        ]
+        
+        for format in formats {
+            formatter.dateFormat = format
+            if let date = formatter.date(from: cleanedString) {
+                return date
+            }
+        }
+        
+        return nil
+    }
+    
     /// Format a date string to dd/MM/yyyy HH:mm format
     /// - Parameter dateString: ISO 8601 date string
     /// - Returns: Formatted date and time string
     static func formatDateTime(_ dateString: String) -> String {
-        if let date = iso8601Formatter.date(from: dateString) {
+        if let date = parseDate(dateString) {
             return dateTimeFormatter.string(from: date)
         }
         
