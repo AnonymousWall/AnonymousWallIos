@@ -77,16 +77,26 @@ struct CampusView: View {
                     } else if posts.isEmpty && !isLoadingPosts {
                         VStack {
                             Spacer()
-                            VStack(spacing: 16) {
-                                Image(systemName: "building.2.fill")
-                                    .font(.system(size: 60))
-                                    .foregroundColor(.gray)
-                                Text("No campus posts yet")
-                                    .font(.headline)
-                                    .foregroundColor(.gray)
-                                Text("Be the first to post!")
-                                    .font(.subheadline)
-                                    .foregroundColor(.gray)
+                            VStack(spacing: 20) {
+                                ZStack {
+                                    Circle()
+                                        .fill(Color.purplePinkGradient)
+                                        .frame(width: 100, height: 100)
+                                        .blur(radius: 30)
+                                    
+                                    Image(systemName: "building.2.fill")
+                                        .font(.system(size: 60))
+                                        .foregroundStyle(Color.purplePinkGradient)
+                                }
+                                
+                                VStack(spacing: 8) {
+                                    Text("No campus posts yet")
+                                        .font(.system(size: 22, weight: .bold))
+                                        .foregroundColor(.primary)
+                                    Text("Be the first to post!")
+                                        .font(.system(size: 16))
+                                        .foregroundColor(.secondary)
+                                }
                             }
                             Spacer()
                         }

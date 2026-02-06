@@ -24,77 +24,106 @@ struct PostRowView: View {
     }
     
     private var wallColor: Color {
-        isCampusPost ? .blue : .green
+        isCampusPost ? .primaryPurple : .vibrantTeal
+    }
+    
+    private var wallGradient: LinearGradient {
+        isCampusPost ? Color.purplePinkGradient : Color.tealPurpleGradient
     }
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 14) {
             // Wall type badge and author name
-            HStack {
+            HStack(spacing: 10) {
                 Text(wallDisplayName)
-                    .font(.caption2)
-                    .fontWeight(.semibold)
-                    .foregroundColor(wallColor)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-                    .background(wallColor.opacity(0.15))
-                    .cornerRadius(4)
+                    .font(.caption)
+                    .fontWeight(.bold)
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(wallGradient)
+                    .cornerRadius(12)
+                    .shadow(color: wallColor.opacity(0.3), radius: 4, x: 0, y: 2)
                 
                 Text("by \(isOwnPost ? "Me" : post.author.profileName)")
                     .font(.caption)
-                    .foregroundColor(.gray)
+                    .fontWeight(.medium)
+                    .foregroundColor(.secondary)
                 
                 Spacer()
             }
             
             // Post title
             Text(post.title)
-                .font(.headline)
-                .fontWeight(.semibold)
+                .font(.system(size: 18, weight: .bold))
                 .foregroundColor(.primary)
                 .fixedSize(horizontal: false, vertical: true)
             
             // Post content
             Text(post.content)
-                .font(.body)
+                .font(.system(size: 15))
                 .foregroundColor(.primary)
+                .lineSpacing(2)
                 .fixedSize(horizontal: false, vertical: true)
             
             // Footer with time and actions
-            HStack {
+            HStack(spacing: 16) {
                 // Timestamp
-                Text(DateFormatting.formatRelativeTime(post.createdAt))
-                    .font(.caption)
-                    .foregroundColor(.gray)
+                HStack(spacing: 4) {
+                    Image(systemName: "clock")
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
+                    Text(DateFormatting.formatRelativeTime(post.createdAt))
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
                 
                 Spacer()
                 
                 // Like button
                 Button(action: onLike) {
-                    HStack(spacing: 4) {
+                    HStack(spacing: 5) {
                         Image(systemName: post.liked ? "heart.fill" : "heart")
-                            .foregroundColor(post.liked ? .red : .gray)
+                            .font(.system(size: 16))
+                            .foregroundColor(post.liked ? .pink : .secondary)
                         Text("\(post.likes)")
-                            .font(.caption)
-                            .foregroundColor(.gray)
+                            .font(.subheadline)
+                            .fontWeight(.semibold)
+                            .foregroundColor(post.liked ? .pink : .secondary)
                     }
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 6)
+                    .background(post.liked ? Color.pink.opacity(0.15) : Color(.systemGray6))
+                    .cornerRadius(8)
                 }
+                .buttonStyle(PlainButtonStyle())
                 
                 // Comment count indicator
-                HStack(spacing: 4) {
-                    Image(systemName: "bubble.left")
-                        .foregroundColor(.gray)
+                HStack(spacing: 5) {
+                    Image(systemName: "bubble.left.fill")
+                        .font(.system(size: 16))
+                        .foregroundColor(.vibrantTeal)
                     Text("\(post.comments)")
-                        .font(.caption)
-                        .foregroundColor(.gray)
+                        .font(.subheadline)
+                        .fontWeight(.semibold)
+                        .foregroundColor(.vibrantTeal)
                 }
+                .padding(.horizontal, 10)
+                .padding(.vertical, 6)
+                .background(Color.vibrantTeal.opacity(0.15))
+                .cornerRadius(8)
                 
                 // Delete button (only for own posts)
                 if isOwnPost {
                     Button(action: { showDeleteConfirmation = true }) {
-                        Image(systemName: "trash")
-                            .foregroundColor(.red)
+                        Image(systemName: "trash.fill")
+                            .font(.system(size: 16))
+                            .foregroundColor(.white)
+                            .padding(6)
+                            .background(Color.red)
+                            .cornerRadius(8)
                     }
+                    .buttonStyle(PlainButtonStyle())
                     .confirmationDialog(
                         "Delete Post",
                         isPresented: $showDeleteConfirmation,
@@ -110,10 +139,16 @@ struct PostRowView: View {
                 }
             }
         }
-        .padding()
-        .background(Color(.systemBackground))
-        .cornerRadius(10)
-        .shadow(color: Color.black.opacity(0.1), radius: 2, x: 0, y: 1)
+        .padding(16)
+        .background(
+            RoundedRectangle(cornerRadius: 16)
+                .fill(Color(.systemBackground))
+                .shadow(color: Color.black.opacity(0.08), radius: 8, x: 0, y: 4)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(Color(.systemGray5), lineWidth: 0.5)
+        )
     }
 }
 

@@ -48,23 +48,41 @@ struct ProfileView: View {
                 }
                 
                 // User info section
-                VStack(spacing: 8) {
-                    Image(systemName: "person.circle.fill")
-                        .font(.system(size: 60))
-                        .foregroundColor(.blue)
+                VStack(spacing: 12) {
+                    // Avatar with gradient background
+                    ZStack {
+                        Circle()
+                            .fill(Color.purplePinkGradient)
+                            .frame(width: 90, height: 90)
+                            .shadow(color: Color.primaryPurple.opacity(0.3), radius: 10, x: 0, y: 5)
+                        
+                        Image(systemName: "person.circle.fill")
+                            .font(.system(size: 80))
+                            .foregroundColor(.white)
+                    }
                     
                     if let email = authState.currentUser?.email {
                         Text(email)
-                            .font(.headline)
+                            .font(.system(size: 17, weight: .semibold))
+                            .foregroundColor(.primary)
                     }
                     
                     if let profileName = authState.currentUser?.profileName {
-                        Text(profileName)
-                            .font(.subheadline)
-                            .foregroundColor(.gray)
+                        HStack(spacing: 6) {
+                            Image(systemName: "person.fill")
+                                .font(.caption)
+                                .foregroundColor(.vibrantTeal)
+                            Text(profileName)
+                                .font(.system(size: 15, weight: .medium))
+                                .foregroundColor(.secondary)
+                        }
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 6)
+                        .background(Color.vibrantTeal.opacity(0.15))
+                        .cornerRadius(12)
                     }
                 }
-                .padding()
+                .padding(.vertical, 20)
                 
                 // Segment control
                 Picker("Content Type", selection: $selectedSegment) {
@@ -169,16 +187,26 @@ struct ProfileView: View {
                     } else if selectedSegment == 0 {
                         // Posts section
                         if myPosts.isEmpty {
-                            VStack(spacing: 16) {
-                                Image(systemName: "bubble.left.and.bubble.right")
-                                    .font(.system(size: 60))
-                                    .foregroundColor(.gray)
-                                Text("No posts yet")
-                                    .font(.headline)
-                                    .foregroundColor(.gray)
-                                Text("Create your first post!")
-                                    .font(.subheadline)
-                                    .foregroundColor(.gray)
+                            VStack(spacing: 20) {
+                                ZStack {
+                                    Circle()
+                                        .fill(Color.orangePinkGradient)
+                                        .frame(width: 100, height: 100)
+                                        .blur(radius: 30)
+                                    
+                                    Image(systemName: "bubble.left.and.bubble.right.fill")
+                                        .font(.system(size: 60))
+                                        .foregroundStyle(Color.orangePinkGradient)
+                                }
+                                
+                                VStack(spacing: 8) {
+                                    Text("No posts yet")
+                                        .font(.system(size: 22, weight: .bold))
+                                        .foregroundColor(.primary)
+                                    Text("Create your first post!")
+                                        .font(.system(size: 16))
+                                        .foregroundColor(.secondary)
+                                }
                             }
                             .frame(maxWidth: .infinity, minHeight: 300)
                         } else {
@@ -200,16 +228,26 @@ struct ProfileView: View {
                     } else {
                         // Comments section
                         if myComments.isEmpty {
-                            VStack(spacing: 16) {
-                                Image(systemName: "bubble.left")
-                                    .font(.system(size: 60))
-                                    .foregroundColor(.gray)
-                                Text("No comments yet")
-                                    .font(.headline)
-                                    .foregroundColor(.gray)
-                                Text("Start commenting on posts!")
-                                    .font(.subheadline)
-                                    .foregroundColor(.gray)
+                            VStack(spacing: 20) {
+                                ZStack {
+                                    Circle()
+                                        .fill(Color.tealPurpleGradient)
+                                        .frame(width: 100, height: 100)
+                                        .blur(radius: 30)
+                                    
+                                    Image(systemName: "bubble.left.fill")
+                                        .font(.system(size: 60))
+                                        .foregroundStyle(Color.tealPurpleGradient)
+                                }
+                                
+                                VStack(spacing: 8) {
+                                    Text("No comments yet")
+                                        .font(.system(size: 22, weight: .bold))
+                                        .foregroundColor(.primary)
+                                    Text("Start commenting on posts!")
+                                        .font(.system(size: 16))
+                                        .foregroundColor(.secondary)
+                                }
                             }
                             .frame(maxWidth: .infinity, minHeight: 300)
                         } else {
