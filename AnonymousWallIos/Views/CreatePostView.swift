@@ -92,7 +92,7 @@ struct CreatePostView: View {
                 
                 // Post button
                 Button(action: {
-                    HapticFeedback.success()
+                    HapticFeedback.light()
                     createPost()
                 }) {
                     if isPosting {
@@ -180,6 +180,7 @@ struct CreatePostView: View {
             do {
                 _ = try await PostService.shared.createPost(title: trimmedTitle, content: trimmedContent, wall: selectedWall, token: token, userId: userId)
                 await MainActor.run {
+                    HapticFeedback.success()
                     isPosting = false
                     onPostCreated()
                     dismiss()

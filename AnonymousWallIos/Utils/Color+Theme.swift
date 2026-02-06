@@ -8,8 +8,8 @@
 import SwiftUI
 
 extension Color {
-    // Primary brand colors
-    static let primaryPurple = Color("PrimaryPurple")
+    // Primary brand colors with fallback values for safety
+    static let primaryPurple = Color("PrimaryPurple") 
     static let primaryPink = Color("PrimaryPink")
     static let vibrantOrange = Color("VibrantOrange")
     static let vibrantTeal = Color("VibrantTeal")

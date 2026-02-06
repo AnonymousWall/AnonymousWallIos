@@ -162,7 +162,7 @@ struct LoginView: View {
             
             // Login button
             Button(action: {
-                HapticFeedback.success()
+                HapticFeedback.light()
                 loginUser()
             }) {
                 if isLoading {
@@ -269,6 +269,7 @@ struct LoginView: View {
                 }
                 
                 await MainActor.run {
+                    HapticFeedback.success()
                     isLoading = false
                     // User is logging in - passwordSet from API indicates password status
                     authState.login(user: response.user, token: response.accessToken)

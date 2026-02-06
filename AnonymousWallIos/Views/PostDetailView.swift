@@ -195,7 +195,7 @@ struct PostDetailView: View {
                     .accessibilityLabel("Comment text field")
                 
                 Button(action: {
-                    HapticFeedback.success()
+                    HapticFeedback.light()
                     submitComment()
                 }) {
                     if isSubmitting {
@@ -373,6 +373,7 @@ struct PostDetailView: View {
                 )
                 
                 await MainActor.run {
+                    HapticFeedback.success()
                     commentText = ""
                     isSubmitting = false
                 }

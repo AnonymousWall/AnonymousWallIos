@@ -66,7 +66,7 @@ struct RegistrationView: View {
                             
                             if !codeSent {
                                 Button(action: {
-                                    HapticFeedback.success()
+                                    HapticFeedback.light()
                                     sendVerificationCode()
                                 }) {
                                     if isSendingCode {
@@ -124,7 +124,7 @@ struct RegistrationView: View {
                 // Register button (shown after code is sent)
                 if codeSent {
                     Button(action: {
-                        HapticFeedback.success()
+                        HapticFeedback.light()
                         registerUser()
                     }) {
                         if isLoading {
@@ -192,6 +192,7 @@ struct RegistrationView: View {
             do {
                 _ = try await AuthService.shared.sendEmailVerificationCode(email: email, purpose: "register")
                 await MainActor.run {
+                    HapticFeedback.success()
                     isSendingCode = false
                     codeSent = true
                 }
@@ -214,6 +215,7 @@ struct RegistrationView: View {
             do {
                 let response = try await AuthService.shared.registerWithEmail(email: email, code: verificationCode)
                 await MainActor.run {
+                    HapticFeedback.success()
                     isLoading = false
                     // User is now logged in after registration
                     // passwordSet from API will indicate if password setup is required
