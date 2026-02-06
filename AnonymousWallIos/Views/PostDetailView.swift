@@ -428,39 +428,53 @@ struct CommentRowView: View {
     var onDelete: () -> Void
     
     var body: some View {
-        HStack(alignment: .top, spacing: 12) {
-            // Comment content
-            VStack(alignment: .leading, spacing: 4) {
-                // Author name
-                Text(comment.author.profileName)
-                    .font(.caption)
-                    .fontWeight(.semibold)
-                    .foregroundColor(.blue)
-                
-                Text(comment.text)
-                    .font(.body)
-                    .foregroundColor(.primary)
-                    .fixedSize(horizontal: false, vertical: true)
-                
-                Text(DateFormatting.formatRelativeTime(comment.createdAt))
-                    .font(.caption2)
-                    .foregroundColor(.gray)
+        HStack(spacing: 0) {
+            // Add leading spacer for own comments (push to right)
+            if isOwnComment {
+                Spacer()
+                    .frame(minWidth: 40)
             }
             
-            Spacer()
-            
-            // Delete button (only for own comments)
-            if isOwnComment {
-                Button(action: onDelete) {
-                    Image(systemName: "trash")
+            HStack(alignment: .top, spacing: 12) {
+                // Comment content
+                VStack(alignment: .leading, spacing: 4) {
+                    // Author name
+                    Text(comment.author.profileName)
                         .font(.caption)
-                        .foregroundColor(.red)
+                        .fontWeight(.semibold)
+                        .foregroundColor(isOwnComment ? .white : .blue)
+                    
+                    Text(comment.text)
+                        .font(.body)
+                        .foregroundColor(isOwnComment ? .white : .primary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    
+                    Text(DateFormatting.formatRelativeTime(comment.createdAt))
+                        .font(.caption2)
+                        .foregroundColor(isOwnComment ? Color.white.opacity(0.8) : .gray)
+                }
+                
+                Spacer()
+                
+                // Delete button (only for own comments)
+                if isOwnComment {
+                    Button(action: onDelete) {
+                        Image(systemName: "trash")
+                            .font(.caption)
+                            .foregroundColor(.white)
+                    }
                 }
             }
+            .padding()
+            .background(isOwnComment ? Color.blue : Color(.secondarySystemBackground))
+            .cornerRadius(8)
+            
+            // Add trailing spacer for other users' comments (push to left)
+            if !isOwnComment {
+                Spacer()
+                    .frame(minWidth: 40)
+            }
         }
-        .padding()
-        .background(Color(.secondarySystemBackground))
-        .cornerRadius(8)
         .padding(.horizontal)
     }
 }
