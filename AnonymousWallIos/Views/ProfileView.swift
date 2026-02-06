@@ -583,7 +583,7 @@ struct ProfileCommentRowView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
-                Text("Comment by \(comment.author.profileName)")
+                Text("Comment by Me")
                     .font(.caption)
                     .foregroundColor(.blue)
                     .fontWeight(.semibold)
