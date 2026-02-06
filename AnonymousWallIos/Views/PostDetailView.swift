@@ -270,9 +270,11 @@ struct PostDetailView: View {
     private func loadMoreCommentsIfNeeded() {
         guard !isLoadingMoreComments && hasMorePages else { return }
         
-        isLoadingMoreComments = true
-        
-        Task {
+        Task { @MainActor in
+            // Check again inside the task to prevent race condition
+            guard !isLoadingMoreComments && hasMorePages else { return }
+            
+            isLoadingMoreComments = true
             await loadMoreComments()
         }
     }

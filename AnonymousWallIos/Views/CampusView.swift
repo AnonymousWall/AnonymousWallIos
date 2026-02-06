@@ -215,9 +215,11 @@ struct CampusView: View {
     private func loadMoreIfNeeded() {
         guard !isLoadingMore && hasMorePages else { return }
         
-        isLoadingMore = true
-        
-        Task {
+        Task { @MainActor in
+            // Check again inside the task to prevent race condition
+            guard !isLoadingMore && hasMorePages else { return }
+            
+            isLoadingMore = true
             await loadMorePosts()
         }
     }
