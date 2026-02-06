@@ -32,17 +32,26 @@ struct DateFormatting {
             cleanedString = String(dateString[..<bracketIndex])
         }
         
+        // Truncate microseconds to milliseconds (DateFormatter only supports 3 digits)
+        // Pattern: find .NNNNNN (more than 3 digits after decimal) and truncate to .NNN
+        if let dotIndex = cleanedString.firstIndex(of: "."),
+           let endIndex = cleanedString[dotIndex...].firstIndex(where: { !$0.isNumber && $0 != "." }) {
+            let fractionalPart = cleanedString[cleanedString.index(after: dotIndex)..<endIndex]
+            if fractionalPart.count > 3 {
+                let truncated = String(fractionalPart.prefix(3))
+                let rest = cleanedString[endIndex...]
+                cleanedString = String(cleanedString[...dotIndex]) + truncated + rest
+            }
+        }
+        
         // Try parsing with fractional seconds
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "en_US_POSIX")
-        formatter.timeZone = TimeZone(secondsFromGMT: 0)
         
         // Try different formats with fractional seconds
         let formats = [
-            "yyyy-MM-dd'T'HH:mm:ss.SSSSSSZZZZZ",  // Microseconds with timezone
             "yyyy-MM-dd'T'HH:mm:ss.SSSZZZZZ",     // Milliseconds with timezone
             "yyyy-MM-dd'T'HH:mm:ssZZZZZ",         // No fractional seconds with timezone
-            "yyyy-MM-dd'T'HH:mm:ss.SSSSSS",       // Microseconds without timezone
             "yyyy-MM-dd'T'HH:mm:ss.SSS",          // Milliseconds without timezone
             "yyyy-MM-dd'T'HH:mm:ss"               // No fractional seconds
         ]
