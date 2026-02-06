@@ -166,7 +166,7 @@ struct WallView: View {
                     // Reset pagination and reload from first page
                     currentPage = 1
                     hasMorePages = true
-                    await loadPosts(isRefresh: true)
+                    await loadPosts()
                 }
             })
         }
@@ -182,7 +182,7 @@ struct WallView: View {
             
             // Load posts
             loadTask = Task {
-                await loadPosts(isRefresh: true)
+                await loadPosts()
             }
         }
         .onDisappear {
@@ -204,7 +204,7 @@ struct WallView: View {
         
         // Create a new task that won't be cancelled by the refreshable gesture
         loadTask = Task {
-            await loadPosts(isRefresh: true)
+            await loadPosts()
         }
         
         // Wait for the task to complete
@@ -212,16 +212,14 @@ struct WallView: View {
     }
     
     @MainActor
-    private func loadPosts(isRefresh: Bool = false) async {
+    private func loadPosts() async {
         guard let token = authState.authToken,
               let userId = authState.currentUser?.id else {
             return
         }
         
-        // Set loading state
-        if isRefresh {
-            isLoadingPosts = true
-        }
+        // Set loading state for initial load or refresh
+        isLoadingPosts = true
         errorMessage = nil
         
         // Ensure loading state is always reset
@@ -236,7 +234,7 @@ struct WallView: View {
                 page: currentPage,
                 limit: 20
             )
-            // Replace posts on initial load or refresh
+            // Replace posts (used for initial load and refresh)
             posts = response.data
             
             // Update pagination state
@@ -319,7 +317,7 @@ struct WallView: View {
                 // Reload posts to get updated like status
                 currentPage = 1
                 hasMorePages = true
-                await loadPosts(isRefresh: true)
+                await loadPosts()
             } catch {
                 await MainActor.run {
                     errorMessage = error.localizedDescription
@@ -341,7 +339,7 @@ struct WallView: View {
                 // Reload posts to remove the deleted post from the list
                 currentPage = 1
                 hasMorePages = true
-                await loadPosts(isRefresh: true)
+                await loadPosts()
             } catch {
                 await MainActor.run {
                     // Provide user-friendly error message

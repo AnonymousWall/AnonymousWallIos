@@ -88,7 +88,7 @@ struct PostDetailView: View {
                                 Task {
                                     currentPage = 1
                                     hasMorePages = true
-                                    await loadComments(isRefresh: true)
+                                    await loadComments()
                                 }
                             }
                         }
@@ -192,7 +192,7 @@ struct PostDetailView: View {
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
             Task {
-                await loadComments(isRefresh: true)
+                await loadComments()
             }
         }
         .confirmationDialog(
@@ -214,16 +214,14 @@ struct PostDetailView: View {
     // MARK: - Functions
     
     @MainActor
-    private func loadComments(isRefresh: Bool = false) async {
+    private func loadComments() async {
         guard let token = authState.authToken,
               let userId = authState.currentUser?.id else {
             errorMessage = "Authentication required to load comments."
             return
         }
         
-        if isRefresh {
-            isLoadingComments = true
-        }
+        isLoadingComments = true
         errorMessage = nil
         
         defer {
@@ -239,7 +237,7 @@ struct PostDetailView: View {
                 limit: 20,
                 sort: selectedSortOrder
             )
-            // Replace comments on initial load or refresh
+            // Replace comments (used for initial load and refresh)
             comments = response.data
             hasMorePages = currentPage < response.pagination.totalPages
         } catch is CancellationError {
@@ -260,7 +258,7 @@ struct PostDetailView: View {
         currentPage = 1
         hasMorePages = true
         let task = Task {
-            await loadComments(isRefresh: true)
+            await loadComments()
         }
         
         // Wait for the task to complete
@@ -343,7 +341,7 @@ struct PostDetailView: View {
                 }
                 
                 // Reload comments
-                await loadComments(isRefresh: true)
+                await loadComments()
             } catch is CancellationError {
                 // Silently handle cancellation - user likely navigated away
                 await MainActor.run {
@@ -379,7 +377,7 @@ struct PostDetailView: View {
                     userId: userId
                 )
                 // Reload comments
-                await loadComments(isRefresh: true)
+                await loadComments()
             } catch is CancellationError {
                 // Silently handle cancellation - user likely navigated away
                 return

@@ -61,7 +61,7 @@ struct HomeView: View {
                     currentPage = 1
                     hasMorePages = true
                     loadTask = Task {
-                        await loadPosts(isRefresh: true)
+                        await loadPosts()
                     }
                 }
                 
@@ -170,21 +170,19 @@ struct HomeView: View {
         currentPage = 1
         hasMorePages = true
         loadTask = Task {
-            await loadPosts(isRefresh: true)
+            await loadPosts()
         }
         await loadTask?.value
     }
     
     @MainActor
-    private func loadPosts(isRefresh: Bool = false) async {
+    private func loadPosts() async {
         guard let token = authState.authToken,
               let userId = authState.currentUser?.id else {
             return
         }
         
-        if isRefresh {
-            isLoadingPosts = true
-        }
+        isLoadingPosts = true
         errorMessage = nil
         
         defer {
@@ -200,7 +198,7 @@ struct HomeView: View {
                 limit: 20,
                 sort: selectedSortOrder
             )
-            // Replace posts on initial load or refresh
+            // Replace posts (used for initial load and refresh)
             posts = response.data
             hasMorePages = currentPage < response.pagination.totalPages
         } catch is CancellationError {
@@ -273,7 +271,7 @@ struct HomeView: View {
                 _ = try await PostService.shared.toggleLike(postId: post.id, token: token, userId: userId)
                 currentPage = 1
                 hasMorePages = true
-                await loadPosts(isRefresh: true)
+                await loadPosts()
             } catch {
                 await MainActor.run {
                     errorMessage = error.localizedDescription
@@ -294,7 +292,7 @@ struct HomeView: View {
                 _ = try await PostService.shared.hidePost(postId: post.id, token: token, userId: userId)
                 currentPage = 1
                 hasMorePages = true
-                await loadPosts(isRefresh: true)
+                await loadPosts()
             } catch {
                 await MainActor.run {
                     if let networkError = error as? NetworkError {
