@@ -31,51 +31,58 @@ struct LoginView: View {
     }
     
     var body: some View {
-        VStack(spacing: 20) {
-            // Header
-            VStack(spacing: 10) {
-                Image(systemName: "lock.circle.fill")
-                    .resizable()
-                    .frame(width: 80, height: 80)
-                    .foregroundColor(.blue)
+        ScrollView {
+            VStack(spacing: 24) {
+                // Header
+                VStack(spacing: 16) {
+                    ZStack {
+                        Circle()
+                            .fill(Color.purplePinkGradient)
+                            .frame(width: 100, height: 100)
+                            .shadow(color: Color.primaryPurple.opacity(0.3), radius: 10, x: 0, y: 5)
+                        
+                        Image(systemName: "lock.circle.fill")
+                            .resizable()
+                            .frame(width: 80, height: 80)
+                            .foregroundColor(.white)
+                    }
+                    
+                    VStack(spacing: 8) {
+                        Text("Welcome Back")
+                            .font(.system(size: 32, weight: .bold))
+                        
+                        Text("Login to your account")
+                            .font(.system(size: 16))
+                            .foregroundColor(.secondary)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal)
+                    }
+                }
+                .padding(.top, 40)
                 
-                Text("Welcome Back")
-                    .font(.largeTitle)
-                    .fontWeight(.bold)
+                // Login method selector
+                Picker("Login Method", selection: $loginMethod) {
+                    Text("Password").tag(LoginMethod.password)
+                    Text("Verification Code").tag(LoginMethod.verificationCode)
+                }
+                .pickerStyle(SegmentedPickerStyle())
+                .padding(.horizontal)
                 
-                Text("Login to your account")
-                    .font(.subheadline)
-                    .foregroundColor(.gray)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal)
-            }
-            .padding(.top, 40)
-            
-            // Login method selector
-            Picker("Login Method", selection: $loginMethod) {
-                Text("Password").tag(LoginMethod.password)
-                Text("Verification Code").tag(LoginMethod.verificationCode)
-            }
-            .pickerStyle(SegmentedPickerStyle())
-            .padding(.horizontal)
-            
-            Spacer()
-            
-            // Email input
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Email")
-                    .font(.headline)
-                    .foregroundColor(.primary)
-                
-                TextField("Enter your email", text: $email)
-                    .textInputAutocapitalization(.never)
-                    .keyboardType(.emailAddress)
-                    .autocorrectionDisabled()
-                    .padding()
-                    .background(Color(.systemGray6))
-                    .cornerRadius(10)
-            }
-            .padding(.horizontal)
+                // Email input
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Email")
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundColor(.primary)
+                    
+                    TextField("Enter your email", text: $email)
+                        .textInputAutocapitalization(.never)
+                        .keyboardType(.emailAddress)
+                        .autocorrectionDisabled()
+                        .padding()
+                        .background(Color(.systemGray6))
+                        .cornerRadius(12)
+                }
+                .padding(.horizontal)
             
             // Password or Verification Code based on selected method
             if loginMethod == .password {
@@ -154,25 +161,38 @@ struct LoginView: View {
             }
             
             // Login button
-            Button(action: loginUser) {
+            Button(action: {
+                HapticFeedback.light()
+                loginUser()
+            }) {
                 if isLoading {
                     ProgressView()
                         .progressViewStyle(CircularProgressViewStyle(tint: .white))
                         .frame(maxWidth: .infinity)
                 } else {
-                    Text("Login")
-                        .fontWeight(.semibold)
-                        .frame(maxWidth: .infinity)
+                    HStack(spacing: 10) {
+                        Image(systemName: "arrow.right.circle.fill")
+                            .font(.system(size: 18))
+                        Text("Login")
+                            .fontWeight(.bold)
+                            .font(.system(size: 18))
+                    }
+                    .frame(maxWidth: .infinity)
                 }
             }
-            .frame(height: 50)
-            .background(isLoginButtonDisabled ? Color.gray : Color.blue)
+            .frame(height: 56)
+            .background(
+                isLoginButtonDisabled 
+                ? AnyShapeStyle(Color.gray)
+                : AnyShapeStyle(Color.purplePinkGradient)
+            )
             .foregroundColor(.white)
-            .cornerRadius(10)
+            .cornerRadius(16)
+            .shadow(color: isLoginButtonDisabled ? Color.clear : Color.primaryPurple.opacity(0.3), radius: 8, x: 0, y: 4)
             .padding(.horizontal)
             .disabled(isLoginButtonDisabled)
             
-            Spacer()
+            Spacer(minLength: 20)
             
             // Registration link
             HStack {
@@ -182,6 +202,7 @@ struct LoginView: View {
                     .fontWeight(.semibold)
             }
             .padding(.bottom, 20)
+            }
         }
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
@@ -249,6 +270,7 @@ struct LoginView: View {
                 }
                 
                 await MainActor.run {
+                    HapticFeedback.success()
                     isLoading = false
                     // User is logging in - passwordSet from API indicates password status
                     authState.login(user: response.user, token: response.accessToken)

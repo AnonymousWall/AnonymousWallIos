@@ -57,6 +57,7 @@ struct HomeView: View {
                 .padding(.horizontal)
                 .padding(.vertical, 8)
                 .onChange(of: selectedSortOrder) { _, _ in
+                    HapticFeedback.selection()
                     loadTask?.cancel()
                     posts = [] // Clear posts to show loading indicator
                     resetPagination()
@@ -77,16 +78,26 @@ struct HomeView: View {
                     } else if posts.isEmpty && !isLoadingPosts {
                         VStack {
                             Spacer()
-                            VStack(spacing: 16) {
-                                Image(systemName: "globe")
-                                    .font(.system(size: 60))
-                                    .foregroundColor(.gray)
-                                Text("No national posts yet")
-                                    .font(.headline)
-                                    .foregroundColor(.gray)
-                                Text("Be the first to post!")
-                                    .font(.subheadline)
-                                    .foregroundColor(.gray)
+                            VStack(spacing: 20) {
+                                ZStack {
+                                    Circle()
+                                        .fill(Color.tealPurpleGradient)
+                                        .frame(width: 100, height: 100)
+                                        .blur(radius: 30)
+                                    
+                                    Image(systemName: "globe.americas.fill")
+                                        .font(.system(size: 60))
+                                        .foregroundStyle(Color.tealPurpleGradient)
+                                }
+                                
+                                VStack(spacing: 8) {
+                                    Text("No national posts yet")
+                                        .font(.system(size: 22, weight: .bold))
+                                        .foregroundColor(.primary)
+                                    Text("Be the first to post!")
+                                        .font(.system(size: 16))
+                                        .foregroundColor(.secondary)
+                                }
                             }
                             Spacer()
                         }

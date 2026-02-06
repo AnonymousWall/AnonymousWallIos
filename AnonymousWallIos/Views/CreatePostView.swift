@@ -33,6 +33,9 @@ struct CreatePostView: View {
                 .pickerStyle(SegmentedPickerStyle())
                 .padding(.horizontal)
                 .padding(.top, 10)
+                .onChange(of: selectedWall) { _, _ in
+                    HapticFeedback.selection()
+                }
                 
                 // Title input
                 VStack(alignment: .leading, spacing: 8) {
@@ -88,21 +91,34 @@ struct CreatePostView: View {
                 Spacer()
                 
                 // Post button
-                Button(action: createPost) {
+                Button(action: {
+                    HapticFeedback.light()
+                    createPost()
+                }) {
                     if isPosting {
                         ProgressView()
                             .progressViewStyle(CircularProgressViewStyle(tint: .white))
                             .frame(maxWidth: .infinity)
                     } else {
-                        Text("Post")
-                            .fontWeight(.semibold)
-                            .frame(maxWidth: .infinity)
+                        HStack(spacing: 10) {
+                            Image(systemName: "paperplane.fill")
+                                .font(.system(size: 18))
+                            Text("Post")
+                                .fontWeight(.bold)
+                                .font(.system(size: 18))
+                        }
+                        .frame(maxWidth: .infinity)
                     }
                 }
-                .frame(height: 50)
-                .background(isPostButtonDisabled ? Color.gray : Color.blue)
+                .frame(height: 56)
+                .background(
+                    isPostButtonDisabled 
+                    ? AnyShapeStyle(Color.gray)
+                    : AnyShapeStyle(Color.purplePinkGradient)
+                )
                 .foregroundColor(.white)
-                .cornerRadius(10)
+                .cornerRadius(16)
+                .shadow(color: isPostButtonDisabled ? Color.clear : Color.primaryPurple.opacity(0.3), radius: 8, x: 0, y: 4)
                 .padding(.horizontal)
                 .padding(.bottom, 20)
                 .disabled(isPostButtonDisabled)
@@ -164,6 +180,7 @@ struct CreatePostView: View {
             do {
                 _ = try await PostService.shared.createPost(title: trimmedTitle, content: trimmedContent, wall: selectedWall, token: token, userId: userId)
                 await MainActor.run {
+                    HapticFeedback.success()
                     isPosting = false
                     onPostCreated()
                     dismiss()
