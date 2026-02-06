@@ -292,4 +292,115 @@ The segmented control provides three sorting options:
 - Unselected segments: White background with black text
 - Smooth animation when switching between segments
 
+## 8. Profile View - With Sorting Controls
+
+The Profile view now includes sorting controls for both posts and comments.
+
+### Profile View - Posts Tab with Sorting
+
+```
+┌─────────────────────────────────────┐
+│              Profile            ⋯  │
+├─────────────────────────────────────┤
+│                                     │
+│          👤  [Person Icon]          │
+│         user@example.com            │
+│         John Doe                    │
+│                                     │
+│  ┌─────────────┬─────────────────┐ │
+│  │   Posts     │    Comments     │ │  <- Content Segment
+│  └─────────────┴─────────────────┘ │
+│                                     │
+│  ┌───────┬──────────┬─────────┐   │
+│  │Recent │Most Likes│ Oldest  │   │  <- Posts Sorting Control
+│  └───────┴──────────┴─────────┘   │
+│                                     │
+│  ┌────────────────────────────────┐│
+│  │ 👤 John Doe                    ││
+│  │                                ││
+│  │ My Post Title                  ││
+│  │ This is my latest post...      ││
+│  │                                ││
+│  │ ❤️ 12    💬 3        2h ago    ││
+│  └────────────────────────────────┘│
+│                                     │
+│  ┌────────────────────────────────┐│
+│  │ 👤 John Doe                    ││
+│  │                                ││
+│  │ Another Post Title             ││
+│  │ Content of another post...     ││
+│  │                                ││
+│  │ ❤️ 5     💬 1        1d ago    ││
+│  └────────────────────────────────┘│
+│                                     │
+└─────────────────────────────────────┘
+     Campus    National    Profile
+```
+
+### Profile View - Comments Tab with Sorting
+
+```
+┌─────────────────────────────────────┐
+│              Profile            ⋯  │
+├─────────────────────────────────────┤
+│                                     │
+│          👤  [Person Icon]          │
+│         user@example.com            │
+│         John Doe                    │
+│                                     │
+│  ┌─────────────┬─────────────────┐ │
+│  │   Posts     │    Comments     │ │  <- Content Segment
+│  └─────────────┴─────────────────┘ │
+│                                     │
+│  ┌───────────┬─────────────────┐  │
+│  │  Recent   │     Oldest      │  │  <- Comments Sorting Control
+│  └───────────┴─────────────────┘  │
+│                                     │
+│  ┌────────────────────────────────┐│
+│  │ Comment by John Doe            ││
+│  │ on Post #abc123                ││
+│  │                                ││
+│  │ This is my comment on the post ││
+│  │                       1h ago   ││
+│  └────────────────────────────────┘│
+│                                     │
+│  ┌────────────────────────────────┐│
+│  │ Comment by John Doe            ││
+│  │ on Post #def456                ││
+│  │                                ││
+│  │ Another comment here...        ││
+│  │                       5h ago   ││
+│  └────────────────────────────────┘│
+│                                     │
+└─────────────────────────────────────┘
+     Campus    National    Profile
+```
+
+### Profile Sorting Options
+
+**Posts Sorting:**
+1. **Recent** (Default) - Shows newest posts first (sorted by creation time, descending)
+2. **Most Likes** - Shows posts with the most likes first (sorted by like count, descending)
+3. **Oldest** - Shows oldest posts first (sorted by creation time, ascending)
+
+**Comments Sorting:**
+1. **Recent** (Default) - Shows newest comments first (sorted by creation time, descending)
+2. **Oldest** - Shows oldest comments first (sorted by creation time, ascending)
+
+Note: Comments do not have a "Most Likes" option since comments don't have like functionality.
+
+**User Interaction:**
+- Switch between Posts and Comments using the top segment control
+- Each tab displays its own sorting control
+- Tap any sorting segment to change sort order
+- Content automatically reloads with the selected sort order
+- Each tab maintains its own sort preference independently
+- Pull down to refresh maintains the current sort selection
+
+**Visual States:**
+- Selected segment: Blue background with white text
+- Unselected segments: White background with black text
+- Smooth animation when switching between segments
+- Sorting controls appear/disappear based on selected content tab
+
 The UI is built entirely with SwiftUI and follows iOS Human Interface Guidelines for a native iOS experience.
