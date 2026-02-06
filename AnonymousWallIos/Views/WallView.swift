@@ -236,13 +236,8 @@ struct WallView: View {
                 page: currentPage,
                 limit: 20
             )
-            // Always update posts if request succeeded, even if task was cancelled
-            // This ensures refresh works correctly when user releases before completion
-            if isRefresh {
-                posts = response.data
-            } else {
-                posts = response.data
-            }
+            // Replace posts on initial load or refresh
+            posts = response.data
             
             // Update pagination state
             hasMorePages = currentPage < response.pagination.totalPages

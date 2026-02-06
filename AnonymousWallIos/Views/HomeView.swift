@@ -200,11 +200,8 @@ struct HomeView: View {
                 limit: 20,
                 sort: selectedSortOrder
             )
-            if isRefresh {
-                posts = response.data
-            } else {
-                posts = response.data
-            }
+            // Replace posts on initial load or refresh
+            posts = response.data
             hasMorePages = currentPage < response.pagination.totalPages
         } catch is CancellationError {
             return

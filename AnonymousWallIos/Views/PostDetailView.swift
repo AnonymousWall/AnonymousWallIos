@@ -239,11 +239,8 @@ struct PostDetailView: View {
                 limit: 20,
                 sort: selectedSortOrder
             )
-            if isRefresh {
-                comments = response.data
-            } else {
-                comments = response.data
-            }
+            // Replace comments on initial load or refresh
+            comments = response.data
             hasMorePages = currentPage < response.pagination.totalPages
         } catch is CancellationError {
             // Silently handle cancellation - this is expected behavior
