@@ -58,6 +58,7 @@ struct CampusView: View {
                 .padding(.vertical, 8)
                 .onChange(of: selectedSortOrder) { _, _ in
                     loadTask?.cancel()
+                    posts = [] // Clear posts to show loading indicator
                     resetPagination()
                     loadTask = Task {
                         await loadPosts()
