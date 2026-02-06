@@ -103,16 +103,6 @@ HStack {
 }
 .padding(.horizontal)
 .padding(.vertical, 8)
-    .pickerStyle(.segmented)
-    .padding(.horizontal)
-    .padding(.vertical, 8)
-    .onChange(of: commentSortOrder) { _, _ in
-        loadTask?.cancel()
-        loadTask = Task {
-            await loadContent()
-        }
-    }
-}
 ```
 
 ### 3. Sorting Logic
