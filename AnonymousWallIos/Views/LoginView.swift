@@ -183,8 +183,8 @@ struct LoginView: View {
             .frame(height: 56)
             .background(
                 isLoginButtonDisabled 
-                ? Color.gray 
-                : Color.purplePinkGradient
+                ? AnyShapeStyle(Color.gray)
+                : AnyShapeStyle(Color.purplePinkGradient)
             )
             .foregroundColor(.white)
             .cornerRadius(16)
@@ -202,6 +202,7 @@ struct LoginView: View {
                     .fontWeight(.semibold)
             }
             .padding(.bottom, 20)
+            }
         }
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {

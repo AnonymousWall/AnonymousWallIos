@@ -113,8 +113,8 @@ struct CreatePostView: View {
                 .frame(height: 56)
                 .background(
                     isPostButtonDisabled 
-                    ? Color.gray 
-                    : Color.purplePinkGradient
+                    ? AnyShapeStyle(Color.gray)
+                    : AnyShapeStyle(Color.purplePinkGradient)
                 )
                 .foregroundColor(.white)
                 .cornerRadius(16)

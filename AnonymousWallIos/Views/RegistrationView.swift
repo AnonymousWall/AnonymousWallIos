@@ -80,7 +80,7 @@ struct RegistrationView: View {
                                 }
                                 .padding(.horizontal, 18)
                                 .padding(.vertical, 14)
-                                .background(email.isEmpty ? Color.gray : Color.tealPurpleGradient)
+                                .background(email.isEmpty ? AnyShapeStyle(Color.gray) : AnyShapeStyle(Color.tealPurpleGradient))
                                 .foregroundColor(.white)
                                 .cornerRadius(12)
                                 .shadow(color: email.isEmpty ? Color.clear : Color.vibrantTeal.opacity(0.3), radius: 4, x: 0, y: 2)
@@ -145,8 +145,8 @@ struct RegistrationView: View {
                     .frame(height: 56)
                     .background(
                         verificationCode.isEmpty 
-                        ? Color.gray 
-                        : Color.tealPurpleGradient
+                        ? AnyShapeStyle(Color.gray)
+                        : AnyShapeStyle(Color.tealPurpleGradient)
                     )
                     .foregroundColor(.white)
                     .cornerRadius(16)

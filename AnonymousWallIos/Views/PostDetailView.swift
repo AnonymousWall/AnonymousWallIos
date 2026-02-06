@@ -204,7 +204,7 @@ struct PostDetailView: View {
                     } else {
                         ZStack {
                             Circle()
-                                .fill(commentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? Color.gray.opacity(0.3) : Color.purplePinkGradient)
+                                .fill(commentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? AnyShapeStyle(Color.gray.opacity(0.3)) : AnyShapeStyle(Color.purplePinkGradient))
                                 .frame(width: 36, height: 36)
                             
                             Image(systemName: "arrow.up")
