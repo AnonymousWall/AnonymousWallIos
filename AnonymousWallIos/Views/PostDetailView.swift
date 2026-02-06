@@ -19,6 +19,7 @@ struct PostDetailView: View {
     @State private var errorMessage: String?
     @State private var showDeleteConfirmation = false
     @State private var commentToDelete: Comment?
+    @State private var selectedSortOrder: SortOrder = .newest
     
     var body: some View {
         VStack(spacing: 0) {
@@ -66,7 +67,30 @@ struct PostDetailView: View {
                     Divider()
                         .padding(.vertical, 8)
                     
-                    // Comments section
+                    // Comments section header with sorting
+                    HStack {
+                        Text("Comments")
+                            .font(.headline)
+                        
+                        Spacer()
+                        
+                        // Sort order picker for comments
+                        if !comments.isEmpty {
+                            Picker("Sort", selection: $selectedSortOrder) {
+                                Text("Newest").tag(SortOrder.newest)
+                                Text("Oldest").tag(SortOrder.oldest)
+                            }
+                            .pickerStyle(.menu)
+                            .onChange(of: selectedSortOrder) { _, _ in
+                                Task {
+                                    await loadComments()
+                                }
+                            }
+                        }
+                    }
+                    .padding(.horizontal)
+                    .padding(.bottom, 8)
+                    
                     if isLoadingComments && comments.isEmpty {
                         HStack {
                             Spacer()
@@ -90,10 +114,6 @@ struct PostDetailView: View {
                         .padding(.vertical, 32)
                     } else {
                         VStack(alignment: .leading, spacing: 12) {
-                            Text("Comments")
-                                .font(.headline)
-                                .padding(.horizontal)
-                            
                             ForEach(comments) { comment in
                                 CommentRowView(
                                     comment: comment,
@@ -191,7 +211,8 @@ struct PostDetailView: View {
             let response = try await PostService.shared.getComments(
                 postId: post.id,
                 token: token,
-                userId: userId
+                userId: userId,
+                sort: selectedSortOrder
             )
             comments = response.data
         } catch is CancellationError {

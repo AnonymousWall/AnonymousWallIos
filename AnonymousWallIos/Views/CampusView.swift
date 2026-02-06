@@ -122,8 +122,9 @@ struct CampusView: View {
             SetPasswordView()
         }
         .onAppear {
-            // Show password setup if needed
-            if authState.needsPasswordSetup {
+            // Show password setup if needed (only once)
+            if authState.needsPasswordSetup && !authState.hasShownPasswordSetup {
+                authState.markPasswordSetupShown()
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                     showSetPassword = true
                 }

@@ -13,6 +13,7 @@ class AuthState: ObservableObject {
     @Published var currentUser: User?
     @Published var authToken: String?
     @Published var needsPasswordSetup = false
+    @Published var hasShownPasswordSetup = false
     
     private let config = AppConfiguration.shared
     private let keychainAuthTokenKey: String
@@ -37,6 +38,10 @@ class AuthState: ObservableObject {
         UserDefaults.standard.set(needsPasswordSetup, forKey: AppConfiguration.UserDefaultsKeys.needsPasswordSetup)
     }
     
+    func markPasswordSetupShown() {
+        self.hasShownPasswordSetup = true
+    }
+    
     func updateUser(_ user: User) {
         self.currentUser = user
         // Update stored user data
@@ -55,6 +60,7 @@ class AuthState: ObservableObject {
         self.authToken = nil
         self.isAuthenticated = false
         self.needsPasswordSetup = false
+        self.hasShownPasswordSetup = false
         clearAuthState()
     }
     

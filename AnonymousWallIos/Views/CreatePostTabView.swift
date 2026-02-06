@@ -49,10 +49,6 @@ struct CreatePostTabView: View {
                 showCreatePost = false
             })
         }
-        .onAppear {
-            // Automatically show create post sheet when tab is tapped
-            showCreatePost = true
-        }
     }
 }
 
