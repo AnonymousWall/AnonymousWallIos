@@ -86,8 +86,7 @@ struct PostDetailView: View {
                             .pickerStyle(.menu)
                             .onChange(of: selectedSortOrder) { _, _ in
                                 Task {
-                                    currentPage = 1
-                                    hasMorePages = true
+                                    resetPagination()
                                     await loadComments()
                                 }
                             }
@@ -213,6 +212,12 @@ struct PostDetailView: View {
     
     // MARK: - Functions
     
+    /// Reset pagination to initial state
+    private func resetPagination() {
+        currentPage = 1
+        hasMorePages = true
+    }
+    
     @MainActor
     private func loadComments() async {
         guard let token = authState.authToken,
@@ -255,8 +260,7 @@ struct PostDetailView: View {
     private func refreshComments() async {
         // Create a new task that won't be cancelled by the refreshable gesture
         // This ensures refresh works correctly when user releases before completion
-        currentPage = 1
-        hasMorePages = true
+        resetPagination()
         let task = Task {
             await loadComments()
         }
@@ -289,28 +293,29 @@ struct PostDetailView: View {
             isLoadingMoreComments = false
         }
         
-        currentPage += 1
+        // Calculate next page
+        let nextPage = currentPage + 1
         
         do {
             let response = try await PostService.shared.getComments(
                 postId: post.id,
                 token: token,
                 userId: userId,
-                page: currentPage,
+                page: nextPage,
                 limit: 20,
                 sort: selectedSortOrder
             )
             
+            // Update page number only after successful response
+            currentPage = nextPage
+            
             comments.append(contentsOf: response.data)
             hasMorePages = currentPage < response.pagination.totalPages
         } catch is CancellationError {
-            currentPage -= 1
             return
         } catch NetworkError.cancelled {
-            currentPage -= 1
             return
         } catch {
-            currentPage -= 1
             errorMessage = "Failed to load more comments: \(error.localizedDescription)"
         }
     }

@@ -164,8 +164,7 @@ struct WallView: View {
             CreatePostView(onPostCreated: {
                 Task {
                     // Reset pagination and reload from first page
-                    currentPage = 1
-                    hasMorePages = true
+                    resetPagination()
                     await loadPosts()
                 }
             })
@@ -193,14 +192,19 @@ struct WallView: View {
     
     // MARK: - Functions
     
+    /// Reset pagination to initial state
+    private func resetPagination() {
+        currentPage = 1
+        hasMorePages = true
+    }
+    
     @MainActor
     private func refreshPosts() async {
         // Cancel any existing load task
         loadTask?.cancel()
         
         // Reset pagination state
-        currentPage = 1
-        hasMorePages = true
+        resetPagination()
         
         // Create a new task that won't be cancelled by the refreshable gesture
         loadTask = Task {
@@ -274,16 +278,19 @@ struct WallView: View {
             isLoadingMore = false
         }
         
-        // Increment page number
-        currentPage += 1
+        // Calculate next page
+        let nextPage = currentPage + 1
         
         do {
             let response = try await PostService.shared.fetchPosts(
                 token: token,
                 userId: userId,
-                page: currentPage,
+                page: nextPage,
                 limit: 20
             )
+            
+            // Update page number only after successful response
+            currentPage = nextPage
             
             // Append new posts
             posts.append(contentsOf: response.data)
@@ -291,16 +298,13 @@ struct WallView: View {
             // Update pagination state
             hasMorePages = currentPage < response.pagination.totalPages
         } catch is CancellationError {
-            // Revert page increment on cancellation
-            currentPage -= 1
+            // Don't update page number on cancellation
             return
         } catch NetworkError.cancelled {
-            // Revert page increment on cancellation
-            currentPage -= 1
+            // Don't update page number on cancellation
             return
         } catch {
-            // Revert page increment on error
-            currentPage -= 1
+            // Don't update page number on error
             errorMessage = error.localizedDescription
         }
     }
@@ -315,8 +319,7 @@ struct WallView: View {
             do {
                 _ = try await PostService.shared.toggleLike(postId: post.id, token: token, userId: userId)
                 // Reload posts to get updated like status
-                currentPage = 1
-                hasMorePages = true
+                resetPagination()
                 await loadPosts()
             } catch {
                 await MainActor.run {
@@ -337,8 +340,7 @@ struct WallView: View {
             do {
                 _ = try await PostService.shared.hidePost(postId: post.id, token: token, userId: userId)
                 // Reload posts to remove the deleted post from the list
-                currentPage = 1
-                hasMorePages = true
+                resetPagination()
                 await loadPosts()
             } catch {
                 await MainActor.run {

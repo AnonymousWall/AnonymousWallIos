@@ -58,8 +58,7 @@ struct HomeView: View {
                 .padding(.vertical, 8)
                 .onChange(of: selectedSortOrder) { _, _ in
                     loadTask?.cancel()
-                    currentPage = 1
-                    hasMorePages = true
+                    resetPagination()
                     loadTask = Task {
                         await loadPosts()
                     }
@@ -164,11 +163,16 @@ struct HomeView: View {
     
     // MARK: - Functions
     
+    /// Reset pagination to initial state
+    private func resetPagination() {
+        currentPage = 1
+        hasMorePages = true
+    }
+    
     @MainActor
     private func refreshPosts() async {
         loadTask?.cancel()
-        currentPage = 1
-        hasMorePages = true
+        resetPagination()
         loadTask = Task {
             await loadPosts()
         }
@@ -234,28 +238,29 @@ struct HomeView: View {
             isLoadingMore = false
         }
         
-        currentPage += 1
+        // Calculate next page
+        let nextPage = currentPage + 1
         
         do {
             let response = try await PostService.shared.fetchPosts(
                 token: token,
                 userId: userId,
                 wall: .national,
-                page: currentPage,
+                page: nextPage,
                 limit: 20,
                 sort: selectedSortOrder
             )
             
+            // Update page number only after successful response
+            currentPage = nextPage
+            
             posts.append(contentsOf: response.data)
             hasMorePages = currentPage < response.pagination.totalPages
         } catch is CancellationError {
-            currentPage -= 1
             return
         } catch NetworkError.cancelled {
-            currentPage -= 1
             return
         } catch {
-            currentPage -= 1
             errorMessage = error.localizedDescription
         }
     }
@@ -269,8 +274,7 @@ struct HomeView: View {
         Task {
             do {
                 _ = try await PostService.shared.toggleLike(postId: post.id, token: token, userId: userId)
-                currentPage = 1
-                hasMorePages = true
+                resetPagination()
                 await loadPosts()
             } catch {
                 await MainActor.run {
@@ -290,8 +294,7 @@ struct HomeView: View {
         Task {
             do {
                 _ = try await PostService.shared.hidePost(postId: post.id, token: token, userId: userId)
-                currentPage = 1
-                hasMorePages = true
+                resetPagination()
                 await loadPosts()
             } catch {
                 await MainActor.run {
