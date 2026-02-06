@@ -7,6 +7,14 @@
 
 import SwiftUI
 
+// PreferenceKey to track scroll offset
+struct ScrollOffsetPreferenceKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = nextValue()
+    }
+}
+
 struct ProfileView: View {
     @EnvironmentObject var authState: AuthState
     @State private var selectedSegment = 0
@@ -21,6 +29,45 @@ struct ProfileView: View {
     @State private var loadTask: Task<Void, Never>?
     @State private var postSortOrder: SortOrder = .newest
     @State private var commentSortOrder: SortOrder = .newest
+    @State private var scrollOffset: CGFloat = 0
+    
+    // Computed properties for banner collapse animation
+    private var avatarSize: CGFloat {
+        let minSize: CGFloat = 50
+        let maxSize: CGFloat = 90
+        let threshold: CGFloat = 100
+        
+        if scrollOffset >= 0 {
+            return maxSize
+        }
+        
+        let progress = min(abs(scrollOffset) / threshold, 1.0)
+        return maxSize - (progress * (maxSize - minSize))
+    }
+    
+    private var bannerOpacity: Double {
+        let threshold: CGFloat = 50
+        
+        if scrollOffset >= 0 {
+            return 1.0
+        }
+        
+        let progress = min(abs(scrollOffset) / threshold, 1.0)
+        return 1.0 - progress
+    }
+    
+    private var bannerVerticalPadding: CGFloat {
+        let minPadding: CGFloat = 5
+        let maxPadding: CGFloat = 20
+        let threshold: CGFloat = 100
+        
+        if scrollOffset >= 0 {
+            return maxPadding
+        }
+        
+        let progress = min(abs(scrollOffset) / threshold, 1.0)
+        return maxPadding - (progress * (maxPadding - minPadding))
+    }
     
     var body: some View {
         NavigationStack {
@@ -47,42 +94,47 @@ struct ProfileView: View {
                     .padding()
                 }
                 
-                // User info section
+                // User info section - collapsible based on scroll
                 VStack(spacing: 12) {
                     // Avatar with gradient background
                     ZStack {
                         Circle()
                             .fill(Color.purplePinkGradient)
-                            .frame(width: 90, height: 90)
+                            .frame(width: avatarSize, height: avatarSize)
                             .shadow(color: Color.primaryPurple.opacity(0.3), radius: 10, x: 0, y: 5)
                         
                         Image(systemName: "person.circle.fill")
-                            .font(.system(size: 80))
+                            .font(.system(size: avatarSize - 10))
                             .foregroundColor(.white)
                     }
                     
-                    if let email = authState.currentUser?.email {
-                        Text(email)
-                            .font(.system(size: 17, weight: .semibold))
-                            .foregroundColor(.primary)
-                    }
-                    
-                    if let profileName = authState.currentUser?.profileName {
-                        HStack(spacing: 6) {
-                            Image(systemName: "person.fill")
-                                .font(.caption)
-                                .foregroundColor(.vibrantTeal)
-                            Text(profileName)
-                                .font(.system(size: 15, weight: .medium))
-                                .foregroundColor(.secondary)
+                    if bannerOpacity > 0 {
+                        if let email = authState.currentUser?.email {
+                            Text(email)
+                                .font(.system(size: 17, weight: .semibold))
+                                .foregroundColor(.primary)
+                                .opacity(bannerOpacity)
                         }
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 6)
-                        .background(Color.vibrantTeal.opacity(0.15))
-                        .cornerRadius(12)
+                        
+                        if let profileName = authState.currentUser?.profileName {
+                            HStack(spacing: 6) {
+                                Image(systemName: "person.fill")
+                                    .font(.caption)
+                                    .foregroundColor(.vibrantTeal)
+                                Text(profileName)
+                                    .font(.system(size: 15, weight: .medium))
+                                    .foregroundColor(.secondary)
+                            }
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 6)
+                            .background(Color.vibrantTeal.opacity(0.15))
+                            .cornerRadius(12)
+                            .opacity(bannerOpacity)
+                        }
                     }
                 }
-                .padding(.vertical, 20)
+                .padding(.vertical, bannerVerticalPadding)
+                .animation(.easeInOut(duration: 0.2), value: scrollOffset)
                 
                 // Segment control
                 Picker("Content Type", selection: $selectedSegment) {
@@ -178,6 +230,14 @@ struct ProfileView: View {
                 
                 // Content area
                 ScrollView {
+                    GeometryReader { geometry in
+                        Color.clear.preference(
+                            key: ScrollOffsetPreferenceKey.self,
+                            value: geometry.frame(in: .named("scrollView")).minY
+                        )
+                    }
+                    .frame(height: 0)
+                    
                     if isLoading {
                         VStack {
                             Spacer()
@@ -267,6 +327,10 @@ struct ProfileView: View {
                             .padding()
                         }
                     }
+                }
+                .coordinateSpace(name: "scrollView")
+                .onPreferenceChange(ScrollOffsetPreferenceKey.self) { value in
+                    scrollOffset = value
                 }
                 .refreshable {
                     await refreshContent()
