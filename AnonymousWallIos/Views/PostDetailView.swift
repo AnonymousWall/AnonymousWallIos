@@ -14,6 +14,9 @@ struct PostDetailView: View {
     let post: Post
     @State private var comments: [Comment] = []
     @State private var isLoadingComments = false
+    @State private var isLoadingMoreComments = false
+    @State private var currentPage = 1
+    @State private var hasMorePages = true
     @State private var commentText = ""
     @State private var isSubmitting = false
     @State private var errorMessage: String?
@@ -83,6 +86,7 @@ struct PostDetailView: View {
                             .pickerStyle(.menu)
                             .onChange(of: selectedSortOrder) { _, _ in
                                 Task {
+                                    resetPagination()
                                     await loadComments()
                                 }
                             }
@@ -123,6 +127,22 @@ struct PostDetailView: View {
                                         showDeleteConfirmation = true
                                     }
                                 )
+                                .onAppear {
+                                    // Load more when the last comment appears
+                                    if comment.id == comments.last?.id {
+                                        loadMoreCommentsIfNeeded()
+                                    }
+                                }
+                            }
+                            
+                            // Loading indicator at bottom
+                            if isLoadingMoreComments {
+                                HStack {
+                                    Spacer()
+                                    ProgressView()
+                                        .padding()
+                                    Spacer()
+                                }
                             }
                         }
                     }
@@ -192,6 +212,12 @@ struct PostDetailView: View {
     
     // MARK: - Functions
     
+    /// Reset pagination to initial state
+    private func resetPagination() {
+        currentPage = 1
+        hasMorePages = true
+    }
+    
     @MainActor
     private func loadComments() async {
         guard let token = authState.authToken,
@@ -212,9 +238,13 @@ struct PostDetailView: View {
                 postId: post.id,
                 token: token,
                 userId: userId,
+                page: currentPage,
+                limit: 20,
                 sort: selectedSortOrder
             )
+            // Replace comments (used for initial load and refresh)
             comments = response.data
+            hasMorePages = currentPage < response.pagination.totalPages
         } catch is CancellationError {
             // Silently handle cancellation - this is expected behavior
             return
@@ -230,12 +260,64 @@ struct PostDetailView: View {
     private func refreshComments() async {
         // Create a new task that won't be cancelled by the refreshable gesture
         // This ensures refresh works correctly when user releases before completion
+        resetPagination()
         let task = Task {
             await loadComments()
         }
         
         // Wait for the task to complete
         await task.value
+    }
+    
+    private func loadMoreCommentsIfNeeded() {
+        guard !isLoadingMoreComments && hasMorePages else { return }
+        
+        Task { @MainActor in
+            // Check again inside the task to prevent race condition
+            guard !isLoadingMoreComments && hasMorePages else { return }
+            
+            isLoadingMoreComments = true
+            await loadMoreComments()
+        }
+    }
+    
+    @MainActor
+    private func loadMoreComments() async {
+        guard let token = authState.authToken,
+              let userId = authState.currentUser?.id else {
+            isLoadingMoreComments = false
+            return
+        }
+        
+        defer {
+            isLoadingMoreComments = false
+        }
+        
+        // Calculate next page
+        let nextPage = currentPage + 1
+        
+        do {
+            let response = try await PostService.shared.getComments(
+                postId: post.id,
+                token: token,
+                userId: userId,
+                page: nextPage,
+                limit: 20,
+                sort: selectedSortOrder
+            )
+            
+            // Update page number only after successful response
+            currentPage = nextPage
+            
+            comments.append(contentsOf: response.data)
+            hasMorePages = currentPage < response.pagination.totalPages
+        } catch is CancellationError {
+            return
+        } catch NetworkError.cancelled {
+            return
+        } catch {
+            errorMessage = error.localizedDescription
+        }
     }
     
     private func submitComment() {

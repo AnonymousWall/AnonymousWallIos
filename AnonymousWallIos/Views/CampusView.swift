@@ -12,6 +12,9 @@ struct CampusView: View {
     @State private var showSetPassword = false
     @State private var posts: [Post] = []
     @State private var isLoadingPosts = false
+    @State private var isLoadingMore = false
+    @State private var currentPage = 1
+    @State private var hasMorePages = true
     @State private var errorMessage: String?
     @State private var loadTask: Task<Void, Never>?
     @State private var selectedSortOrder: SortOrder = .newest
@@ -55,6 +58,7 @@ struct CampusView: View {
                 .padding(.vertical, 8)
                 .onChange(of: selectedSortOrder) { _, _ in
                     loadTask?.cancel()
+                    resetPagination()
                     loadTask = Task {
                         await loadPosts()
                     }
@@ -98,6 +102,22 @@ struct CampusView: View {
                                     )
                                 }
                                 .buttonStyle(PlainButtonStyle())
+                                .onAppear {
+                                    // Load more when the last post appears
+                                    if post.id == posts.last?.id {
+                                        loadMoreIfNeeded()
+                                    }
+                                }
+                            }
+                            
+                            // Loading indicator at bottom
+                            if isLoadingMore {
+                                HStack {
+                                    Spacer()
+                                    ProgressView()
+                                        .padding()
+                                    Spacer()
+                                }
                             }
                         }
                         .padding()
@@ -143,9 +163,16 @@ struct CampusView: View {
     
     // MARK: - Functions
     
+    /// Reset pagination to initial state
+    private func resetPagination() {
+        currentPage = 1
+        hasMorePages = true
+    }
+    
     @MainActor
     private func refreshPosts() async {
         loadTask?.cancel()
+        resetPagination()
         loadTask = Task {
             await loadPosts()
         }
@@ -171,9 +198,64 @@ struct CampusView: View {
                 token: token,
                 userId: userId,
                 wall: .campus,
+                page: currentPage,
+                limit: 20,
                 sort: selectedSortOrder
             )
+            // Replace posts (used for initial load and refresh)
             posts = response.data
+            hasMorePages = currentPage < response.pagination.totalPages
+        } catch is CancellationError {
+            return
+        } catch NetworkError.cancelled {
+            return
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+    
+    private func loadMoreIfNeeded() {
+        guard !isLoadingMore && hasMorePages else { return }
+        
+        Task { @MainActor in
+            // Check again inside the task to prevent race condition
+            guard !isLoadingMore && hasMorePages else { return }
+            
+            isLoadingMore = true
+            await loadMorePosts()
+        }
+    }
+    
+    @MainActor
+    private func loadMorePosts() async {
+        guard let token = authState.authToken,
+              let userId = authState.currentUser?.id else {
+            isLoadingMore = false
+            return
+        }
+        
+        defer {
+            isLoadingMore = false
+        }
+        
+        // Calculate next page
+        let nextPage = currentPage + 1
+        
+        do {
+            let response = try await PostService.shared.fetchPosts(
+                token: token,
+                userId: userId,
+                wall: .campus,
+                page: nextPage,
+                limit: 20,
+                sort: selectedSortOrder
+            )
+            
+            // Update page number only after successful response
+            currentPage = nextPage
+            
+            posts.append(contentsOf: response.data)
+            hasMorePages = currentPage < response.pagination.totalPages
         } catch is CancellationError {
             return
         } catch NetworkError.cancelled {
@@ -192,6 +274,7 @@ struct CampusView: View {
         Task {
             do {
                 _ = try await PostService.shared.toggleLike(postId: post.id, token: token, userId: userId)
+                resetPagination()
                 await loadPosts()
             } catch {
                 await MainActor.run {
@@ -211,6 +294,7 @@ struct CampusView: View {
         Task {
             do {
                 _ = try await PostService.shared.hidePost(postId: post.id, token: token, userId: userId)
+                resetPagination()
                 await loadPosts()
             } catch {
                 await MainActor.run {
