@@ -422,8 +422,26 @@ struct ProfileView: View {
         
         Task {
             do {
-                _ = try await PostService.shared.toggleLike(postId: post.id, token: token, userId: userId)
-                await loadMyPosts(token: token, userId: userId)
+                let response = try await PostService.shared.toggleLike(postId: post.id, token: token, userId: userId)
+                
+                // Update the post locally without reloading the entire list
+                await MainActor.run {
+                    if let index = myPosts.firstIndex(where: { $0.id == post.id }) {
+                        let updatedPost = Post(
+                            id: myPosts[index].id,
+                            title: myPosts[index].title,
+                            content: myPosts[index].content,
+                            wall: myPosts[index].wall,
+                            likes: response.liked ? myPosts[index].likes + 1 : myPosts[index].likes - 1,
+                            comments: myPosts[index].comments,
+                            liked: response.liked,
+                            author: myPosts[index].author,
+                            createdAt: myPosts[index].createdAt,
+                            updatedAt: myPosts[index].updatedAt
+                        )
+                        myPosts[index] = updatedPost
+                    }
+                }
             } catch {
                 await MainActor.run {
                     errorMessage = error.localizedDescription
