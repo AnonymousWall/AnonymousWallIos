@@ -88,7 +88,10 @@ struct CreatePostView: View {
                 Spacer()
                 
                 // Post button
-                Button(action: createPost) {
+                Button(action: {
+                    HapticFeedback.success()
+                    createPost()
+                }) {
                     if isPosting {
                         ProgressView()
                             .progressViewStyle(CircularProgressViewStyle(tint: .white))

@@ -30,49 +30,64 @@ struct PostDetailView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
                     // Original post
-                    VStack(alignment: .leading, spacing: 12) {
+                    VStack(alignment: .leading, spacing: 14) {
                         // Post title
                         Text(post.title)
-                            .font(.title2)
-                            .fontWeight(.bold)
+                            .font(.system(size: 24, weight: .bold))
                             .foregroundColor(.primary)
                             .fixedSize(horizontal: false, vertical: true)
                         
                         Text(post.content)
-                            .font(.body)
+                            .font(.system(size: 16))
                             .foregroundColor(.primary)
+                            .lineSpacing(2)
                             .fixedSize(horizontal: false, vertical: true)
                         
-                        HStack {
-                            Text(DateFormatting.formatRelativeTime(post.createdAt))
-                                .font(.caption)
-                                .foregroundColor(.gray)
+                        HStack(spacing: 16) {
+                            HStack(spacing: 4) {
+                                Image(systemName: "clock")
+                                    .font(.caption2)
+                                    .foregroundColor(.secondary)
+                                Text(DateFormatting.formatRelativeTime(post.createdAt))
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                            }
                             
                             Spacer()
                             
                             HStack(spacing: 16) {
-                                HStack(spacing: 4) {
+                                HStack(spacing: 5) {
                                     Image(systemName: "heart.fill")
-                                        .foregroundColor(.gray)
+                                        .font(.system(size: 16))
+                                        .foregroundColor(.pink)
                                     Text("\(post.likes)")
-                                        .font(.caption)
-                                        .foregroundColor(.gray)
+                                        .font(.subheadline)
+                                        .fontWeight(.semibold)
+                                        .foregroundColor(.pink)
                                 }
                                 
-                                HStack(spacing: 4) {
-                                    Image(systemName: "bubble.left")
-                                        .foregroundColor(.gray)
+                                HStack(spacing: 5) {
+                                    Image(systemName: "bubble.left.fill")
+                                        .font(.system(size: 16))
+                                        .foregroundColor(.vibrantTeal)
                                     Text("\(post.comments)")
-                                        .font(.caption)
-                                        .foregroundColor(.gray)
+                                        .font(.subheadline)
+                                        .fontWeight(.semibold)
+                                        .foregroundColor(.vibrantTeal)
                                 }
                             }
                         }
                     }
-                    .padding()
-                    .background(Color(.systemBackground))
-                    .cornerRadius(10)
-                    .shadow(color: Color.black.opacity(0.1), radius: 2, x: 0, y: 1)
+                    .padding(16)
+                    .background(
+                        RoundedRectangle(cornerRadius: 16)
+                            .fill(Color(.systemBackground))
+                            .shadow(color: Color.black.opacity(0.08), radius: 8, x: 0, y: 4)
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 16)
+                            .stroke(Color(.systemGray5), lineWidth: 0.5)
+                    )
                     
                     Divider()
                         .padding(.vertical, 8)
@@ -179,14 +194,24 @@ struct PostDetailView: View {
                     .disabled(isSubmitting)
                     .accessibilityLabel("Comment text field")
                 
-                Button(action: submitComment) {
+                Button(action: {
+                    HapticFeedback.success()
+                    submitComment()
+                }) {
                     if isSubmitting {
                         ProgressView()
-                            .frame(width: 24, height: 24)
+                            .frame(width: 32, height: 32)
                     } else {
-                        Image(systemName: "arrow.up.circle.fill")
-                            .font(.title2)
-                            .foregroundColor(commentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? .gray : .blue)
+                        ZStack {
+                            Circle()
+                                .fill(commentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? Color.gray.opacity(0.3) : Color.purplePinkGradient)
+                                .frame(width: 36, height: 36)
+                            
+                            Image(systemName: "arrow.up")
+                                .font(.system(size: 16, weight: .bold))
+                                .foregroundColor(.white)
+                        }
+                        .shadow(color: commentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? Color.clear : Color.primaryPurple.opacity(0.3), radius: 4, x: 0, y: 2)
                     }
                 }
                 .disabled(commentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isSubmitting)

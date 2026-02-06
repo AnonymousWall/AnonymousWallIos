@@ -81,7 +81,10 @@ struct PostRowView: View {
                 Spacer()
                 
                 // Like button
-                Button(action: onLike) {
+                Button(action: {
+                    HapticFeedback.medium()
+                    onLike()
+                }) {
                     HStack(spacing: 5) {
                         Image(systemName: post.liked ? "heart.fill" : "heart")
                             .font(.system(size: 16))
@@ -115,7 +118,10 @@ struct PostRowView: View {
                 
                 // Delete button (only for own posts)
                 if isOwnPost {
-                    Button(action: { showDeleteConfirmation = true }) {
+                    Button(action: { 
+                        HapticFeedback.warning()
+                        showDeleteConfirmation = true 
+                    }) {
                         Image(systemName: "trash.fill")
                             .font(.system(size: 16))
                             .foregroundColor(.white)

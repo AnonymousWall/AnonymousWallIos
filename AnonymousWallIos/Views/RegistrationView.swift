@@ -19,64 +19,76 @@ struct RegistrationView: View {
     
     var body: some View {
         NavigationStack {
-            VStack(spacing: 20) {
-                // Header
-                VStack(spacing: 10) {
-                    Image(systemName: "person.circle.fill")
-                        .resizable()
-                        .frame(width: 80, height: 80)
-                        .foregroundColor(.blue)
-                    
-                    Text("Create Account")
-                        .font(.largeTitle)
-                        .fontWeight(.bold)
-                    
-                    Text(codeSent ? "Enter the code sent to your email" : "Enter your email to get started")
-                        .font(.subheadline)
-                        .foregroundColor(.gray)
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal)
-                }
-                .padding(.top, 40)
-                
-                Spacer()
-                
-                // Email input
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Email")
-                        .font(.headline)
-                        .foregroundColor(.primary)
-                    
-                    HStack {
-                        TextField("Enter your email", text: $email)
-                            .textInputAutocapitalization(.never)
-                            .keyboardType(.emailAddress)
-                            .autocorrectionDisabled()
-                            .disabled(codeSent)
-                            .padding()
-                            .background(Color(.systemGray6))
-                            .cornerRadius(10)
+            ScrollView {
+                VStack(spacing: 24) {
+                    // Header
+                    VStack(spacing: 16) {
+                        ZStack {
+                            Circle()
+                                .fill(Color.tealPurpleGradient)
+                                .frame(width: 100, height: 100)
+                                .shadow(color: Color.vibrantTeal.opacity(0.3), radius: 10, x: 0, y: 5)
+                            
+                            Image(systemName: "person.circle.fill")
+                                .resizable()
+                                .frame(width: 80, height: 80)
+                                .foregroundColor(.white)
+                        }
                         
-                        if !codeSent {
-                            Button(action: sendVerificationCode) {
-                                if isSendingCode {
-                                    ProgressView()
-                                        .progressViewStyle(CircularProgressViewStyle())
-                                } else {
-                                    Text("Get Code")
-                                        .fontWeight(.semibold)
-                                }
-                            }
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 12)
-                            .background(email.isEmpty ? Color.gray : Color.blue)
-                            .foregroundColor(.white)
-                            .cornerRadius(10)
-                            .disabled(email.isEmpty || isSendingCode)
+                        VStack(spacing: 8) {
+                            Text("Create Account")
+                                .font(.system(size: 32, weight: .bold))
+                            
+                            Text(codeSent ? "Enter the code sent to your email" : "Enter your email to get started")
+                                .font(.system(size: 16))
+                                .foregroundColor(.secondary)
+                                .multilineTextAlignment(.center)
+                                .padding(.horizontal)
                         }
                     }
-                }
-                .padding(.horizontal)
+                    .padding(.top, 40)
+                    
+                    // Email input
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Email")
+                            .font(.system(size: 15, weight: .semibold))
+                            .foregroundColor(.primary)
+                        
+                        HStack {
+                            TextField("Enter your email", text: $email)
+                                .textInputAutocapitalization(.never)
+                                .keyboardType(.emailAddress)
+                                .autocorrectionDisabled()
+                                .disabled(codeSent)
+                                .padding()
+                                .background(Color(.systemGray6))
+                                .cornerRadius(12)
+                            
+                            if !codeSent {
+                                Button(action: {
+                                    HapticFeedback.success()
+                                    sendVerificationCode()
+                                }) {
+                                    if isSendingCode {
+                                        ProgressView()
+                                            .progressViewStyle(CircularProgressViewStyle())
+                                    } else {
+                                        Text("Get Code")
+                                            .fontWeight(.bold)
+                                            .font(.system(size: 14))
+                                    }
+                                }
+                                .padding(.horizontal, 18)
+                                .padding(.vertical, 14)
+                                .background(email.isEmpty ? Color.gray : Color.tealPurpleGradient)
+                                .foregroundColor(.white)
+                                .cornerRadius(12)
+                                .shadow(color: email.isEmpty ? Color.clear : Color.vibrantTeal.opacity(0.3), radius: 4, x: 0, y: 2)
+                                .disabled(email.isEmpty || isSendingCode)
+                            }
+                        }
+                    }
+                    .padding(.horizontal)
                 
                 // Verification code input (shown after code is sent)
                 if codeSent {
@@ -111,26 +123,39 @@ struct RegistrationView: View {
                 
                 // Register button (shown after code is sent)
                 if codeSent {
-                    Button(action: registerUser) {
+                    Button(action: {
+                        HapticFeedback.success()
+                        registerUser()
+                    }) {
                         if isLoading {
                             ProgressView()
                                 .progressViewStyle(CircularProgressViewStyle(tint: .white))
                                 .frame(maxWidth: .infinity)
                         } else {
-                            Text("Register")
-                                .fontWeight(.semibold)
-                                .frame(maxWidth: .infinity)
+                            HStack(spacing: 10) {
+                                Image(systemName: "checkmark.circle.fill")
+                                    .font(.system(size: 18))
+                                Text("Register")
+                                    .fontWeight(.bold)
+                                    .font(.system(size: 18))
+                            }
+                            .frame(maxWidth: .infinity)
                         }
                     }
-                    .frame(height: 50)
-                    .background(verificationCode.isEmpty ? Color.gray : Color.blue)
+                    .frame(height: 56)
+                    .background(
+                        verificationCode.isEmpty 
+                        ? Color.gray 
+                        : Color.tealPurpleGradient
+                    )
                     .foregroundColor(.white)
-                    .cornerRadius(10)
+                    .cornerRadius(16)
+                    .shadow(color: verificationCode.isEmpty ? Color.clear : Color.vibrantTeal.opacity(0.3), radius: 8, x: 0, y: 4)
                     .padding(.horizontal)
                     .disabled(verificationCode.isEmpty || isLoading)
                 }
                 
-                Spacer()
+                Spacer(minLength: 20)
                 
                 // Login link
                 HStack {
