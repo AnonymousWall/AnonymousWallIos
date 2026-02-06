@@ -316,7 +316,7 @@ struct PostDetailView: View {
         } catch NetworkError.cancelled {
             return
         } catch {
-            errorMessage = "Failed to load more comments: \(error.localizedDescription)"
+            errorMessage = error.localizedDescription
         }
     }
     
