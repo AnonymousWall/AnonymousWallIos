@@ -158,13 +158,15 @@ Authorization: Bearer {jwt-token}
 Content-Type: application/json
 
 {
+    "title": "My First Post Title",    // NEW - REQUIRED (1-255 chars)
     "content": "This is my first post!",
-    "wall": "campus"  // or "national"
+    "wall": "campus"  // or "national", optional, defaults to "campus"
 }
 
 Response: 201 Created
 {
-    "id": "1",
+    "id": "uuid",
+    "title": "My First Post Title",     // NEW
     "content": "This is my first post!",
     "wall": "CAMPUS",
     "likes": 0,
@@ -180,6 +182,28 @@ Response: 201 Created
 }
 ```
 
+**Request Validation:**
+- `title` is **required** (cannot be null, empty, or whitespace-only)
+- `title` maximum length: **255 characters**
+- `content` is **required** (cannot be null, empty, or whitespace-only)
+- `content` maximum length: **5000 characters**
+- `wall` is optional (defaults to "campus"), must be "campus" or "national"
+
+**Error Responses:**
+```json
+// Missing or empty title
+400 Bad Request
+{
+    "error": "Post title cannot be empty"
+}
+
+// Title exceeds 255 characters
+400 Bad Request
+{
+    "error": "Post title exceeds maximum length of 255 characters"
+}
+```
+
 #### 2. List Posts
 ```http
 GET /api/v1/posts?wall=campus&page=1&limit=20&sort=NEWEST
@@ -189,7 +213,8 @@ Response: 200 OK
 {
     "data": [
         {
-            "id": "1",
+            "id": "uuid",
+            "title": "Post Title",        // NEW
             "content": "Post content",
             "wall": "CAMPUS",
             "likes": 5,
@@ -219,14 +244,51 @@ Response: 200 OK
 - `limit` (default: 20) - Posts per page (max: 100)
 - `sort` (default: "NEWEST") - Sort order: NEWEST, OLDEST, MOST_LIKED, LEAST_LIKED
 
-#### 3. Toggle Like on Post
+#### 3. Like Post
 ```http
-POST /api/v1/posts/{postId}/likes
+POST /api/v1/posts/{postId}/like
 Authorization: Bearer {jwt-token}
 
 Response: 200 OK
 {
-    "liked": true  // or false if unlike
+    "id": "uuid",
+    "title": "Post Title",               // UPDATED
+    "content": "Post content",
+    "wall": "CAMPUS",
+    "likes": 6,
+    "comments": 2,
+    "liked": true,
+    "author": {
+        "id": "uuid",
+        "profileName": "John Doe",
+        "isAnonymous": true
+    },
+    "createdAt": "2026-01-28T...",
+    "updatedAt": "2026-01-28T..."
+}
+```
+
+#### 3b. Unlike Post
+```http
+POST /api/v1/posts/{postId}/unlike
+Authorization: Bearer {jwt-token}
+
+Response: 200 OK
+{
+    "id": "uuid",
+    "title": "Post Title",               // UPDATED
+    "content": "Post content",
+    "wall": "CAMPUS",
+    "likes": 5,
+    "comments": 2,
+    "liked": false,
+    "author": {
+        "id": "uuid",
+        "profileName": "John Doe",
+        "isAnonymous": true
+    },
+    "createdAt": "2026-01-28T...",
+    "updatedAt": "2026-01-28T..."
 }
 ```
 
@@ -242,8 +304,8 @@ Content-Type: application/json
 
 Response: 201 Created
 {
-    "id": "1",
-    "postId": "1",
+    "id": "uuid",
+    "postId": "uuid",
     "text": "Great post!",
     "author": {
         "id": "uuid",
@@ -252,7 +314,21 @@ Response: 201 Created
     },
     "createdAt": "2026-01-28T..."
 }
+
+Response: 400 Bad Request
+{
+    "error": "Comment text cannot be empty"
+}
+
+Response: 400 Bad Request
+{
+    "error": "Comment text exceeds maximum length of 5000 characters"
+}
 ```
+
+**Validation Rules:**
+- `text` is **required** (cannot be null, empty, or whitespace-only)
+- `text` maximum length: **5000 characters**
 
 #### 5. Get Comments for Post
 ```http
@@ -263,8 +339,8 @@ Response: 200 OK
 {
     "data": [
         {
-            "id": "1",
-            "postId": "1",
+            "id": "uuid",
+            "postId": "uuid",
             "text": "Great post!",
             "author": {
                 "id": "uuid",
@@ -288,14 +364,51 @@ Response: 200 OK
 - `limit` (default: 20) - Comments per page (max: 100)
 - `sort` (default: "NEWEST") - Sort order: NEWEST, OLDEST
 
-#### 6. Hide Post
+#### 6. Get Single Post
 ```http
-PATCH /api/v1/posts/{postId}/hide
+GET /api/v1/posts/{postId}
 Authorization: Bearer {jwt-token}
 
 Response: 200 OK
 {
-    "message": "Post hidden successfully"
+    "id": "uuid",
+    "title": "Post Title",               // UPDATED
+    "content": "Post content",
+    "wall": "CAMPUS",
+    "likes": 5,
+    "comments": 2,
+    "liked": false,
+    "author": {
+        "id": "uuid",
+        "profileName": "John Doe",
+        "isAnonymous": true
+    },
+    "createdAt": "2026-01-28T...",
+    "updatedAt": "2026-01-28T..."
+}
+```
+
+#### 7. Hide Post
+```http
+POST /api/v1/posts/{postId}/hide
+Authorization: Bearer {jwt-token}
+
+Response: 200 OK
+{
+    "id": "uuid",
+    "title": "Post Title",               // UPDATED
+    "content": "Post content",
+    "wall": "CAMPUS",
+    "likes": 5,
+    "comments": 2,
+    "liked": false,
+    "author": {
+        "id": "uuid",
+        "profileName": "John Doe",
+        "isAnonymous": true
+    },
+    "createdAt": "2026-01-28T...",
+    "updatedAt": "2026-01-28T..."
 }
 ```
 
@@ -304,14 +417,69 @@ Response: 200 OK
 - When a post is hidden, all its comments are also hidden
 - This is a soft-delete operation; data is preserved in the database
 
-#### 7. Unhide Post
+#### 8. Unhide Post
 ```http
-PATCH /api/v1/posts/{postId}/unhide
+POST /api/v1/posts/{postId}/unhide
 Authorization: Bearer {jwt-token}
 
 Response: 200 OK
 {
-    "message": "Post unhidden successfully"
+    "id": "uuid",
+    "title": "Post Title",               // UPDATED
+    "content": "Post content",
+    "wall": "CAMPUS",
+    "likes": 5,
+    "comments": 2,
+    "liked": false,
+    "author": {
+        "id": "uuid",
+        "profileName": "John Doe",
+        "isAnonymous": true
+    },
+    "createdAt": "2026-01-28T...",
+    "updatedAt": "2026-01-28T..."
+}
+```
+
+#### 9. Hide Comment
+```http
+POST /api/v1/posts/{postId}/comments/{commentId}/hide
+Authorization: Bearer {jwt-token}
+
+Response: 200 OK
+{
+    "id": "uuid",
+    "postId": "uuid",
+    "text": "Great post!",
+    "author": {
+        "id": "uuid",
+        "profileName": "Jane Smith",
+        "isAnonymous": true
+    },
+    "createdAt": "2026-01-28T..."
+}
+```
+
+**Notes:**
+- Only the comment author can hide their own comment
+- This is a soft-delete operation; data is preserved in the database
+
+#### 10. Unhide Comment
+```http
+POST /api/v1/posts/{postId}/comments/{commentId}/unhide
+Authorization: Bearer {jwt-token}
+
+Response: 200 OK
+{
+    "id": "uuid",
+    "postId": "uuid",
+    "text": "Great post!",
+    "author": {
+        "id": "uuid",
+        "profileName": "Jane Smith",
+        "isAnonymous": true
+    },
+    "createdAt": "2026-01-28T..."
 }
 ```
 
