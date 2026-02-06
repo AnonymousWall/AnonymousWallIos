@@ -178,3 +178,28 @@
 - Clean interface with hamburger menu
 - Settings tucked away but easily accessible
 - More space for future content (post feed)
+
+## Comment Display Layout
+
+### Comment Differentiation
+Comments in the post detail view now display differently based on authorship:
+
+**Own Comments (Current User)**:
+- Aligned to the **right** side of the screen
+- **Blue background** with white text
+- White author name and timestamp
+- 40pt minimum spacer on the left side to push content right
+- White trash icon for delete button
+
+**Other Users' Comments**:
+- Aligned to the **left** side of the screen
+- **Gray background** (secondarySystemBackground)
+- Blue author name, black text, gray timestamp
+- 40pt minimum spacer on the right side to push content left
+- Standard color scheme
+
+### Visual Benefits
+1. **Clear Distinction**: Users can instantly identify their own comments
+2. **Chat-like Interface**: Similar to popular messaging apps (iMessage, WhatsApp)
+3. **Visual Hierarchy**: Own comments stand out with color differentiation
+4. **Professional Design**: Follows iOS design patterns for conversation UIs
