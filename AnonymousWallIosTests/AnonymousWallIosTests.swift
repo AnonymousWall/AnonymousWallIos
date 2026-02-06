@@ -393,5 +393,107 @@ struct AnonymousWallIosTests {
         #expect(json.contains("\"wall\""))
         #expect(json.contains("campus"))
     }
+    
+    // MARK: - ProfileView Sorting Tests
+    
+    @Test func testProfilePostSortingByNewest() async throws {
+        // Test that posts can be sorted by newest
+        let posts = [
+            Post(id: "1", title: "First", content: "First post", wall: "CAMPUS", likes: 5, comments: 0, liked: false,
+                 author: Post.Author(id: "user1", profileName: "User", isAnonymous: true),
+                 createdAt: "2026-01-01T10:00:00Z", updatedAt: "2026-01-01T10:00:00Z"),
+            Post(id: "2", title: "Second", content: "Second post", wall: "CAMPUS", likes: 3, comments: 0, liked: false,
+                 author: Post.Author(id: "user1", profileName: "User", isAnonymous: true),
+                 createdAt: "2026-01-02T10:00:00Z", updatedAt: "2026-01-02T10:00:00Z"),
+            Post(id: "3", title: "Third", content: "Third post", wall: "CAMPUS", likes: 10, comments: 0, liked: false,
+                 author: Post.Author(id: "user1", profileName: "User", isAnonymous: true),
+                 createdAt: "2026-01-01T15:00:00Z", updatedAt: "2026-01-01T15:00:00Z")
+        ]
+        
+        let sorted = posts.sorted { $0.createdAt > $1.createdAt }
+        #expect(sorted[0].id == "2") // Most recent
+        #expect(sorted[1].id == "3")
+        #expect(sorted[2].id == "1") // Oldest
+    }
+    
+    @Test func testProfilePostSortingByOldest() async throws {
+        // Test that posts can be sorted by oldest
+        let posts = [
+            Post(id: "1", title: "First", content: "First post", wall: "CAMPUS", likes: 5, comments: 0, liked: false,
+                 author: Post.Author(id: "user1", profileName: "User", isAnonymous: true),
+                 createdAt: "2026-01-01T10:00:00Z", updatedAt: "2026-01-01T10:00:00Z"),
+            Post(id: "2", title: "Second", content: "Second post", wall: "CAMPUS", likes: 3, comments: 0, liked: false,
+                 author: Post.Author(id: "user1", profileName: "User", isAnonymous: true),
+                 createdAt: "2026-01-02T10:00:00Z", updatedAt: "2026-01-02T10:00:00Z"),
+            Post(id: "3", title: "Third", content: "Third post", wall: "CAMPUS", likes: 10, comments: 0, liked: false,
+                 author: Post.Author(id: "user1", profileName: "User", isAnonymous: true),
+                 createdAt: "2026-01-01T15:00:00Z", updatedAt: "2026-01-01T15:00:00Z")
+        ]
+        
+        let sorted = posts.sorted { $0.createdAt < $1.createdAt }
+        #expect(sorted[0].id == "1") // Oldest
+        #expect(sorted[1].id == "3")
+        #expect(sorted[2].id == "2") // Most recent
+    }
+    
+    @Test func testProfilePostSortingByMostLiked() async throws {
+        // Test that posts can be sorted by most liked
+        let posts = [
+            Post(id: "1", title: "First", content: "First post", wall: "CAMPUS", likes: 5, comments: 0, liked: false,
+                 author: Post.Author(id: "user1", profileName: "User", isAnonymous: true),
+                 createdAt: "2026-01-01T10:00:00Z", updatedAt: "2026-01-01T10:00:00Z"),
+            Post(id: "2", title: "Second", content: "Second post", wall: "CAMPUS", likes: 3, comments: 0, liked: false,
+                 author: Post.Author(id: "user1", profileName: "User", isAnonymous: true),
+                 createdAt: "2026-01-02T10:00:00Z", updatedAt: "2026-01-02T10:00:00Z"),
+            Post(id: "3", title: "Third", content: "Third post", wall: "CAMPUS", likes: 10, comments: 0, liked: false,
+                 author: Post.Author(id: "user1", profileName: "User", isAnonymous: true),
+                 createdAt: "2026-01-01T15:00:00Z", updatedAt: "2026-01-01T15:00:00Z")
+        ]
+        
+        let sorted = posts.sorted { $0.likes > $1.likes }
+        #expect(sorted[0].id == "3") // Most likes (10)
+        #expect(sorted[1].id == "1") // 5 likes
+        #expect(sorted[2].id == "2") // Least likes (3)
+    }
+    
+    @Test func testProfileCommentSortingByNewest() async throws {
+        // Test that comments can be sorted by newest
+        let comments = [
+            Comment(id: "1", postId: "post1", text: "First comment",
+                    author: Post.Author(id: "user1", profileName: "User", isAnonymous: true),
+                    createdAt: "2026-01-01T10:00:00Z"),
+            Comment(id: "2", postId: "post1", text: "Second comment",
+                    author: Post.Author(id: "user1", profileName: "User", isAnonymous: true),
+                    createdAt: "2026-01-02T10:00:00Z"),
+            Comment(id: "3", postId: "post1", text: "Third comment",
+                    author: Post.Author(id: "user1", profileName: "User", isAnonymous: true),
+                    createdAt: "2026-01-01T15:00:00Z")
+        ]
+        
+        let sorted = comments.sorted { $0.createdAt > $1.createdAt }
+        #expect(sorted[0].id == "2") // Most recent
+        #expect(sorted[1].id == "3")
+        #expect(sorted[2].id == "1") // Oldest
+    }
+    
+    @Test func testProfileCommentSortingByOldest() async throws {
+        // Test that comments can be sorted by oldest
+        let comments = [
+            Comment(id: "1", postId: "post1", text: "First comment",
+                    author: Post.Author(id: "user1", profileName: "User", isAnonymous: true),
+                    createdAt: "2026-01-01T10:00:00Z"),
+            Comment(id: "2", postId: "post1", text: "Second comment",
+                    author: Post.Author(id: "user1", profileName: "User", isAnonymous: true),
+                    createdAt: "2026-01-02T10:00:00Z"),
+            Comment(id: "3", postId: "post1", text: "Third comment",
+                    author: Post.Author(id: "user1", profileName: "User", isAnonymous: true),
+                    createdAt: "2026-01-01T15:00:00Z")
+        ]
+        
+        let sorted = comments.sorted { $0.createdAt < $1.createdAt }
+        #expect(sorted[0].id == "1") // Oldest
+        #expect(sorted[1].id == "3")
+        #expect(sorted[2].id == "2") // Most recent
+    }
 
 }

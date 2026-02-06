@@ -38,6 +38,22 @@ struct Post: Codable, Identifiable {
         case createdAt
         case updatedAt
     }
+    
+    /// Create a copy of this post with updated like status
+    func withUpdatedLike(liked: Bool, likes: Int) -> Post {
+        return Post(
+            id: self.id,
+            title: self.title,
+            content: self.content,
+            wall: self.wall,
+            likes: likes,
+            comments: self.comments,
+            liked: liked,
+            author: self.author,
+            createdAt: self.createdAt,
+            updatedAt: self.updatedAt
+        )
+    }
 }
 
 struct PostListResponse: Codable {
