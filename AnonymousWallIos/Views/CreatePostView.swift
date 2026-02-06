@@ -10,6 +10,7 @@ import SwiftUI
 struct CreatePostView: View {
     @EnvironmentObject var authState: AuthState
     @Environment(\.dismiss) var dismiss
+    @State private var postTitle = ""
     @State private var postContent = ""
     @State private var selectedWall: WallType = .campus
     @State private var isPosting = false
@@ -17,7 +18,8 @@ struct CreatePostView: View {
     
     var onPostCreated: () -> Void
     
-    private let maxCharacters = 500
+    private let maxTitleCharacters = 255
+    private let maxContentCharacters = 5000
     
     var body: some View {
         NavigationStack {
@@ -32,22 +34,48 @@ struct CreatePostView: View {
                 .padding(.horizontal)
                 .padding(.top, 10)
                 
-                // Character count
-                HStack {
-                    Spacer()
-                    Text("\(postContent.count)/\(maxCharacters)")
-                        .font(.caption)
-                        .foregroundColor(postContent.count > maxCharacters ? .red : .gray)
-                }
-                .padding(.horizontal)
-                
-                // Text editor
-                TextEditor(text: $postContent)
-                    .frame(minHeight: 200)
-                    .padding(8)
-                    .background(Color(.systemGray6))
-                    .cornerRadius(10)
+                // Title input
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Title")
+                        .font(.headline)
+                        .padding(.horizontal)
+                    
+                    TextField("Enter post title", text: $postTitle)
+                        .textFieldStyle(RoundedBorderTextFieldStyle())
+                        .padding(.horizontal)
+                    
+                    HStack {
+                        Spacer()
+                        Text("\(postTitle.count)/\(maxTitleCharacters)")
+                            .font(.caption)
+                            .foregroundColor(postTitle.count > maxTitleCharacters ? .red : .gray)
+                    }
                     .padding(.horizontal)
+                }
+                
+                // Content section
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Content")
+                        .font(.headline)
+                        .padding(.horizontal)
+                    
+                    // Character count for content
+                    HStack {
+                        Spacer()
+                        Text("\(postContent.count)/\(maxContentCharacters)")
+                            .font(.caption)
+                            .foregroundColor(postContent.count > maxContentCharacters ? .red : .gray)
+                    }
+                    .padding(.horizontal)
+                    
+                    // Text editor
+                    TextEditor(text: $postContent)
+                        .frame(minHeight: 200)
+                        .padding(8)
+                        .background(Color(.systemGray6))
+                        .cornerRadius(10)
+                        .padding(.horizontal)
+                }
                 
                 // Error message
                 if let errorMessage = errorMessage {
@@ -92,21 +120,34 @@ struct CreatePostView: View {
     }
     
     private var isPostButtonDisabled: Bool {
+        postTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ||
         postContent.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ||
-        postContent.count > maxCharacters ||
+        postTitle.count > maxTitleCharacters ||
+        postContent.count > maxContentCharacters ||
         isPosting
     }
     
     private func createPost() {
+        let trimmedTitle = postTitle.trimmingCharacters(in: .whitespacesAndNewlines)
         let trimmedContent = postContent.trimmingCharacters(in: .whitespacesAndNewlines)
         
-        guard !trimmedContent.isEmpty else {
-            errorMessage = "Post cannot be empty"
+        guard !trimmedTitle.isEmpty else {
+            errorMessage = "Post title cannot be empty"
             return
         }
         
-        guard trimmedContent.count <= maxCharacters else {
-            errorMessage = "Post exceeds maximum length"
+        guard trimmedTitle.count <= maxTitleCharacters else {
+            errorMessage = "Post title exceeds maximum length of \(maxTitleCharacters) characters"
+            return
+        }
+        
+        guard !trimmedContent.isEmpty else {
+            errorMessage = "Post content cannot be empty"
+            return
+        }
+        
+        guard trimmedContent.count <= maxContentCharacters else {
+            errorMessage = "Post content exceeds maximum length of \(maxContentCharacters) characters"
             return
         }
         
@@ -121,7 +162,7 @@ struct CreatePostView: View {
         
         Task {
             do {
-                _ = try await PostService.shared.createPost(content: trimmedContent, wall: selectedWall, token: token, userId: userId)
+                _ = try await PostService.shared.createPost(title: trimmedTitle, content: trimmedContent, wall: selectedWall, token: token, userId: userId)
                 await MainActor.run {
                     isPosting = false
                     onPostCreated()

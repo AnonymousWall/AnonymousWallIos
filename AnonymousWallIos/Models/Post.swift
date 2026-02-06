@@ -9,6 +9,8 @@ import Foundation
 
 struct Post: Codable, Identifiable {
     let id: String
+    /// Post title (required, 1-255 characters)
+    let title: String
     let content: String
     let wall: String
     let likes: Int
@@ -26,6 +28,7 @@ struct Post: Codable, Identifiable {
     
     enum CodingKeys: String, CodingKey {
         case id
+        case title
         case content
         case wall
         case likes
@@ -50,6 +53,9 @@ struct PostListResponse: Codable {
 }
 
 struct CreatePostRequest: Codable {
+    /// Post title (required, 1-255 characters)
+    let title: String
+    /// Post content (required, 1-5000 characters)
     let content: String
     let wall: String
 }
