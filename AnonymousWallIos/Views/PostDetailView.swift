@@ -14,6 +14,9 @@ struct PostDetailView: View {
     let post: Post
     @State private var comments: [Comment] = []
     @State private var isLoadingComments = false
+    @State private var isLoadingMoreComments = false
+    @State private var currentPage = 1
+    @State private var hasMorePages = true
     @State private var commentText = ""
     @State private var isSubmitting = false
     @State private var errorMessage: String?
@@ -83,7 +86,9 @@ struct PostDetailView: View {
                             .pickerStyle(.menu)
                             .onChange(of: selectedSortOrder) { _, _ in
                                 Task {
-                                    await loadComments()
+                                    currentPage = 1
+                                    hasMorePages = true
+                                    await loadComments(isRefresh: true)
                                 }
                             }
                         }
@@ -123,6 +128,22 @@ struct PostDetailView: View {
                                         showDeleteConfirmation = true
                                     }
                                 )
+                                .onAppear {
+                                    // Load more when the last comment appears
+                                    if comment.id == comments.last?.id {
+                                        loadMoreCommentsIfNeeded()
+                                    }
+                                }
+                            }
+                            
+                            // Loading indicator at bottom
+                            if isLoadingMoreComments {
+                                HStack {
+                                    Spacer()
+                                    ProgressView()
+                                        .padding()
+                                    Spacer()
+                                }
                             }
                         }
                     }
@@ -171,7 +192,7 @@ struct PostDetailView: View {
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
             Task {
-                await loadComments()
+                await loadComments(isRefresh: true)
             }
         }
         .confirmationDialog(
@@ -193,14 +214,16 @@ struct PostDetailView: View {
     // MARK: - Functions
     
     @MainActor
-    private func loadComments() async {
+    private func loadComments(isRefresh: Bool = false) async {
         guard let token = authState.authToken,
               let userId = authState.currentUser?.id else {
             errorMessage = "Authentication required to load comments."
             return
         }
         
-        isLoadingComments = true
+        if isRefresh {
+            isLoadingComments = true
+        }
         errorMessage = nil
         
         defer {
@@ -212,9 +235,16 @@ struct PostDetailView: View {
                 postId: post.id,
                 token: token,
                 userId: userId,
+                page: currentPage,
+                limit: 20,
                 sort: selectedSortOrder
             )
-            comments = response.data
+            if isRefresh {
+                comments = response.data
+            } else {
+                comments = response.data
+            }
+            hasMorePages = currentPage < response.pagination.totalPages
         } catch is CancellationError {
             // Silently handle cancellation - this is expected behavior
             return
@@ -230,12 +260,62 @@ struct PostDetailView: View {
     private func refreshComments() async {
         // Create a new task that won't be cancelled by the refreshable gesture
         // This ensures refresh works correctly when user releases before completion
+        currentPage = 1
+        hasMorePages = true
         let task = Task {
-            await loadComments()
+            await loadComments(isRefresh: true)
         }
         
         // Wait for the task to complete
         await task.value
+    }
+    
+    private func loadMoreCommentsIfNeeded() {
+        guard !isLoadingMoreComments && hasMorePages else { return }
+        
+        isLoadingMoreComments = true
+        
+        Task {
+            await loadMoreComments()
+        }
+    }
+    
+    @MainActor
+    private func loadMoreComments() async {
+        guard let token = authState.authToken,
+              let userId = authState.currentUser?.id else {
+            isLoadingMoreComments = false
+            return
+        }
+        
+        defer {
+            isLoadingMoreComments = false
+        }
+        
+        currentPage += 1
+        
+        do {
+            let response = try await PostService.shared.getComments(
+                postId: post.id,
+                token: token,
+                userId: userId,
+                page: currentPage,
+                limit: 20,
+                sort: selectedSortOrder
+            )
+            
+            comments.append(contentsOf: response.data)
+            hasMorePages = currentPage < response.pagination.totalPages
+        } catch is CancellationError {
+            currentPage -= 1
+            return
+        } catch NetworkError.cancelled {
+            currentPage -= 1
+            return
+        } catch {
+            currentPage -= 1
+            errorMessage = "Failed to load more comments: \(error.localizedDescription)"
+        }
     }
     
     private func submitComment() {
@@ -264,7 +344,7 @@ struct PostDetailView: View {
                 }
                 
                 // Reload comments
-                await loadComments()
+                await loadComments(isRefresh: true)
             } catch is CancellationError {
                 // Silently handle cancellation - user likely navigated away
                 await MainActor.run {
@@ -300,7 +380,7 @@ struct PostDetailView: View {
                     userId: userId
                 )
                 // Reload comments
-                await loadComments()
+                await loadComments(isRefresh: true)
             } catch is CancellationError {
                 // Silently handle cancellation - user likely navigated away
                 return

@@ -14,6 +14,9 @@ struct WallView: View {
     @State private var showCreatePost = false
     @State private var posts: [Post] = []
     @State private var isLoadingPosts = false
+    @State private var isLoadingMore = false
+    @State private var currentPage = 1
+    @State private var hasMorePages = true
     @State private var errorMessage: String?
     @State private var loadTask: Task<Void, Never>?
     
@@ -84,6 +87,22 @@ struct WallView: View {
                                     )
                                 }
                                 .buttonStyle(PlainButtonStyle())
+                                .onAppear {
+                                    // Load more when the last post appears
+                                    if post.id == posts.last?.id {
+                                        loadMoreIfNeeded()
+                                    }
+                                }
+                            }
+                            
+                            // Loading indicator at bottom
+                            if isLoadingMore {
+                                HStack {
+                                    Spacer()
+                                    ProgressView()
+                                        .padding()
+                                    Spacer()
+                                }
                             }
                         }
                         .padding()
@@ -144,7 +163,10 @@ struct WallView: View {
         .sheet(isPresented: $showCreatePost) {
             CreatePostView(onPostCreated: {
                 Task {
-                    await loadPosts()
+                    // Reset pagination and reload from first page
+                    currentPage = 1
+                    hasMorePages = true
+                    await loadPosts(isRefresh: true)
                 }
             })
         }
@@ -160,7 +182,7 @@ struct WallView: View {
             
             // Load posts
             loadTask = Task {
-                await loadPosts()
+                await loadPosts(isRefresh: true)
             }
         }
         .onDisappear {
@@ -176,9 +198,13 @@ struct WallView: View {
         // Cancel any existing load task
         loadTask?.cancel()
         
+        // Reset pagination state
+        currentPage = 1
+        hasMorePages = true
+        
         // Create a new task that won't be cancelled by the refreshable gesture
         loadTask = Task {
-            await loadPosts()
+            await loadPosts(isRefresh: true)
         }
         
         // Wait for the task to complete
@@ -186,14 +212,16 @@ struct WallView: View {
     }
     
     @MainActor
-    private func loadPosts() async {
+    private func loadPosts(isRefresh: Bool = false) async {
         guard let token = authState.authToken,
               let userId = authState.currentUser?.id else {
             return
         }
         
         // Set loading state
-        isLoadingPosts = true
+        if isRefresh {
+            isLoadingPosts = true
+        }
         errorMessage = nil
         
         // Ensure loading state is always reset
@@ -202,10 +230,22 @@ struct WallView: View {
         }
         
         do {
-            let response = try await PostService.shared.fetchPosts(token: token, userId: userId)
+            let response = try await PostService.shared.fetchPosts(
+                token: token,
+                userId: userId,
+                page: currentPage,
+                limit: 20
+            )
             // Always update posts if request succeeded, even if task was cancelled
             // This ensures refresh works correctly when user releases before completion
-            posts = response.data
+            if isRefresh {
+                posts = response.data
+            } else {
+                posts = response.data
+            }
+            
+            // Update pagination state
+            hasMorePages = currentPage < response.pagination.totalPages
         } catch is CancellationError {
             // Silently handle cancellation - this is expected behavior
             return
@@ -213,6 +253,59 @@ struct WallView: View {
             // Silently handle network cancellation - this is expected behavior during refresh
             return
         } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+    
+    private func loadMoreIfNeeded() {
+        guard !isLoadingMore && hasMorePages else { return }
+        
+        isLoadingMore = true
+        
+        Task {
+            await loadMorePosts()
+        }
+    }
+    
+    @MainActor
+    private func loadMorePosts() async {
+        guard let token = authState.authToken,
+              let userId = authState.currentUser?.id else {
+            isLoadingMore = false
+            return
+        }
+        
+        defer {
+            isLoadingMore = false
+        }
+        
+        // Increment page number
+        currentPage += 1
+        
+        do {
+            let response = try await PostService.shared.fetchPosts(
+                token: token,
+                userId: userId,
+                page: currentPage,
+                limit: 20
+            )
+            
+            // Append new posts
+            posts.append(contentsOf: response.data)
+            
+            // Update pagination state
+            hasMorePages = currentPage < response.pagination.totalPages
+        } catch is CancellationError {
+            // Revert page increment on cancellation
+            currentPage -= 1
+            return
+        } catch NetworkError.cancelled {
+            // Revert page increment on cancellation
+            currentPage -= 1
+            return
+        } catch {
+            // Revert page increment on error
+            currentPage -= 1
             errorMessage = error.localizedDescription
         }
     }
@@ -227,7 +320,9 @@ struct WallView: View {
             do {
                 _ = try await PostService.shared.toggleLike(postId: post.id, token: token, userId: userId)
                 // Reload posts to get updated like status
-                await loadPosts()
+                currentPage = 1
+                hasMorePages = true
+                await loadPosts(isRefresh: true)
             } catch {
                 await MainActor.run {
                     errorMessage = error.localizedDescription
@@ -247,7 +342,9 @@ struct WallView: View {
             do {
                 _ = try await PostService.shared.hidePost(postId: post.id, token: token, userId: userId)
                 // Reload posts to remove the deleted post from the list
-                await loadPosts()
+                currentPage = 1
+                hasMorePages = true
+                await loadPosts(isRefresh: true)
             } catch {
                 await MainActor.run {
                     // Provide user-friendly error message
