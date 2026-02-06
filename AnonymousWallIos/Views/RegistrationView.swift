@@ -166,13 +166,14 @@ struct RegistrationView: View {
                 }
                 .padding(.bottom, 20)
             }
-            .navigationBarTitleDisplayMode(.inline)
-            .navigationTitle("Create Account")
-            .alert("Registration Successful", isPresented: $showingSuccess) {
-                Button("OK") {}
-            } message: {
-                Text("You are now logged in. Please set up your password to secure your account.")
-            }
+        }
+        .navigationBarTitleDisplayMode(.inline)
+        .navigationTitle("Create Account")
+        .alert("Registration Successful", isPresented: $showingSuccess) {
+            Button("OK") {}
+        } message: {
+            Text("You are now logged in. Please set up your password to secure your account.")
+        }
         }
     }
     
