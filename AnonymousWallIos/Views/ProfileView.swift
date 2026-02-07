@@ -35,6 +35,8 @@ struct ProfileView: View {
     private let minAvatarSize: CGFloat = 45
     private let maxAvatarSize: CGFloat = 90
     private let collapseThreshold: CGFloat = 100
+    private let stickyHeaderThreshold: CGFloat = 50
+    private let stickyHeaderHeight: CGFloat = 88
     
     private var avatarSize: CGFloat {
         let progress = min(max(scrollOffset / collapseThreshold, 0), 1)
@@ -44,10 +46,6 @@ struct ProfileView: View {
     private var bannerOpacity: Double {
         let progress = min(max(scrollOffset / collapseThreshold, 0), 1)
         return 1.0 - Double(progress)
-    }
-    
-    private var stickyHeaderOffset: CGFloat {
-        return max(0, scrollOffset - collapseThreshold)
     }
     
     var body: some View {
@@ -133,7 +131,7 @@ struct ProfileView: View {
                         
                         // Spacer for sticky header
                         Color.clear
-                            .frame(height: 88)
+                            .frame(height: stickyHeaderHeight)
                         
                         // Content area
                         if isLoading {
@@ -339,9 +337,9 @@ struct ProfileView: View {
                     .padding(.vertical, 8)
                 }
                 .background(Color(.systemBackground))
-                .shadow(color: Color.black.opacity(scrollOffset > 50 ? 0.1 : 0), radius: 2, x: 0, y: 2)
-                .offset(y: scrollOffset > 50 ? 0 : -88)
-                .animation(.easeOut(duration: 0.2), value: scrollOffset > 50)
+                .shadow(color: Color.black.opacity(scrollOffset > stickyHeaderThreshold ? 0.1 : 0), radius: 2, x: 0, y: 2)
+                .offset(y: scrollOffset > stickyHeaderThreshold ? 0 : -stickyHeaderHeight)
+                .animation(.easeOut(duration: 0.2), value: scrollOffset > stickyHeaderThreshold)
             }
             .navigationTitle("Profile")
             .navigationBarTitleDisplayMode(.inline)
