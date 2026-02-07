@@ -72,7 +72,7 @@ struct ProfileView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                // Password setup alert banner
+                // Password setup alert banner - stays fixed at top
                 if authState.needsPasswordSetup {
                     HStack {
                         Image(systemName: "exclamationmark.triangle.fill")
@@ -94,149 +94,151 @@ struct ProfileView: View {
                     .padding()
                 }
                 
-                // User info section - collapsible based on scroll
-                VStack(spacing: 12) {
-                    // Avatar with gradient background
-                    ZStack {
-                        Circle()
-                            .fill(Color.purplePinkGradient)
-                            .frame(width: avatarSize, height: avatarSize)
-                            .shadow(color: Color.primaryPurple.opacity(0.3), radius: 10, x: 0, y: 5)
-                        
-                        Image(systemName: "person.circle.fill")
-                            .font(.system(size: avatarSize - 10))
-                            .foregroundColor(.white)
-                    }
-                    
-                    if bannerOpacity > 0 {
-                        if let email = authState.currentUser?.email {
-                            Text(email)
-                                .font(.system(size: 17, weight: .semibold))
-                                .foregroundColor(.primary)
-                                .opacity(bannerOpacity)
+                // Content area with scrollable header
+                ScrollView {
+                    VStack(spacing: 0) {
+                        // Scroll offset tracker
+                        GeometryReader { geometry in
+                            Color.clear.preference(
+                                key: ScrollOffsetPreferenceKey.self,
+                                value: geometry.frame(in: .named("scrollView")).minY
+                            )
                         }
+                        .frame(height: 0)
                         
-                        if let profileName = authState.currentUser?.profileName {
-                            HStack(spacing: 6) {
-                                Image(systemName: "person.fill")
-                                    .font(.caption)
-                                    .foregroundColor(.vibrantTeal)
-                                Text(profileName)
-                                    .font(.system(size: 15, weight: .medium))
-                                    .foregroundColor(.secondary)
+                        // User info section - collapsible based on scroll
+                        VStack(spacing: 12) {
+                            // Avatar with gradient background
+                            ZStack {
+                                Circle()
+                                    .fill(Color.purplePinkGradient)
+                                    .frame(width: avatarSize, height: avatarSize)
+                                    .shadow(color: Color.primaryPurple.opacity(0.3), radius: 10, x: 0, y: 5)
+                                
+                                Image(systemName: "person.circle.fill")
+                                    .font(.system(size: avatarSize - 10))
+                                    .foregroundColor(.white)
                             }
-                            .padding(.horizontal, 14)
-                            .padding(.vertical, 6)
-                            .background(Color.vibrantTeal.opacity(0.15))
-                            .cornerRadius(12)
-                            .opacity(bannerOpacity)
-                        }
-                    }
-                }
-                .padding(.vertical, bannerVerticalPadding)
-                .animation(.easeInOut(duration: 0.2), value: scrollOffset)
-                
-                // Segment control
-                Picker("Content Type", selection: $selectedSegment) {
-                    Text("Posts").tag(0)
-                    Text("Comments").tag(1)
-                }
-                .pickerStyle(SegmentedPickerStyle())
-                .padding(.horizontal)
-                .padding(.bottom, 10)
-                .onChange(of: selectedSegment) { _, _ in
-                    HapticFeedback.selection()
-                    loadTask?.cancel()
-                    loadTask = Task {
-                        await loadContent()
-                    }
-                }
-                
-                // Sorting dropdown menu
-                HStack {
-                    Text("Sort by:")
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
-                    
-                    Menu {
-                        if selectedSegment == 0 {
-                            // Posts sorting options
-                            ForEach(SortOrder.feedOptions, id: \.self) { option in
-                                Button {
-                                    postSortOrder = option
-                                    loadTask?.cancel()
-                                    loadTask = Task {
-                                        await loadContent()
+                            
+                            if bannerOpacity > 0 {
+                                if let email = authState.currentUser?.email {
+                                    Text(email)
+                                        .font(.system(size: 17, weight: .semibold))
+                                        .foregroundColor(.primary)
+                                        .opacity(bannerOpacity)
+                                }
+                                
+                                if let profileName = authState.currentUser?.profileName {
+                                    HStack(spacing: 6) {
+                                        Image(systemName: "person.fill")
+                                            .font(.caption)
+                                            .foregroundColor(.vibrantTeal)
+                                        Text(profileName)
+                                            .font(.system(size: 15, weight: .medium))
+                                            .foregroundColor(.secondary)
                                     }
-                                } label: {
-                                    HStack {
-                                        Text(option.displayName)
-                                        if postSortOrder == option {
-                                            Image(systemName: "checkmark")
+                                    .padding(.horizontal, 14)
+                                    .padding(.vertical, 6)
+                                    .background(Color.vibrantTeal.opacity(0.15))
+                                    .cornerRadius(12)
+                                    .opacity(bannerOpacity)
+                                }
+                            }
+                        }
+                        .padding(.vertical, bannerVerticalPadding)
+                        .animation(.easeInOut(duration: 0.2), value: scrollOffset)
+                        
+                        // Segment control
+                        Picker("Content Type", selection: $selectedSegment) {
+                            Text("Posts").tag(0)
+                            Text("Comments").tag(1)
+                        }
+                        .pickerStyle(SegmentedPickerStyle())
+                        .padding(.horizontal)
+                        .padding(.bottom, 10)
+                        .onChange(of: selectedSegment) { _, _ in
+                            HapticFeedback.selection()
+                            loadTask?.cancel()
+                            loadTask = Task {
+                                await loadContent()
+                            }
+                        }
+                        
+                        // Sorting dropdown menu
+                        HStack {
+                            Text("Sort by:")
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
+                            
+                            Menu {
+                                if selectedSegment == 0 {
+                                    // Posts sorting options
+                                    ForEach(SortOrder.feedOptions, id: \.self) { option in
+                                        Button {
+                                            postSortOrder = option
+                                            loadTask?.cancel()
+                                            loadTask = Task {
+                                                await loadContent()
+                                            }
+                                        } label: {
+                                            HStack {
+                                                Text(option.displayName)
+                                                if postSortOrder == option {
+                                                    Image(systemName: "checkmark")
+                                                }
+                                            }
+                                        }
+                                    }
+                                } else {
+                                    // Comments sorting options - only newest/oldest supported
+                                    Button {
+                                        commentSortOrder = .newest
+                                        loadTask?.cancel()
+                                        loadTask = Task {
+                                            await loadContent()
+                                        }
+                                    } label: {
+                                        HStack {
+                                            Text(SortOrder.newest.displayName)
+                                            if commentSortOrder == .newest {
+                                                Image(systemName: "checkmark")
+                                            }
+                                        }
+                                    }
+                                    
+                                    Button {
+                                        commentSortOrder = .oldest
+                                        loadTask?.cancel()
+                                        loadTask = Task {
+                                            await loadContent()
+                                        }
+                                    } label: {
+                                        HStack {
+                                            Text(SortOrder.oldest.displayName)
+                                            if commentSortOrder == .oldest {
+                                                Image(systemName: "checkmark")
+                                            }
                                         }
                                     }
                                 }
-                            }
-                        } else {
-                            // Comments sorting options - only newest/oldest supported
-                            Button {
-                                commentSortOrder = .newest
-                                loadTask?.cancel()
-                                loadTask = Task {
-                                    await loadContent()
-                                }
                             } label: {
                                 HStack {
-                                    Text(SortOrder.newest.displayName)
-                                    if commentSortOrder == .newest {
-                                        Image(systemName: "checkmark")
-                                    }
+                                    Text(selectedSegment == 0 ? postSortOrder.displayName : commentSortOrder.displayName)
+                                        .foregroundColor(.blue)
+                                    Image(systemName: "chevron.down")
+                                        .font(.caption)
+                                        .foregroundColor(.blue)
                                 }
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 6)
+                                .background(Color(.systemGray6))
+                                .cornerRadius(8)
                             }
                             
-                            Button {
-                                commentSortOrder = .oldest
-                                loadTask?.cancel()
-                                loadTask = Task {
-                                    await loadContent()
-                                }
-                            } label: {
-                                HStack {
-                                    Text(SortOrder.oldest.displayName)
-                                    if commentSortOrder == .oldest {
-                                        Image(systemName: "checkmark")
-                                    }
-                                }
-                            }
+                            Spacer()
                         }
-                    } label: {
-                        HStack {
-                            Text(selectedSegment == 0 ? postSortOrder.displayName : commentSortOrder.displayName)
-                                .foregroundColor(.blue)
-                            Image(systemName: "chevron.down")
-                                .font(.caption)
-                                .foregroundColor(.blue)
-                        }
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 6)
-                        .background(Color(.systemGray6))
-                        .cornerRadius(8)
-                    }
-                    
-                    Spacer()
-                }
-                .padding(.horizontal)
-                .padding(.vertical, 8)
-                
-                // Content area
-                ScrollView {
-                    GeometryReader { geometry in
-                        Color.clear.preference(
-                            key: ScrollOffsetPreferenceKey.self,
-                            value: geometry.frame(in: .named("scrollView")).minY
-                        )
-                    }
-                    .frame(height: 0)
+                        .padding(.horizontal)
+                        .padding(.vertical, 8)
                     
                     if isLoading {
                         VStack {
@@ -336,7 +338,7 @@ struct ProfileView: View {
                     await refreshContent()
                 }
                 
-                // Error message
+                // Error message - stays at bottom
                 if let errorMessage = errorMessage {
                     Text(errorMessage)
                         .foregroundColor(.red)
