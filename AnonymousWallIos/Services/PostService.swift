@@ -169,4 +169,34 @@ class PostService {
         
         return try await networkClient.performRequest(request)
     }
+    
+    // MARK: - User Operations
+    
+    /// Get user's own comments
+    func getUserComments(
+        token: String,
+        userId: String,
+        page: Int = 1,
+        limit: Int = 20,
+        sort: SortOrder = .newest
+    ) async throws -> CommentListResponse {
+        var components = URLComponents(string: "\(config.fullAPIBaseURL)/users/me/comments")
+        components?.queryItems = [
+            URLQueryItem(name: "page", value: "\(page)"),
+            URLQueryItem(name: "limit", value: "\(limit)"),
+            URLQueryItem(name: "sort", value: sort.rawValue)
+        ]
+        
+        guard let url = components?.url else {
+            throw NetworkError.invalidURL
+        }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        request.setValue(userId, forHTTPHeaderField: "X-User-Id")
+        
+        return try await networkClient.performRequest(request)
+    }
 }

@@ -22,6 +22,16 @@ struct ProfileView: View {
     @State private var postSortOrder: SortOrder = .newest
     @State private var commentSortOrder: SortOrder = .newest
     
+    // Pagination state for posts
+    @State private var currentPostsPage = 1
+    @State private var hasMorePosts = true
+    @State private var isLoadingMorePosts = false
+    
+    // Pagination state for comments
+    @State private var currentCommentsPage = 1
+    @State private var hasMoreComments = true
+    @State private var isLoadingMoreComments = false
+    
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
@@ -95,6 +105,7 @@ struct ProfileView: View {
                 .onChange(of: selectedSegment) { _, _ in
                     HapticFeedback.selection()
                     loadTask?.cancel()
+                    resetPagination()
                     loadTask = Task {
                         await loadContent()
                     }
@@ -113,6 +124,7 @@ struct ProfileView: View {
                                 Button {
                                     postSortOrder = option
                                     loadTask?.cancel()
+                                    resetPagination()
                                     loadTask = Task {
                                         await loadContent()
                                     }
@@ -130,6 +142,7 @@ struct ProfileView: View {
                             Button {
                                 commentSortOrder = .newest
                                 loadTask?.cancel()
+                                resetPagination()
                                 loadTask = Task {
                                     await loadContent()
                                 }
@@ -145,6 +158,7 @@ struct ProfileView: View {
                             Button {
                                 commentSortOrder = .oldest
                                 loadTask?.cancel()
+                                resetPagination()
                                 loadTask = Task {
                                     await loadContent()
                                 }
@@ -222,6 +236,22 @@ struct ProfileView: View {
                                         )
                                     }
                                     .buttonStyle(PlainButtonStyle())
+                                    .onAppear {
+                                        // Load more when the last post appears
+                                        if post.id == myPosts.last?.id {
+                                            loadMorePostsIfNeeded()
+                                        }
+                                    }
+                                }
+                                
+                                // Loading indicator at bottom
+                                if isLoadingMorePosts {
+                                    HStack {
+                                        Spacer()
+                                        ProgressView()
+                                            .padding()
+                                        Spacer()
+                                    }
                                 }
                             }
                             .padding()
@@ -259,8 +289,30 @@ struct ProfileView: View {
                                             ProfileCommentRowView(comment: comment)
                                         }
                                         .buttonStyle(PlainButtonStyle())
+                                        .onAppear {
+                                            // Load more when the last comment appears
+                                            if comment.id == myComments.last?.id {
+                                                loadMoreCommentsIfNeeded()
+                                            }
+                                        }
                                     } else {
                                         ProfileCommentRowView(comment: comment)
+                                            .onAppear {
+                                                // Load more when the last comment appears
+                                                if comment.id == myComments.last?.id {
+                                                    loadMoreCommentsIfNeeded()
+                                                }
+                                            }
+                                    }
+                                }
+                                
+                                // Loading indicator at bottom
+                                if isLoadingMoreComments {
+                                    HStack {
+                                        Spacer()
+                                        ProgressView()
+                                            .padding()
+                                        Spacer()
                                     }
                                 }
                             }
@@ -341,9 +393,26 @@ struct ProfileView: View {
     
     // MARK: - Functions
     
+    /// Reset pagination to initial state
+    private func resetPagination() {
+        if selectedSegment == 0 {
+            // Reset posts pagination
+            currentPostsPage = 1
+            hasMorePosts = true
+            myPosts = []
+        } else {
+            // Reset comments pagination
+            currentCommentsPage = 1
+            hasMoreComments = true
+            myComments = []
+            commentPostMap = [:]
+        }
+    }
+    
     @MainActor
     private func refreshContent() async {
         loadTask?.cancel()
+        resetPagination()
         loadTask = Task {
             await loadContent()
         }
@@ -380,15 +449,17 @@ struct ProfileView: View {
         var campusCancelled = false
         var nationalCancelled = false
         
-        // Fetch campus posts
+        // Fetch campus posts for current page
         do {
             let campusResponse = try await PostService.shared.fetchPosts(
                 token: token,
                 userId: userId,
                 wall: .campus,
-                limit: 100
+                page: currentPostsPage,
+                limit: 20,
+                sort: postSortOrder
             )
-            campusPosts = campusResponse.data
+            campusPosts = campusResponse.data.filter { $0.author.id == userId }
         } catch is CancellationError {
             campusCancelled = true
         } catch NetworkError.cancelled {
@@ -397,83 +468,17 @@ struct ProfileView: View {
             errorMessage = error.localizedDescription
         }
         
-        // Fetch national posts
+        // Fetch national posts for current page
         do {
             let nationalResponse = try await PostService.shared.fetchPosts(
                 token: token,
                 userId: userId,
                 wall: .national,
-                limit: 100
+                page: currentPostsPage,
+                limit: 20,
+                sort: postSortOrder
             )
-            nationalPosts = nationalResponse.data
-        } catch is CancellationError {
-            nationalCancelled = true
-        } catch NetworkError.cancelled {
-            nationalCancelled = true
-        } catch {
-            errorMessage = error.localizedDescription
-        }
-        
-        // Determine if we should update posts:
-        // - At least one fetch was not cancelled
-        // - AND we have actual data from at least one fetch
-        let hasAttemptedFetch = !campusCancelled || !nationalCancelled
-        let hasActualData = !campusPosts.isEmpty || !nationalPosts.isEmpty
-        let shouldUpdatePosts = hasAttemptedFetch && hasActualData
-        
-        if shouldUpdatePosts {
-            let allPosts = campusPosts + nationalPosts
-            let userPosts = allPosts.filter { $0.author.id == userId }
-            
-            // Apply selected sort order
-            // Note: Only feedOptions (.newest, .mostLiked, .oldest) are exposed in UI
-            switch postSortOrder {
-            case .newest:
-                myPosts = userPosts.sorted { $0.createdAt > $1.createdAt }
-            case .oldest:
-                myPosts = userPosts.sorted { $0.createdAt < $1.createdAt }
-            case .mostLiked:
-                myPosts = userPosts.sorted { $0.likes > $1.likes }
-            case .leastLiked:
-                // Not exposed in UI, but handle for completeness
-                myPosts = userPosts.sorted { $0.likes < $1.likes }
-            }
-        }
-    }
-    
-    @MainActor
-    private func loadMyComments(token: String, userId: String) async {
-        var campusPosts: [Post] = []
-        var nationalPosts: [Post] = []
-        var campusCancelled = false
-        var nationalCancelled = false
-        
-        // Fetch campus posts
-        do {
-            let campusResponse = try await PostService.shared.fetchPosts(
-                token: token,
-                userId: userId,
-                wall: .campus,
-                limit: 100
-            )
-            campusPosts = campusResponse.data
-        } catch is CancellationError {
-            campusCancelled = true
-        } catch NetworkError.cancelled {
-            campusCancelled = true
-        } catch {
-            errorMessage = error.localizedDescription
-        }
-        
-        // Fetch national posts
-        do {
-            let nationalResponse = try await PostService.shared.fetchPosts(
-                token: token,
-                userId: userId,
-                wall: .national,
-                limit: 100
-            )
-            nationalPosts = nationalResponse.data
+            nationalPosts = nationalResponse.data.filter { $0.author.id == userId }
         } catch is CancellationError {
             nationalCancelled = true
         } catch NetworkError.cancelled {
@@ -487,71 +492,96 @@ struct ProfileView: View {
             return
         }
         
-        // Fetch comments for all posts and filter user's comments
+        // Merge posts from both walls
         let allPosts = campusPosts + nationalPosts
         
-        // Handle the case when we have no posts (could be due to cancellation, errors, or empty results)
-        guard !allPosts.isEmpty else {
-            // Only clear comments if both fetches were not cancelled (meaning they completed but returned no data)
-            // Don't clear if either was cancelled, as we want to maintain existing state
-            if !campusCancelled && !nationalCancelled {
-                myComments = []
-                commentPostMap = [:]
-            }
-            return
+        // Apply selected sort order to merged results
+        let sortedPosts: [Post]
+        switch postSortOrder {
+        case .newest:
+            sortedPosts = allPosts.sorted { $0.createdAt > $1.createdAt }
+        case .oldest:
+            sortedPosts = allPosts.sorted { $0.createdAt < $1.createdAt }
+        case .mostLiked:
+            sortedPosts = allPosts.sorted { $0.likes > $1.likes }
+        case .leastLiked:
+            sortedPosts = allPosts.sorted { $0.likes < $1.likes }
         }
         
-        var allComments: [Comment] = []
-        var tempPostMap: [String: Post] = [:]
+        // Replace posts (used for initial load and refresh)
+        myPosts = sortedPosts
         
-        // First, populate the post map with all posts
-        for post in allPosts {
-            tempPostMap[post.id] = post
-        }
-        
-        // Then fetch comments
-        for post in allPosts {
-            do {
-                let commentResponse = try await PostService.shared.getComments(
-                    postId: post.id,
-                    token: token,
-                    userId: userId,
-                    limit: 100
-                )
-                allComments.append(contentsOf: commentResponse.data)
-            } catch is CancellationError {
-                // Silently handle cancellation
-                continue
-            } catch NetworkError.cancelled {
-                // Silently handle network cancellation
-                continue
-            } catch {
-                // Continue even if some comment fetches fail
-                continue
-            }
-        }
-        
-        // Only update UI when we have new data (non-empty collections)
-        // Preserve existing state when new collections are empty
-        if !tempPostMap.isEmpty {
-            commentPostMap = tempPostMap
-        }
-        
-        if !allComments.isEmpty {
-            // Filter to only show user's own comments
-            let userComments = allComments.filter { $0.author.id == userId }
+        // Determine if there are more pages
+        // We consider there are more pages if either wall returned the full page size
+        hasMorePosts = campusPosts.count == 20 || nationalPosts.count == 20
+    }
+    
+    @MainActor
+    private func loadMyComments(token: String, userId: String) async {
+        do {
+            // Use the new user endpoint to fetch comments with pagination
+            let commentResponse = try await PostService.shared.getUserComments(
+                token: token,
+                userId: userId,
+                page: currentCommentsPage,
+                limit: 20,
+                sort: commentSortOrder
+            )
             
-            // Apply selected sort order
-            // Note: Only .newest and .oldest are exposed in the UI for comments
-            switch commentSortOrder {
-            case .newest:
-                myComments = userComments.sorted { $0.createdAt > $1.createdAt }
-            case .oldest:
-                myComments = userComments.sorted { $0.createdAt < $1.createdAt }
-            case .mostLiked, .leastLiked:
-                // Not supported for comments, default to newest
-                myComments = userComments.sorted { $0.createdAt > $1.createdAt }
+            // Replace comments (used for initial load and refresh)
+            myComments = commentResponse.data
+            hasMoreComments = currentCommentsPage < commentResponse.pagination.totalPages
+            
+            // Fetch posts for these comments to enable navigation
+            // Get unique post IDs from comments
+            let uniquePostIds = Set(commentResponse.data.map { $0.postId })
+            
+            // Fetch each unique post
+            var tempPostMap: [String: Post] = [:]
+            for postId in uniquePostIds {
+                do {
+                    // Try fetching from campus first
+                    let campusResponse = try await PostService.shared.fetchPosts(
+                        token: token,
+                        userId: userId,
+                        wall: .campus,
+                        page: 1,
+                        limit: 100
+                    )
+                    if let post = campusResponse.data.first(where: { $0.id == postId }) {
+                        tempPostMap[postId] = post
+                        continue
+                    }
+                    
+                    // If not found in campus, try national
+                    let nationalResponse = try await PostService.shared.fetchPosts(
+                        token: token,
+                        userId: userId,
+                        wall: .national,
+                        page: 1,
+                        limit: 100
+                    )
+                    if let post = nationalResponse.data.first(where: { $0.id == postId }) {
+                        tempPostMap[postId] = post
+                    }
+                } catch is CancellationError {
+                    continue
+                } catch NetworkError.cancelled {
+                    continue
+                } catch {
+                    // Continue even if some post fetches fail
+                    continue
+                }
             }
+            
+            commentPostMap = tempPostMap
+            
+        } catch is CancellationError {
+            return
+        } catch NetworkError.cancelled {
+            return
+        } catch {
+            errorMessage = error.localizedDescription
         }
     }
     
@@ -611,6 +641,192 @@ struct ProfileView: View {
                     }
                 }
             }
+        }
+    }
+    
+    // MARK: - Pagination Functions
+    
+    private func loadMorePostsIfNeeded() {
+        guard !isLoadingMorePosts && hasMorePosts else { return }
+        
+        Task { @MainActor in
+            // Check again inside the task to prevent race condition
+            guard !isLoadingMorePosts && hasMorePosts else { return }
+            
+            isLoadingMorePosts = true
+            await loadMorePosts()
+        }
+    }
+    
+    @MainActor
+    private func loadMorePosts() async {
+        guard let token = authState.authToken,
+              let userId = authState.currentUser?.id else {
+            isLoadingMorePosts = false
+            return
+        }
+        
+        defer {
+            isLoadingMorePosts = false
+        }
+        
+        // Calculate next page
+        let nextPage = currentPostsPage + 1
+        
+        var campusPosts: [Post] = []
+        var nationalPosts: [Post] = []
+        
+        // Fetch campus posts for next page
+        do {
+            let campusResponse = try await PostService.shared.fetchPosts(
+                token: token,
+                userId: userId,
+                wall: .campus,
+                page: nextPage,
+                limit: 20,
+                sort: postSortOrder
+            )
+            campusPosts = campusResponse.data.filter { $0.author.id == userId }
+        } catch is CancellationError {
+            return
+        } catch NetworkError.cancelled {
+            return
+        } catch {
+            errorMessage = error.localizedDescription
+            return
+        }
+        
+        // Fetch national posts for next page
+        do {
+            let nationalResponse = try await PostService.shared.fetchPosts(
+                token: token,
+                userId: userId,
+                wall: .national,
+                page: nextPage,
+                limit: 20,
+                sort: postSortOrder
+            )
+            nationalPosts = nationalResponse.data.filter { $0.author.id == userId }
+        } catch is CancellationError {
+            return
+        } catch NetworkError.cancelled {
+            return
+        } catch {
+            errorMessage = error.localizedDescription
+            return
+        }
+        
+        // Merge new posts from both walls
+        let newPosts = campusPosts + nationalPosts
+        
+        // Apply selected sort order to new posts
+        let sortedNewPosts: [Post]
+        switch postSortOrder {
+        case .newest:
+            sortedNewPosts = newPosts.sorted { $0.createdAt > $1.createdAt }
+        case .oldest:
+            sortedNewPosts = newPosts.sorted { $0.createdAt < $1.createdAt }
+        case .mostLiked:
+            sortedNewPosts = newPosts.sorted { $0.likes > $1.likes }
+        case .leastLiked:
+            sortedNewPosts = newPosts.sorted { $0.likes < $1.likes }
+        }
+        
+        // Update page number only after successful response
+        currentPostsPage = nextPage
+        
+        // Append new posts
+        myPosts.append(contentsOf: sortedNewPosts)
+        
+        // Update hasMorePosts flag
+        hasMorePosts = campusPosts.count == 20 || nationalPosts.count == 20
+    }
+    
+    private func loadMoreCommentsIfNeeded() {
+        guard !isLoadingMoreComments && hasMoreComments else { return }
+        
+        Task { @MainActor in
+            // Check again inside the task to prevent race condition
+            guard !isLoadingMoreComments && hasMoreComments else { return }
+            
+            isLoadingMoreComments = true
+            await loadMoreComments()
+        }
+    }
+    
+    @MainActor
+    private func loadMoreComments() async {
+        guard let token = authState.authToken,
+              let userId = authState.currentUser?.id else {
+            isLoadingMoreComments = false
+            return
+        }
+        
+        defer {
+            isLoadingMoreComments = false
+        }
+        
+        // Calculate next page
+        let nextPage = currentCommentsPage + 1
+        
+        do {
+            // Use the new user endpoint to fetch more comments
+            let commentResponse = try await PostService.shared.getUserComments(
+                token: token,
+                userId: userId,
+                page: nextPage,
+                limit: 20,
+                sort: commentSortOrder
+            )
+            
+            // Update page number only after successful response
+            currentCommentsPage = nextPage
+            
+            // Append new comments
+            myComments.append(contentsOf: commentResponse.data)
+            hasMoreComments = currentCommentsPage < commentResponse.pagination.totalPages
+            
+            // Fetch posts for new comments to enable navigation
+            let uniquePostIds = Set(commentResponse.data.map { $0.postId })
+            
+            // Fetch each unique post that we don't already have
+            for postId in uniquePostIds where commentPostMap[postId] == nil {
+                do {
+                    // Try fetching from campus first
+                    let campusResponse = try await PostService.shared.fetchPosts(
+                        token: token,
+                        userId: userId,
+                        wall: .campus,
+                        page: 1,
+                        limit: 100
+                    )
+                    if let post = campusResponse.data.first(where: { $0.id == postId }) {
+                        commentPostMap[postId] = post
+                        continue
+                    }
+                    
+                    // If not found in campus, try national
+                    let nationalResponse = try await PostService.shared.fetchPosts(
+                        token: token,
+                        userId: userId,
+                        wall: .national,
+                        page: 1,
+                        limit: 100
+                    )
+                    if let post = nationalResponse.data.first(where: { $0.id == postId }) {
+                        commentPostMap[postId] = post
+                    }
+                } catch {
+                    // Continue even if some post fetches fail
+                    continue
+                }
+            }
+        } catch is CancellationError {
+            return
+        } catch NetworkError.cancelled {
+            return
+        } catch {
+            errorMessage = error.localizedDescription
         }
     }
 }
