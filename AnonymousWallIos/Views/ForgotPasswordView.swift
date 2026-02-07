@@ -232,10 +232,12 @@ struct ForgotPasswordView: View {
         stopCountdownTimer()
         
         countdownTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { timer in
-            if resendCountdown > 0 {
-                resendCountdown -= 1
-            } else {
-                stopCountdownTimer()
+            DispatchQueue.main.async {
+                if resendCountdown > 0 {
+                    resendCountdown -= 1
+                } else {
+                    stopCountdownTimer()
+                }
             }
         }
     }
