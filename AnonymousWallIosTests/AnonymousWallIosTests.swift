@@ -495,5 +495,111 @@ struct AnonymousWallIosTests {
         #expect(sorted[1].id == "3")
         #expect(sorted[2].id == "2") // Most recent
     }
+    
+    // MARK: - Post Like Tests
+    
+    @Test func testPostWithUpdatedLike() async throws {
+        // Test that Post.withUpdatedLike creates a new post with updated like status
+        let originalPost = Post(
+            id: "1",
+            title: "Test Post",
+            content: "Test content",
+            wall: "CAMPUS",
+            likes: 5,
+            comments: 2,
+            liked: false,
+            author: Post.Author(id: "user-123", profileName: "Test User", isAnonymous: true),
+            createdAt: "2026-01-31T12:00:00Z",
+            updatedAt: "2026-01-31T12:00:00Z"
+        )
+        
+        // Test liking the post
+        let likedPost = originalPost.withUpdatedLike(liked: true, likes: 6)
+        #expect(likedPost.id == originalPost.id)
+        #expect(likedPost.title == originalPost.title)
+        #expect(likedPost.content == originalPost.content)
+        #expect(likedPost.liked == true)
+        #expect(likedPost.likes == 6)
+        #expect(likedPost.comments == originalPost.comments)
+        
+        // Test unliking the post
+        let unlikedPost = likedPost.withUpdatedLike(liked: false, likes: 5)
+        #expect(unlikedPost.liked == false)
+        #expect(unlikedPost.likes == 5)
+    }
+    
+    @Test func testPostLikedStateFromAPI() async throws {
+        // Test that Post model correctly decodes liked state from API
+        let likedPostJson = """
+        {
+            "id": "1",
+            "title": "Liked Post",
+            "content": "This post is liked",
+            "wall": "CAMPUS",
+            "likes": 10,
+            "comments": 5,
+            "liked": true,
+            "author": {
+                "id": "user-123",
+                "profileName": "Test User",
+                "isAnonymous": true
+            },
+            "createdAt": "2026-01-31T12:00:00Z",
+            "updatedAt": "2026-01-31T12:00:00Z"
+        }
+        """
+        
+        let unlikedPostJson = """
+        {
+            "id": "2",
+            "title": "Not Liked Post",
+            "content": "This post is not liked",
+            "wall": "CAMPUS",
+            "likes": 3,
+            "comments": 1,
+            "liked": false,
+            "author": {
+                "id": "user-456",
+                "profileName": "Another User",
+                "isAnonymous": true
+            },
+            "createdAt": "2026-01-31T13:00:00Z",
+            "updatedAt": "2026-01-31T13:00:00Z"
+        }
+        """
+        
+        let decoder = JSONDecoder()
+        
+        let likedPost = try decoder.decode(Post.self, from: likedPostJson.data(using: .utf8)!)
+        #expect(likedPost.liked == true)
+        #expect(likedPost.likes == 10)
+        
+        let unlikedPost = try decoder.decode(Post.self, from: unlikedPostJson.data(using: .utf8)!)
+        #expect(unlikedPost.liked == false)
+        #expect(unlikedPost.likes == 3)
+    }
+    
+    @Test func testLikeResponseDecoding() async throws {
+        // Test that LikeResponse can be decoded from API
+        let likedJson = """
+        {
+            "liked": true
+        }
+        """
+        
+        let unlikedJson = """
+        {
+            "liked": false
+        }
+        """
+        
+        let decoder = JSONDecoder()
+        
+        let likedResponse = try decoder.decode(LikeResponse.self, from: likedJson.data(using: .utf8)!)
+        #expect(likedResponse.liked == true)
+        
+        let unlikedResponse = try decoder.decode(LikeResponse.self, from: unlikedJson.data(using: .utf8)!)
+        #expect(unlikedResponse.liked == false)
+    }
 
 }
