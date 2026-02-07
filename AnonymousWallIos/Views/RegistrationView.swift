@@ -16,6 +16,8 @@ struct RegistrationView: View {
     @State private var errorMessage: String?
     @State private var codeSent = false
     @State private var showingSuccess = false
+    @State private var resendCountdown = 0
+    @State private var countdownTimer: Timer?
     
     var body: some View {
         NavigationStack {
@@ -72,6 +74,10 @@ struct RegistrationView: View {
                                     if isSendingCode {
                                         ProgressView()
                                             .progressViewStyle(CircularProgressViewStyle())
+                                    } else if resendCountdown > 0 {
+                                        Text("\(resendCountdown)s")
+                                            .fontWeight(.bold)
+                                            .font(.system(size: 14))
                                     } else {
                                         Text("Get Code")
                                             .fontWeight(.bold)
@@ -80,11 +86,11 @@ struct RegistrationView: View {
                                 }
                                 .padding(.horizontal, 18)
                                 .padding(.vertical, 14)
-                                .background(email.isEmpty ? AnyShapeStyle(Color.gray) : AnyShapeStyle(Color.tealPurpleGradient))
+                                .background((email.isEmpty || resendCountdown > 0) ? AnyShapeStyle(Color.gray) : AnyShapeStyle(Color.tealPurpleGradient))
                                 .foregroundColor(.white)
                                 .cornerRadius(12)
-                                .shadow(color: email.isEmpty ? Color.clear : Color.vibrantTeal.opacity(0.3), radius: 4, x: 0, y: 2)
-                                .disabled(email.isEmpty || isSendingCode)
+                                .shadow(color: (email.isEmpty || resendCountdown > 0) ? Color.clear : Color.vibrantTeal.opacity(0.3), radius: 4, x: 0, y: 2)
+                                .disabled(email.isEmpty || isSendingCode || resendCountdown > 0)
                             }
                         }
                     }
@@ -107,10 +113,17 @@ struct RegistrationView: View {
                     .padding(.horizontal)
                     
                     Button(action: sendVerificationCode) {
-                        Text("Resend Code")
-                            .font(.caption)
-                            .foregroundColor(.blue)
+                        if resendCountdown > 0 {
+                            Text("Resend Code in \(resendCountdown)s")
+                                .font(.caption)
+                                .foregroundColor(.gray)
+                        } else {
+                            Text("Resend Code")
+                                .font(.caption)
+                                .foregroundColor(.blue)
+                        }
                     }
+                    .disabled(resendCountdown > 0)
                 }
                 
                 // Error message
@@ -169,11 +182,13 @@ struct RegistrationView: View {
         }
         .navigationBarTitleDisplayMode(.inline)
         .navigationTitle("Create Account")
+        .onDisappear {
+            stopCountdownTimer()
+        }
         .alert("Registration Successful", isPresented: $showingSuccess) {
             Button("OK") {}
         } message: {
             Text("You are now logged in. Please set up your password to secure your account.")
-        }
         }
     }
     
@@ -196,6 +211,7 @@ struct RegistrationView: View {
                     HapticFeedback.success()
                     isSendingCode = false
                     codeSent = true
+                    startCountdownTimer()
                 }
             } catch {
                 await MainActor.run {
@@ -204,6 +220,24 @@ struct RegistrationView: View {
                 }
             }
         }
+    }
+    
+    private func startCountdownTimer() {
+        resendCountdown = 60
+        stopCountdownTimer()
+        
+        countdownTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { timer in
+            if resendCountdown > 0 {
+                resendCountdown -= 1
+            } else {
+                stopCountdownTimer()
+            }
+        }
+    }
+    
+    private func stopCountdownTimer() {
+        countdownTimer?.invalidate()
+        countdownTimer = nil
     }
     
     private func registerUser() {

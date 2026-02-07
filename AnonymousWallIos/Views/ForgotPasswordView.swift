@@ -18,6 +18,8 @@ struct ForgotPasswordView: View {
     @State private var errorMessage: String?
     @State private var codeSent = false
     @State private var showSuccess = false
+    @State private var resendCountdown = 0
+    @State private var countdownTimer: Timer?
     @Environment(\.dismiss) var dismiss
     
     var body: some View {
@@ -65,6 +67,9 @@ struct ForgotPasswordView: View {
                                 if isSendingCode {
                                     ProgressView()
                                         .progressViewStyle(CircularProgressViewStyle())
+                                } else if resendCountdown > 0 {
+                                    Text("\(resendCountdown)s")
+                                        .fontWeight(.semibold)
                                 } else {
                                     Text("Send Code")
                                         .fontWeight(.semibold)
@@ -72,10 +77,10 @@ struct ForgotPasswordView: View {
                             }
                             .padding(.horizontal, 16)
                             .padding(.vertical, 12)
-                            .background(email.isEmpty ? Color.gray : Color.blue)
+                            .background((email.isEmpty || resendCountdown > 0) ? Color.gray : Color.blue)
                             .foregroundColor(.white)
                             .cornerRadius(10)
-                            .disabled(email.isEmpty || isSendingCode)
+                            .disabled(email.isEmpty || isSendingCode || resendCountdown > 0)
                         }
                     }
                 }
@@ -124,10 +129,17 @@ struct ForgotPasswordView: View {
                     .padding(.horizontal)
                     
                     Button(action: requestReset) {
-                        Text("Resend Code")
-                            .font(.caption)
-                            .foregroundColor(.blue)
+                        if resendCountdown > 0 {
+                            Text("Resend Code in \(resendCountdown)s")
+                                .font(.caption)
+                                .foregroundColor(.gray)
+                        } else {
+                            Text("Resend Code")
+                                .font(.caption)
+                                .foregroundColor(.blue)
+                        }
                     }
+                    .disabled(resendCountdown > 0)
                 }
                 
                 // Error message
@@ -169,6 +181,9 @@ struct ForgotPasswordView: View {
                 .padding(.bottom, 20)
             }
             .navigationBarHidden(true)
+            .onDisappear {
+                stopCountdownTimer()
+            }
             .alert("Password Reset Successful", isPresented: $showSuccess) {
                 Button("OK") {
                     dismiss()
@@ -201,6 +216,7 @@ struct ForgotPasswordView: View {
                 await MainActor.run {
                     isSendingCode = false
                     codeSent = true
+                    startCountdownTimer()
                 }
             } catch {
                 await MainActor.run {
@@ -209,6 +225,24 @@ struct ForgotPasswordView: View {
                 }
             }
         }
+    }
+    
+    private func startCountdownTimer() {
+        resendCountdown = 60
+        stopCountdownTimer()
+        
+        countdownTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { timer in
+            if resendCountdown > 0 {
+                resendCountdown -= 1
+            } else {
+                stopCountdownTimer()
+            }
+        }
+    }
+    
+    private func stopCountdownTimer() {
+        countdownTimer?.invalidate()
+        countdownTimer = nil
     }
     
     private func resetPassword() {
