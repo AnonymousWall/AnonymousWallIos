@@ -506,20 +506,7 @@ struct ProfileView: View {
         let allPosts = campusPosts + nationalPosts
         
         // Apply selected sort order to merged results
-        let sortedPosts: [Post]
-        switch postSortOrder {
-        case .newest:
-            sortedPosts = allPosts.sorted { $0.createdAt > $1.createdAt }
-        case .oldest:
-            sortedPosts = allPosts.sorted { $0.createdAt < $1.createdAt }
-        case .mostLiked:
-            sortedPosts = allPosts.sorted { $0.likes > $1.likes }
-        case .leastLiked:
-            sortedPosts = allPosts.sorted { $0.likes < $1.likes }
-        }
-        
-        // Replace posts (used for initial load and refresh)
-        myPosts = sortedPosts
+        myPosts = sortedPosts(allPosts, by: postSortOrder)
         
         // Determine if there are more pages
         // Note: Due to client-side filtering, we continue if either wall has more pages
@@ -644,6 +631,22 @@ struct ProfileView: View {
         }
     }
     
+    // MARK: - Helper Functions
+    
+    /// Sort posts according to the selected sort order
+    private func sortedPosts(_ posts: [Post], by order: SortOrder) -> [Post] {
+        switch order {
+        case .newest:
+            return posts.sorted { $0.createdAt > $1.createdAt }
+        case .oldest:
+            return posts.sorted { $0.createdAt < $1.createdAt }
+        case .mostLiked:
+            return posts.sorted { $0.likes > $1.likes }
+        case .leastLiked:
+            return posts.sorted { $0.likes < $1.likes }
+        }
+    }
+    
     // MARK: - Pagination Functions
     
     private func loadMorePostsIfNeeded() {
@@ -723,38 +726,14 @@ struct ProfileView: View {
         // Merge new posts from both walls
         let newPosts = campusPosts + nationalPosts
         
-        // Apply selected sort order to new posts
-        let sortedNewPosts: [Post]
-        switch postSortOrder {
-        case .newest:
-            sortedNewPosts = newPosts.sorted { $0.createdAt > $1.createdAt }
-        case .oldest:
-            sortedNewPosts = newPosts.sorted { $0.createdAt < $1.createdAt }
-        case .mostLiked:
-            sortedNewPosts = newPosts.sorted { $0.likes > $1.likes }
-        case .leastLiked:
-            sortedNewPosts = newPosts.sorted { $0.likes < $1.likes }
-        }
-        
         // Update page number only after successful response
         currentPostsPage = nextPage
         
         // Append new posts and re-sort the entire list to maintain correct order
         // Note: This is necessary because posts from different walls and pages
         // need to be interleaved correctly according to the sort order
-        myPosts.append(contentsOf: sortedNewPosts)
-        
-        // Re-sort the complete list to maintain global sort order
-        switch postSortOrder {
-        case .newest:
-            myPosts.sort { $0.createdAt > $1.createdAt }
-        case .oldest:
-            myPosts.sort { $0.createdAt < $1.createdAt }
-        case .mostLiked:
-            myPosts.sort { $0.likes > $1.likes }
-        case .leastLiked:
-            myPosts.sort { $0.likes < $1.likes }
-        }
+        myPosts.append(contentsOf: newPosts)
+        myPosts = sortedPosts(myPosts, by: postSortOrder)
         
         // Update hasMorePosts flag
         // Note: Due to client-side filtering, we continue if either wall has more pages
