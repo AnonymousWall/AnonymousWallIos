@@ -239,94 +239,96 @@ struct ProfileView: View {
                         }
                         .padding(.horizontal)
                         .padding(.vertical, 8)
-                    
-                    if isLoading {
-                        VStack {
-                            Spacer()
-                            ProgressView("Loading...")
-                            Spacer()
-                        }
-                        .frame(maxWidth: .infinity, minHeight: 300)
-                    } else if selectedSegment == 0 {
-                        // Posts section
-                        if myPosts.isEmpty {
-                            VStack(spacing: 20) {
-                                ZStack {
-                                    Circle()
-                                        .fill(Color.orangePinkGradient)
-                                        .frame(width: 100, height: 100)
-                                        .blur(radius: 30)
-                                    
-                                    Image(systemName: "bubble.left.and.bubble.right.fill")
-                                        .font(.system(size: 60))
-                                        .foregroundStyle(Color.orangePinkGradient)
-                                }
-                                
-                                VStack(spacing: 8) {
-                                    Text("No posts yet")
-                                        .font(.system(size: 22, weight: .bold))
-                                        .foregroundColor(.primary)
-                                    Text("Create your first post!")
-                                        .font(.system(size: 16))
-                                        .foregroundColor(.secondary)
-                                }
+                        
+                        // Content section
+                        if isLoading {
+                            VStack {
+                                Spacer()
+                                ProgressView("Loading...")
+                                Spacer()
                             }
                             .frame(maxWidth: .infinity, minHeight: 300)
-                        } else {
-                            LazyVStack(spacing: 12) {
-                                ForEach(myPosts) { post in
-                                    NavigationLink(destination: PostDetailView(post: post)) {
-                                        PostRowView(
-                                            post: post,
-                                            isOwnPost: true,
-                                            onLike: { toggleLike(for: post) },
-                                            onDelete: { deletePost(post) }
-                                        )
+                        } else if selectedSegment == 0 {
+                            // Posts section
+                            if myPosts.isEmpty {
+                                VStack(spacing: 20) {
+                                    ZStack {
+                                        Circle()
+                                            .fill(Color.orangePinkGradient)
+                                            .frame(width: 100, height: 100)
+                                            .blur(radius: 30)
+                                        
+                                        Image(systemName: "bubble.left.and.bubble.right.fill")
+                                            .font(.system(size: 60))
+                                            .foregroundStyle(Color.orangePinkGradient)
                                     }
-                                    .buttonStyle(PlainButtonStyle())
-                                }
-                            }
-                            .padding()
-                        }
-                    } else {
-                        // Comments section
-                        if myComments.isEmpty {
-                            VStack(spacing: 20) {
-                                ZStack {
-                                    Circle()
-                                        .fill(Color.tealPurpleGradient)
-                                        .frame(width: 100, height: 100)
-                                        .blur(radius: 30)
                                     
-                                    Image(systemName: "bubble.left.fill")
-                                        .font(.system(size: 60))
-                                        .foregroundStyle(Color.tealPurpleGradient)
+                                    VStack(spacing: 8) {
+                                        Text("No posts yet")
+                                            .font(.system(size: 22, weight: .bold))
+                                            .foregroundColor(.primary)
+                                        Text("Create your first post!")
+                                            .font(.system(size: 16))
+                                            .foregroundColor(.secondary)
+                                    }
                                 }
-                                
-                                VStack(spacing: 8) {
-                                    Text("No comments yet")
-                                        .font(.system(size: 22, weight: .bold))
-                                        .foregroundColor(.primary)
-                                    Text("Start commenting on posts!")
-                                        .font(.system(size: 16))
-                                        .foregroundColor(.secondary)
-                                }
-                            }
-                            .frame(maxWidth: .infinity, minHeight: 300)
-                        } else {
-                            LazyVStack(spacing: 12) {
-                                ForEach(myComments) { comment in
-                                    if let post = commentPostMap[comment.postId] {
+                                .frame(maxWidth: .infinity, minHeight: 300)
+                            } else {
+                                LazyVStack(spacing: 12) {
+                                    ForEach(myPosts) { post in
                                         NavigationLink(destination: PostDetailView(post: post)) {
-                                            ProfileCommentRowView(comment: comment)
+                                            PostRowView(
+                                                post: post,
+                                                isOwnPost: true,
+                                                onLike: { toggleLike(for: post) },
+                                                onDelete: { deletePost(post) }
+                                            )
                                         }
                                         .buttonStyle(PlainButtonStyle())
-                                    } else {
-                                        ProfileCommentRowView(comment: comment)
                                     }
                                 }
+                                .padding()
                             }
-                            .padding()
+                        } else {
+                            // Comments section
+                            if myComments.isEmpty {
+                                VStack(spacing: 20) {
+                                    ZStack {
+                                        Circle()
+                                            .fill(Color.tealPurpleGradient)
+                                            .frame(width: 100, height: 100)
+                                            .blur(radius: 30)
+                                        
+                                        Image(systemName: "bubble.left.fill")
+                                            .font(.system(size: 60))
+                                            .foregroundStyle(Color.tealPurpleGradient)
+                                    }
+                                    
+                                    VStack(spacing: 8) {
+                                        Text("No comments yet")
+                                            .font(.system(size: 22, weight: .bold))
+                                            .foregroundColor(.primary)
+                                        Text("Start commenting on posts!")
+                                            .font(.system(size: 16))
+                                            .foregroundColor(.secondary)
+                                    }
+                                }
+                                .frame(maxWidth: .infinity, minHeight: 300)
+                            } else {
+                                LazyVStack(spacing: 12) {
+                                    ForEach(myComments) { comment in
+                                        if let post = commentPostMap[comment.postId] {
+                                            NavigationLink(destination: PostDetailView(post: post)) {
+                                                ProfileCommentRowView(comment: comment)
+                                            }
+                                            .buttonStyle(PlainButtonStyle())
+                                        } else {
+                                            ProfileCommentRowView(comment: comment)
+                                        }
+                                    }
+                                }
+                                .padding()
+                            }
                         }
                     }
                 }
