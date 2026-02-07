@@ -547,23 +547,30 @@ struct ProfileView: View {
             // Get unique post IDs from comments
             let uniquePostIds = Set(commentResponse.data.map { $0.postId })
             
-            // Fetch each unique post using the single post endpoint
+            // Fetch posts concurrently using TaskGroup for better performance
             var tempPostMap: [String: Post] = [:]
-            for postId in uniquePostIds {
-                do {
-                    let post = try await PostService.shared.getPost(
-                        postId: postId,
-                        token: token,
-                        userId: userId
-                    )
-                    tempPostMap[postId] = post
-                } catch is CancellationError {
-                    continue
-                } catch NetworkError.cancelled {
-                    continue
-                } catch {
-                    // Continue even if some post fetches fail
-                    continue
+            await withTaskGroup(of: (String, Post?).self) { group in
+                for postId in uniquePostIds {
+                    group.addTask {
+                        do {
+                            let post = try await PostService.shared.getPost(
+                                postId: postId,
+                                token: token,
+                                userId: userId
+                            )
+                            return (postId, post)
+                        } catch {
+                            // Return nil for failed fetches
+                            return (postId, nil)
+                        }
+                    }
+                }
+                
+                // Collect results
+                for await (postId, post) in group {
+                    if let post = post {
+                        tempPostMap[postId] = post
+                    }
                 }
             }
             
@@ -732,8 +739,22 @@ struct ProfileView: View {
         // Update page number only after successful response
         currentPostsPage = nextPage
         
-        // Append new posts
+        // Append new posts and re-sort the entire list to maintain correct order
+        // Note: This is necessary because posts from different walls and pages
+        // need to be interleaved correctly according to the sort order
         myPosts.append(contentsOf: sortedNewPosts)
+        
+        // Re-sort the complete list to maintain global sort order
+        switch postSortOrder {
+        case .newest:
+            myPosts.sort { $0.createdAt > $1.createdAt }
+        case .oldest:
+            myPosts.sort { $0.createdAt < $1.createdAt }
+        case .mostLiked:
+            myPosts.sort { $0.likes > $1.likes }
+        case .leastLiked:
+            myPosts.sort { $0.likes < $1.likes }
+        }
         
         // Update hasMorePosts flag
         // Note: Due to client-side filtering, we continue if either wall has more pages
@@ -787,18 +808,32 @@ struct ProfileView: View {
             // Fetch posts for new comments to enable navigation
             let uniquePostIds = Set(commentResponse.data.map { $0.postId })
             
-            // Fetch each unique post that we don't already have using the single post endpoint
-            for postId in uniquePostIds where commentPostMap[postId] == nil {
-                do {
-                    let post = try await PostService.shared.getPost(
-                        postId: postId,
-                        token: token,
-                        userId: userId
-                    )
-                    commentPostMap[postId] = post
-                } catch {
-                    // Continue even if some post fetches fail
-                    continue
+            // Fetch posts concurrently using TaskGroup for better performance
+            // Only fetch posts we don't already have
+            let postsToFetch = uniquePostIds.filter { commentPostMap[$0] == nil }
+            
+            await withTaskGroup(of: (String, Post?).self) { group in
+                for postId in postsToFetch {
+                    group.addTask {
+                        do {
+                            let post = try await PostService.shared.getPost(
+                                postId: postId,
+                                token: token,
+                                userId: userId
+                            )
+                            return (postId, post)
+                        } catch {
+                            // Return nil for failed fetches
+                            return (postId, nil)
+                        }
+                    }
+                }
+                
+                // Collect results and add to commentPostMap
+                for await (postId, post) in group {
+                    if let post = post {
+                        commentPostMap[postId] = post
+                    }
                 }
             }
         } catch is CancellationError {
