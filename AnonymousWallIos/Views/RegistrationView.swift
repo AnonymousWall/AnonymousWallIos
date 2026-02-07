@@ -226,7 +226,7 @@ struct RegistrationView: View {
         resendCountdown = 60
         stopCountdownTimer()
         
-        countdownTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { timer in
+        countdownTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
             DispatchQueue.main.async {
                 if resendCountdown > 0 {
                     resendCountdown -= 1
