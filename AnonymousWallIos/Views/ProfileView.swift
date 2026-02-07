@@ -444,10 +444,18 @@ struct ProfileView: View {
     
     @MainActor
     private func loadMyPosts(token: String, userId: String) async {
+        // Note: This implementation uses client-side filtering because there is no
+        // dedicated backend endpoint for fetching user's own posts. The API returns
+        // all posts from both walls, and we filter by userId on the client.
+        // This means pagination may fetch pages with few or no user posts.
+        // Ideally, the backend should provide a /api/v1/users/me/posts endpoint.
+        
         var campusPosts: [Post] = []
         var nationalPosts: [Post] = []
         var campusCancelled = false
         var nationalCancelled = false
+        var campusHasMore = false
+        var nationalHasMore = false
         
         // Fetch campus posts for current page
         do {
@@ -460,6 +468,7 @@ struct ProfileView: View {
                 sort: postSortOrder
             )
             campusPosts = campusResponse.data.filter { $0.author.id == userId }
+            campusHasMore = currentPostsPage < campusResponse.pagination.totalPages
         } catch is CancellationError {
             campusCancelled = true
         } catch NetworkError.cancelled {
@@ -479,6 +488,7 @@ struct ProfileView: View {
                 sort: postSortOrder
             )
             nationalPosts = nationalResponse.data.filter { $0.author.id == userId }
+            nationalHasMore = currentPostsPage < nationalResponse.pagination.totalPages
         } catch is CancellationError {
             nationalCancelled = true
         } catch NetworkError.cancelled {
@@ -512,8 +522,9 @@ struct ProfileView: View {
         myPosts = sortedPosts
         
         // Determine if there are more pages
-        // We consider there are more pages if either wall returned the full page size
-        hasMorePosts = campusPosts.count == 20 || nationalPosts.count == 20
+        // Note: Due to client-side filtering, we continue if either wall has more pages
+        // This is a limitation without a dedicated user posts endpoint
+        hasMorePosts = campusHasMore || nationalHasMore
     }
     
     @MainActor
@@ -657,6 +668,8 @@ struct ProfileView: View {
         
         var campusPosts: [Post] = []
         var nationalPosts: [Post] = []
+        var campusHasMore = false
+        var nationalHasMore = false
         
         // Fetch campus posts for next page
         do {
@@ -669,6 +682,7 @@ struct ProfileView: View {
                 sort: postSortOrder
             )
             campusPosts = campusResponse.data.filter { $0.author.id == userId }
+            campusHasMore = nextPage < campusResponse.pagination.totalPages
         } catch is CancellationError {
             return
         } catch NetworkError.cancelled {
@@ -689,6 +703,7 @@ struct ProfileView: View {
                 sort: postSortOrder
             )
             nationalPosts = nationalResponse.data.filter { $0.author.id == userId }
+            nationalHasMore = nextPage < nationalResponse.pagination.totalPages
         } catch is CancellationError {
             return
         } catch NetworkError.cancelled {
@@ -721,7 +736,8 @@ struct ProfileView: View {
         myPosts.append(contentsOf: sortedNewPosts)
         
         // Update hasMorePosts flag
-        hasMorePosts = campusPosts.count == 20 || nationalPosts.count == 20
+        // Note: Due to client-side filtering, we continue if either wall has more pages
+        hasMorePosts = campusHasMore || nationalHasMore
     }
     
     private func loadMoreCommentsIfNeeded() {
