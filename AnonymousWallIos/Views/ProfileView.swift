@@ -444,74 +444,29 @@ struct ProfileView: View {
     
     @MainActor
     private func loadMyPosts(token: String, userId: String) async {
-        // Note: This implementation uses client-side filtering because there is no
-        // dedicated backend endpoint for fetching user's own posts. The API returns
-        // all posts from both walls, and we filter by userId on the client.
-        // This means pagination may fetch pages with few or no user posts.
-        // Ideally, the backend should provide a /api/v1/users/me/posts endpoint.
-        
-        var campusPosts: [Post] = []
-        var nationalPosts: [Post] = []
-        var campusCancelled = false
-        var nationalCancelled = false
-        var campusHasMore = false
-        var nationalHasMore = false
-        
-        // Fetch campus posts for current page
         do {
-            let campusResponse = try await PostService.shared.fetchPosts(
+            // Use the new user endpoint to fetch posts with pagination
+            // This endpoint returns posts from both campus and national walls
+            let postsResponse = try await PostService.shared.getUserPosts(
                 token: token,
                 userId: userId,
-                wall: .campus,
                 page: currentPostsPage,
                 limit: 20,
                 sort: postSortOrder
             )
-            campusPosts = campusResponse.data.filter { $0.author.id == userId }
-            campusHasMore = currentPostsPage < campusResponse.pagination.totalPages
+            
+            // Replace posts (used for initial load and refresh)
+            myPosts = postsResponse.data
+            hasMorePosts = currentPostsPage < postsResponse.pagination.totalPages
         } catch is CancellationError {
-            campusCancelled = true
-        } catch NetworkError.cancelled {
-            campusCancelled = true
-        } catch {
-            errorMessage = error.localizedDescription
-        }
-        
-        // Fetch national posts for current page
-        do {
-            let nationalResponse = try await PostService.shared.fetchPosts(
-                token: token,
-                userId: userId,
-                wall: .national,
-                page: currentPostsPage,
-                limit: 20,
-                sort: postSortOrder
-            )
-            nationalPosts = nationalResponse.data.filter { $0.author.id == userId }
-            nationalHasMore = currentPostsPage < nationalResponse.pagination.totalPages
-        } catch is CancellationError {
-            nationalCancelled = true
-        } catch NetworkError.cancelled {
-            nationalCancelled = true
-        } catch {
-            errorMessage = error.localizedDescription
-        }
-        
-        // If both fetches were cancelled, keep existing state
-        if campusCancelled && nationalCancelled {
+            // If task was cancelled, keep existing state
             return
+        } catch NetworkError.cancelled {
+            // If network request was cancelled, keep existing state
+            return
+        } catch {
+            errorMessage = error.localizedDescription
         }
-        
-        // Merge posts from both walls
-        let allPosts = campusPosts + nationalPosts
-        
-        // Apply selected sort order to merged results
-        myPosts = sortedPosts(allPosts, by: postSortOrder)
-        
-        // Determine if there are more pages
-        // Note: Due to client-side filtering, we continue if either wall has more pages
-        // This is a limitation without a dedicated user posts endpoint
-        hasMorePosts = campusHasMore || nationalHasMore
     }
     
     @MainActor
@@ -676,23 +631,24 @@ struct ProfileView: View {
         // Calculate next page
         let nextPage = currentPostsPage + 1
         
-        var campusPosts: [Post] = []
-        var nationalPosts: [Post] = []
-        var campusHasMore = false
-        var nationalHasMore = false
-        
-        // Fetch campus posts for next page
         do {
-            let campusResponse = try await PostService.shared.fetchPosts(
+            // Use the new user endpoint to fetch next page of posts
+            let postsResponse = try await PostService.shared.getUserPosts(
                 token: token,
                 userId: userId,
-                wall: .campus,
                 page: nextPage,
                 limit: 20,
                 sort: postSortOrder
             )
-            campusPosts = campusResponse.data.filter { $0.author.id == userId }
-            campusHasMore = nextPage < campusResponse.pagination.totalPages
+            
+            // Update page number only after successful response
+            currentPostsPage = nextPage
+            
+            // Append new posts to existing list
+            myPosts.append(contentsOf: postsResponse.data)
+            
+            // Update hasMorePosts flag
+            hasMorePosts = currentPostsPage < postsResponse.pagination.totalPages
         } catch is CancellationError {
             return
         } catch NetworkError.cancelled {
@@ -701,43 +657,6 @@ struct ProfileView: View {
             errorMessage = error.localizedDescription
             return
         }
-        
-        // Fetch national posts for next page
-        do {
-            let nationalResponse = try await PostService.shared.fetchPosts(
-                token: token,
-                userId: userId,
-                wall: .national,
-                page: nextPage,
-                limit: 20,
-                sort: postSortOrder
-            )
-            nationalPosts = nationalResponse.data.filter { $0.author.id == userId }
-            nationalHasMore = nextPage < nationalResponse.pagination.totalPages
-        } catch is CancellationError {
-            return
-        } catch NetworkError.cancelled {
-            return
-        } catch {
-            errorMessage = error.localizedDescription
-            return
-        }
-        
-        // Merge new posts from both walls
-        let newPosts = campusPosts + nationalPosts
-        
-        // Update page number only after successful response
-        currentPostsPage = nextPage
-        
-        // Append new posts and re-sort the entire list to maintain correct order
-        // Note: This is necessary because posts from different walls and pages
-        // need to be interleaved correctly according to the sort order
-        myPosts.append(contentsOf: newPosts)
-        myPosts = sortedPosts(myPosts, by: postSortOrder)
-        
-        // Update hasMorePosts flag
-        // Note: Due to client-side filtering, we continue if either wall has more pages
-        hasMorePosts = campusHasMore || nationalHasMore
     }
     
     private func loadMoreCommentsIfNeeded() {
