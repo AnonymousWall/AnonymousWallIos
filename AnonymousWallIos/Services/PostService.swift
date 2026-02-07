@@ -58,6 +58,25 @@ class PostService {
         }
     }
     
+    /// Get a single post by ID
+    func getPost(
+        postId: String,
+        token: String,
+        userId: String
+    ) async throws -> Post {
+        guard let url = URL(string: "\(config.fullAPIBaseURL)/posts/\(postId)") else {
+            throw NetworkError.invalidURL
+        }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        request.setValue(userId, forHTTPHeaderField: "X-User-Id")
+        
+        return try await networkClient.performRequest(request)
+    }
+    
     /// Create a new post
     func createPost(title: String, content: String, wall: WallType = .campus, token: String, userId: String) async throws -> Post {
         guard let url = URL(string: "\(config.fullAPIBaseURL)/posts") else {

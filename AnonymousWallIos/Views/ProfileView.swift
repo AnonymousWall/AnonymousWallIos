@@ -536,34 +536,16 @@ struct ProfileView: View {
             // Get unique post IDs from comments
             let uniquePostIds = Set(commentResponse.data.map { $0.postId })
             
-            // Fetch each unique post
+            // Fetch each unique post using the single post endpoint
             var tempPostMap: [String: Post] = [:]
             for postId in uniquePostIds {
                 do {
-                    // Try fetching from campus first
-                    let campusResponse = try await PostService.shared.fetchPosts(
+                    let post = try await PostService.shared.getPost(
+                        postId: postId,
                         token: token,
-                        userId: userId,
-                        wall: .campus,
-                        page: 1,
-                        limit: 100
+                        userId: userId
                     )
-                    if let post = campusResponse.data.first(where: { $0.id == postId }) {
-                        tempPostMap[postId] = post
-                        continue
-                    }
-                    
-                    // If not found in campus, try national
-                    let nationalResponse = try await PostService.shared.fetchPosts(
-                        token: token,
-                        userId: userId,
-                        wall: .national,
-                        page: 1,
-                        limit: 100
-                    )
-                    if let post = nationalResponse.data.first(where: { $0.id == postId }) {
-                        tempPostMap[postId] = post
-                    }
+                    tempPostMap[postId] = post
                 } catch is CancellationError {
                     continue
                 } catch NetworkError.cancelled {
@@ -789,33 +771,15 @@ struct ProfileView: View {
             // Fetch posts for new comments to enable navigation
             let uniquePostIds = Set(commentResponse.data.map { $0.postId })
             
-            // Fetch each unique post that we don't already have
+            // Fetch each unique post that we don't already have using the single post endpoint
             for postId in uniquePostIds where commentPostMap[postId] == nil {
                 do {
-                    // Try fetching from campus first
-                    let campusResponse = try await PostService.shared.fetchPosts(
+                    let post = try await PostService.shared.getPost(
+                        postId: postId,
                         token: token,
-                        userId: userId,
-                        wall: .campus,
-                        page: 1,
-                        limit: 100
+                        userId: userId
                     )
-                    if let post = campusResponse.data.first(where: { $0.id == postId }) {
-                        commentPostMap[postId] = post
-                        continue
-                    }
-                    
-                    // If not found in campus, try national
-                    let nationalResponse = try await PostService.shared.fetchPosts(
-                        token: token,
-                        userId: userId,
-                        wall: .national,
-                        page: 1,
-                        limit: 100
-                    )
-                    if let post = nationalResponse.data.first(where: { $0.id == postId }) {
-                        commentPostMap[postId] = post
-                    }
+                    commentPostMap[postId] = post
                 } catch {
                     // Continue even if some post fetches fail
                     continue
