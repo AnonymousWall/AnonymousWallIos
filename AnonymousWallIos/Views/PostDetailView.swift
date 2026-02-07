@@ -12,6 +12,7 @@ struct PostDetailView: View {
     @Environment(\.dismiss) var dismiss
     
     let post: Post
+    @State private var currentPost: Post
     @State private var comments: [Comment] = []
     @State private var isLoadingComments = false
     @State private var isLoadingMoreComments = false
@@ -24,6 +25,11 @@ struct PostDetailView: View {
     @State private var commentToDelete: Comment?
     @State private var selectedSortOrder: SortOrder = .newest
     
+    init(post: Post) {
+        self.post = post
+        self._currentPost = State(initialValue: post)
+    }
+    
     var body: some View {
         VStack(spacing: 0) {
             // Post content
@@ -32,12 +38,12 @@ struct PostDetailView: View {
                     // Original post
                     VStack(alignment: .leading, spacing: 14) {
                         // Post title
-                        Text(post.title)
+                        Text(currentPost.title)
                             .font(.system(size: 24, weight: .bold))
                             .foregroundColor(.primary)
                             .fixedSize(horizontal: false, vertical: true)
                         
-                        Text(post.content)
+                        Text(currentPost.content)
                             .font(.system(size: 16))
                             .foregroundColor(.primary)
                             .lineSpacing(2)
@@ -48,7 +54,7 @@ struct PostDetailView: View {
                                 Image(systemName: "clock")
                                     .font(.caption2)
                                     .foregroundColor(.secondary)
-                                Text(DateFormatting.formatRelativeTime(post.createdAt))
+                                Text(DateFormatting.formatRelativeTime(currentPost.createdAt))
                                     .font(.caption)
                                     .foregroundColor(.secondary)
                             }
@@ -56,21 +62,32 @@ struct PostDetailView: View {
                             Spacer()
                             
                             HStack(spacing: 16) {
-                                HStack(spacing: 5) {
-                                    Image(systemName: "heart.fill")
-                                        .font(.system(size: 16))
-                                        .foregroundColor(.pink)
-                                    Text("\(post.likes)")
-                                        .font(.subheadline)
-                                        .fontWeight(.semibold)
-                                        .foregroundColor(.pink)
+                                // Like button
+                                Button(action: {
+                                    HapticFeedback.medium()
+                                    toggleLike()
+                                }) {
+                                    HStack(spacing: 5) {
+                                        Image(systemName: currentPost.liked ? "heart.fill" : "heart")
+                                            .font(.system(size: 16))
+                                            .foregroundColor(currentPost.liked ? .pink : .secondary)
+                                        Text("\(currentPost.likes)")
+                                            .font(.subheadline)
+                                            .fontWeight(.semibold)
+                                            .foregroundColor(currentPost.liked ? .pink : .secondary)
+                                    }
+                                    .padding(.horizontal, 10)
+                                    .padding(.vertical, 6)
+                                    .background(currentPost.liked ? Color.pink.opacity(0.15) : Color(.systemGray6))
+                                    .cornerRadius(8)
                                 }
+                                .buttonStyle(.bounce)
                                 
                                 HStack(spacing: 5) {
                                     Image(systemName: "bubble.left.fill")
                                         .font(.system(size: 16))
                                         .foregroundColor(.vibrantTeal)
-                                    Text("\(post.comments)")
+                                    Text("\(currentPost.comments)")
                                         .font(.subheadline)
                                         .fontWeight(.semibold)
                                         .foregroundColor(.vibrantTeal)
@@ -439,6 +456,49 @@ struct PostDetailView: View {
                         }
                     } else {
                         errorMessage = "Failed to delete comment. Please try again."
+                    }
+                }
+            }
+        }
+    }
+    
+    private func toggleLike() {
+        guard let token = authState.authToken,
+              let userId = authState.currentUser?.id else {
+            errorMessage = "Authentication required to like post."
+            return
+        }
+        
+        Task {
+            do {
+                let response = try await PostService.shared.toggleLike(postId: currentPost.id, token: token, userId: userId)
+                
+                // Update the post locally
+                await MainActor.run {
+                    let updatedLikes = response.liked ? currentPost.likes + 1 : currentPost.likes - 1
+                    currentPost = currentPost.withUpdatedLike(liked: response.liked, likes: updatedLikes)
+                }
+            } catch is CancellationError {
+                // Silently handle cancellation
+                return
+            } catch NetworkError.cancelled {
+                // Silently handle network cancellation
+                return
+            } catch {
+                await MainActor.run {
+                    if let networkError = error as? NetworkError {
+                        switch networkError {
+                        case .unauthorized:
+                            errorMessage = "Session expired. Please log in again."
+                        case .forbidden:
+                            errorMessage = "You don't have permission to like this post."
+                        case .noConnection:
+                            errorMessage = "No internet connection. Please check your network."
+                        default:
+                            errorMessage = "Failed to like post. Please try again."
+                        }
+                    } else {
+                        errorMessage = "Failed to like post. Please try again."
                     }
                 }
             }
