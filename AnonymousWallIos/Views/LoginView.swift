@@ -265,13 +265,13 @@ struct LoginView: View {
         resendCountdown = 60
         stopCountdownTimer()
         
-        countdownTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
-            DispatchQueue.main.async {
-                if self.resendCountdown > 0 {
-                    self.resendCountdown -= 1
-                } else {
-                    self.stopCountdownTimer()
-                }
+        countdownTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
+            guard let self = self else { return }
+            // Timer already executes on main RunLoop - no need for DispatchQueue.main.async
+            if self.resendCountdown > 0 {
+                self.resendCountdown -= 1
+            } else {
+                self.stopCountdownTimer()
             }
         }
     }
