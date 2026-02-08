@@ -85,9 +85,8 @@ class ForgotPasswordViewModel: ObservableObject {
                 isLoading = false
                 showSuccess = true
                 
-                DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-                    onSuccess()
-                }
+                try? await Task.sleep(nanoseconds: 1_000_000_000)
+                onSuccess()
             } catch {
                 isLoading = false
                 errorMessage = error.localizedDescription
