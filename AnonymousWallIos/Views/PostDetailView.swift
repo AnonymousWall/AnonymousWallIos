@@ -183,7 +183,7 @@ struct PostDetailView: View {
                 .padding()
             }
             .refreshable {
-                await refreshComments()
+                await refreshContent()
             }
             
             // Error message
@@ -234,7 +234,15 @@ struct PostDetailView: View {
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
             Task {
-                await loadComments()
+                // Load post details and comments concurrently for better performance
+                await withTaskGroup(of: Void.self) { group in
+                    group.addTask {
+                        await refreshPost()
+                    }
+                    group.addTask {
+                        await loadComments()
+                    }
+                }
             }
         }
         .confirmationDialog(
@@ -335,6 +343,49 @@ struct PostDetailView: View {
         
         // Wait for the task to complete
         await task.value
+    }
+    
+    @MainActor
+    private func refreshContent() async {
+        // Refresh both post details and comments
+        await withTaskGroup(of: Void.self) { group in
+            // Refresh post data
+            group.addTask {
+                await self.refreshPost()
+            }
+            
+            // Refresh comments
+            group.addTask {
+                await self.refreshComments()
+            }
+        }
+    }
+    
+    @MainActor
+    private func refreshPost() async {
+        guard let token = authState.authToken,
+              let userId = authState.currentUser?.id else {
+            return
+        }
+        
+        do {
+            let updatedPost = try await PostService.shared.getPost(
+                postId: post.id,
+                token: token,
+                userId: userId
+            )
+            post = updatedPost
+        } catch is CancellationError {
+            // Silently handle cancellation
+            return
+        } catch NetworkError.cancelled {
+            // Silently handle network cancellation
+            return
+        } catch {
+            // Silently fail to avoid disrupting the user experience
+            // The existing post data will remain visible
+            print("Failed to refresh post: \(error.localizedDescription)")
+        }
     }
     
     private func loadMoreCommentsIfNeeded() {
