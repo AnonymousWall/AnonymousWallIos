@@ -36,6 +36,9 @@ protocol PostServiceProtocol {
     /// Hide/delete a post (soft delete)
     func hidePost(postId: String, token: String, userId: String) async throws -> HidePostResponse
     
+    /// Unhide a post (restore from soft delete)
+    func unhidePost(postId: String, token: String, userId: String) async throws -> HidePostResponse
+    
     // MARK: - Comment Operations
     
     /// Add a comment to a post
@@ -53,6 +56,9 @@ protocol PostServiceProtocol {
     
     /// Hide/delete a comment (soft delete)
     func hideComment(postId: String, commentId: String, token: String, userId: String) async throws -> HidePostResponse
+    
+    /// Unhide a comment (restore from soft delete)
+    func unhideComment(postId: String, commentId: String, token: String, userId: String) async throws -> HidePostResponse
     
     // MARK: - User Operations
     

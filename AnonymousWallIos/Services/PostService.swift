@@ -125,6 +125,21 @@ class PostService: PostServiceProtocol {
         return try await networkClient.performRequest(request)
     }
     
+    /// Unhide a post (restore from soft delete)
+    func unhidePost(postId: String, token: String, userId: String) async throws -> HidePostResponse {
+        guard let url = URL(string: "\(config.fullAPIBaseURL)/posts/\(postId)/unhide") else {
+            throw NetworkError.invalidURL
+        }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "PATCH"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        request.setValue(userId, forHTTPHeaderField: "X-User-Id")
+        
+        return try await networkClient.performRequest(request)
+    }
+    
     // MARK: - Comment Operations
     
     /// Add a comment to a post
@@ -177,6 +192,21 @@ class PostService: PostServiceProtocol {
     /// Hide/delete a comment (soft delete)
     func hideComment(postId: String, commentId: String, token: String, userId: String) async throws -> HidePostResponse {
         guard let url = URL(string: "\(config.fullAPIBaseURL)/posts/\(postId)/comments/\(commentId)/hide") else {
+            throw NetworkError.invalidURL
+        }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "PATCH"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        request.setValue(userId, forHTTPHeaderField: "X-User-Id")
+        
+        return try await networkClient.performRequest(request)
+    }
+    
+    /// Unhide a comment (restore from soft delete)
+    func unhideComment(postId: String, commentId: String, token: String, userId: String) async throws -> HidePostResponse {
+        guard let url = URL(string: "\(config.fullAPIBaseURL)/posts/\(postId)/comments/\(commentId)/unhide") else {
             throw NetworkError.invalidURL
         }
         
