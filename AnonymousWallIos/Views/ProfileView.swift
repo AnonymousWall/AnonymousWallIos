@@ -226,19 +226,19 @@ struct ProfileView: View {
                             .frame(maxWidth: .infinity, minHeight: 300)
                         } else {
                             LazyVStack(spacing: 12) {
-                                ForEach(myPosts) { post in
-                                    NavigationLink(destination: PostDetailView(post: post)) {
+                                ForEach(myPosts.indices, id: \.self) { index in
+                                    NavigationLink(destination: PostDetailView(post: $myPosts[index])) {
                                         PostRowView(
-                                            post: post,
+                                            post: myPosts[index],
                                             isOwnPost: true,
-                                            onLike: { toggleLike(for: post) },
-                                            onDelete: { deletePost(post) }
+                                            onLike: { toggleLike(for: myPosts[index]) },
+                                            onDelete: { deletePost(myPosts[index]) }
                                         )
                                     }
                                     .buttonStyle(PlainButtonStyle())
                                     .onAppear {
                                         // Load more when the last post appears
-                                        if post.id == myPosts.last?.id {
+                                        if myPosts[index].id == myPosts.last?.id {
                                             loadMorePostsIfNeeded()
                                         }
                                     }
@@ -285,7 +285,7 @@ struct ProfileView: View {
                             LazyVStack(spacing: 12) {
                                 ForEach(myComments) { comment in
                                     if let post = commentPostMap[comment.postId] {
-                                        NavigationLink(destination: PostDetailView(post: post)) {
+                                        NavigationLink(destination: PostDetailView(post: .constant(post))) {
                                             ProfileCommentRowView(comment: comment)
                                         }
                                         .buttonStyle(PlainButtonStyle())

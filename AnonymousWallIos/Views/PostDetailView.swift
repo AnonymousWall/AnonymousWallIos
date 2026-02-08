@@ -11,8 +11,7 @@ struct PostDetailView: View {
     @EnvironmentObject var authState: AuthState
     @Environment(\.dismiss) var dismiss
     
-    let post: Post
-    @State private var currentPost: Post
+    @Binding var post: Post
     @State private var comments: [Comment] = []
     @State private var isLoadingComments = false
     @State private var isLoadingMoreComments = false
@@ -25,11 +24,6 @@ struct PostDetailView: View {
     @State private var commentToDelete: Comment?
     @State private var selectedSortOrder: SortOrder = .newest
     
-    init(post: Post) {
-        self.post = post
-        _currentPost = State(initialValue: post)
-    }
-    
     var body: some View {
         VStack(spacing: 0) {
             // Post content
@@ -38,12 +32,12 @@ struct PostDetailView: View {
                     // Original post
                     VStack(alignment: .leading, spacing: 14) {
                         // Post title
-                        Text(currentPost.title)
+                        Text(post.title)
                             .font(.system(size: 24, weight: .bold))
                             .foregroundColor(.primary)
                             .fixedSize(horizontal: false, vertical: true)
                         
-                        Text(currentPost.content)
+                        Text(post.content)
                             .font(.system(size: 16))
                             .foregroundColor(.primary)
                             .lineSpacing(2)
@@ -54,7 +48,7 @@ struct PostDetailView: View {
                                 Image(systemName: "clock")
                                     .font(.caption2)
                                     .foregroundColor(.secondary)
-                                Text(DateFormatting.formatRelativeTime(currentPost.createdAt))
+                                Text(DateFormatting.formatRelativeTime(post.createdAt))
                                     .font(.caption)
                                     .foregroundColor(.secondary)
                             }
@@ -68,17 +62,17 @@ struct PostDetailView: View {
                                     toggleLike()
                                 }) {
                                     HStack(spacing: 5) {
-                                        Image(systemName: currentPost.liked ? "heart.fill" : "heart")
+                                        Image(systemName: post.liked ? "heart.fill" : "heart")
                                             .font(.system(size: 16))
-                                            .foregroundColor(currentPost.liked ? .pink : .secondary)
-                                        Text("\(currentPost.likes)")
+                                            .foregroundColor(post.liked ? .pink : .secondary)
+                                        Text("\(post.likes)")
                                             .font(.subheadline)
                                             .fontWeight(.semibold)
-                                            .foregroundColor(currentPost.liked ? .pink : .secondary)
+                                            .foregroundColor(post.liked ? .pink : .secondary)
                                     }
                                     .padding(.horizontal, 10)
                                     .padding(.vertical, 6)
-                                    .background(currentPost.liked ? Color.pink.opacity(0.15) : Color(.systemGray6))
+                                    .background(post.liked ? Color.pink.opacity(0.15) : Color(.systemGray6))
                                     .cornerRadius(8)
                                 }
                                 .buttonStyle(.bounce)
@@ -87,7 +81,7 @@ struct PostDetailView: View {
                                     Image(systemName: "bubble.left.fill")
                                         .font(.system(size: 16))
                                         .foregroundColor(.vibrantTeal)
-                                    Text("\(currentPost.comments)")
+                                    Text("\(post.comments)")
                                         .font(.subheadline)
                                         .fontWeight(.semibold)
                                         .foregroundColor(.vibrantTeal)
@@ -271,11 +265,11 @@ struct PostDetailView: View {
         
         Task {
             do {
-                let response = try await PostService.shared.toggleLike(postId: currentPost.id, token: token, userId: userId)
+                let response = try await PostService.shared.toggleLike(postId: post.id, token: token, userId: userId)
                 
                 // Update the local post state with the response data
                 await MainActor.run {
-                    currentPost = currentPost.withUpdatedLike(liked: response.liked, likes: response.likeCount)
+                    post = post.withUpdatedLike(liked: response.liked, likes: response.likeCount)
                     HapticFeedback.success()
                 }
             } catch {
@@ -548,21 +542,27 @@ struct CommentRowView: View {
 }
 
 #Preview {
-    NavigationStack {
-        PostDetailView(
-            post: Post(
-                id: "1",
-                title: "Sample Post Title",
-                content: "This is a sample post with some interesting content that people might want to comment on!",
-                wall: "CAMPUS",
-                likes: 5,
-                comments: 2,
-                liked: false,
-                author: Post.Author(id: "user123", profileName: "Anonymous", isAnonymous: true),
-                createdAt: ISO8601DateFormatter().string(from: Date()),
-                updatedAt: ISO8601DateFormatter().string(from: Date())
-            )
+    struct PreviewWrapper: View {
+        @State private var post = Post(
+            id: "1",
+            title: "Sample Post Title",
+            content: "This is a sample post with some interesting content that people might want to comment on!",
+            wall: "CAMPUS",
+            likes: 5,
+            comments: 2,
+            liked: false,
+            author: Post.Author(id: "user123", profileName: "Anonymous", isAnonymous: true),
+            createdAt: ISO8601DateFormatter().string(from: Date()),
+            updatedAt: ISO8601DateFormatter().string(from: Date())
         )
-        .environmentObject(AuthState())
+        
+        var body: some View {
+            NavigationStack {
+                PostDetailView(post: $post)
+                    .environmentObject(AuthState())
+            }
+        }
     }
+    
+    return PreviewWrapper()
 }

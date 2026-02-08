@@ -104,19 +104,19 @@ struct CampusView: View {
                         .frame(maxWidth: .infinity, minHeight: minimumScrollableHeight)
                     } else {
                         LazyVStack(spacing: 12) {
-                            ForEach(posts) { post in
-                                NavigationLink(destination: PostDetailView(post: post)) {
+                            ForEach(posts.indices, id: \.self) { index in
+                                NavigationLink(destination: PostDetailView(post: $posts[index])) {
                                     PostRowView(
-                                        post: post,
-                                        isOwnPost: post.author.id == authState.currentUser?.id,
-                                        onLike: { toggleLike(for: post) },
-                                        onDelete: { deletePost(post) }
+                                        post: posts[index],
+                                        isOwnPost: posts[index].author.id == authState.currentUser?.id,
+                                        onLike: { toggleLike(for: posts[index]) },
+                                        onDelete: { deletePost(posts[index]) }
                                     )
                                 }
                                 .buttonStyle(PlainButtonStyle())
                                 .onAppear {
                                     // Load more when the last post appears
-                                    if post.id == posts.last?.id {
+                                    if posts[index].id == posts.last?.id {
                                         loadMoreIfNeeded()
                                     }
                                 }
