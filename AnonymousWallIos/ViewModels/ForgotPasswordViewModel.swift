@@ -106,12 +106,10 @@ class ForgotPasswordViewModel: ObservableObject {
         
         countdownTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
             guard let self = self else { return }
-            DispatchQueue.main.async {
-                if self.resendCountdown > 0 {
-                    self.resendCountdown -= 1
-                } else {
-                    self.stopCountdownTimer()
-                }
+            if self.resendCountdown > 0 {
+                self.resendCountdown -= 1
+            } else {
+                self.stopCountdownTimer()
             }
         }
     }
