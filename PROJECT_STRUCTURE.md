@@ -17,6 +17,9 @@ AnonymousWallIos/
 │   ├── Networking/                        # Network layer
 │   │   ├── NetworkClient.swift            # HTTP client abstraction
 │   │   └── NetworkError.swift             # Network error types
+│   ├── Protocols/                         # Service protocols
+│   │   ├── AuthServiceProtocol.swift      # Authentication service protocol
+│   │   └── PostServiceProtocol.swift      # Post service protocol
 │   ├── Services/                          # API services
 │   │   ├── AuthService.swift              # Authentication API calls
 │   │   └── PostService.swift              # Post API calls
@@ -74,16 +77,38 @@ AnonymousWallIos/
 - Easy to mock for testing
 - Separation of concerns
 
-### 3. Service Layer
+### 3. Protocol Layer
+**Purpose**: Define service contracts for loose coupling and testability
+
+**Components**:
+- `AuthServiceProtocol`: Contract for authentication operations
+  - Email verification
+  - Registration and login
+  - Password management
+  - Profile management
+- `PostServiceProtocol`: Contract for post operations
+  - Post CRUD operations
+  - Like/unlike functionality
+  - Comment operations
+  - User content retrieval
+
+**Benefits**:
+- Enables dependency injection and inversion of control
+- Allows easy mocking for unit tests
+- Decouples high-level modules from concrete implementations
+- Facilitates future refactoring and alternative implementations
+- Follows SOLID principles (Dependency Inversion Principle)
+
+### 4. Service Layer
 **Purpose**: Encapsulate business logic and API communication
 
 **Components**:
-- `AuthService`: Authentication operations
+- `AuthService`: Authentication operations (conforms to `AuthServiceProtocol`)
   - Email verification
   - Registration
   - Login (password & code)
   - Password management
-- `PostService`: Post operations
+- `PostService`: Post operations (conforms to `PostServiceProtocol`)
   - Fetch posts
   - Create posts
   - Like/unlike posts
@@ -95,7 +120,7 @@ AnonymousWallIos/
 - Easy to test independently
 - Single responsibility principle
 
-### 4. Model Layer
+### 5. Model Layer
 **Purpose**: Define data structures and state management
 
 **Components**:
@@ -109,7 +134,7 @@ AnonymousWallIos/
 - Observable state changes
 - Consistent data flow
 
-### 5. View Layer
+### 6. View Layer
 **Purpose**: User interface using SwiftUI
 
 **Components**:
@@ -122,7 +147,7 @@ AnonymousWallIos/
 - Automatic updates on state changes
 - Clean separation from business logic
 
-### 6. Utils Layer
+### 7. Utils Layer
 **Purpose**: Shared utility functions
 
 **Components**:
@@ -153,7 +178,23 @@ private let networkClient = NetworkClient.shared
 
 **Rationale**: Loose coupling, easier testing
 
-### 3. Observable Object Pattern
+### 3. Protocol-Oriented Programming
+Services conform to protocols for dependency inversion:
+```swift
+protocol AuthServiceProtocol {
+    func loginWithPassword(email: String, password: String) async throws -> AuthResponse
+    // ... other methods
+}
+
+class AuthService: AuthServiceProtocol {
+    static let shared = AuthService()
+    // ... implementation
+}
+```
+
+**Rationale**: Enables mocking, testability, and follows SOLID principles
+
+### 4. Observable Object Pattern
 `AuthState` uses Combine's `@Published` properties:
 ```swift
 class AuthState: ObservableObject {
@@ -164,13 +205,40 @@ class AuthState: ObservableObject {
 
 **Rationale**: Reactive state management with SwiftUI
 
-### 4. Service Layer Pattern
+### 5. Service Layer Pattern
 All API calls go through service classes:
 - Views call services
 - Services use NetworkClient
 - NetworkClient handles HTTP
 
 **Rationale**: Separation of concerns, testability
+
+## Testing Strategy
+
+### Protocol-Based Mocking
+The protocol layer enables easy unit testing through mock implementations:
+
+```swift
+class MockAuthService: AuthServiceProtocol {
+    var loginCalled = false
+    
+    func loginWithPassword(email: String, password: String) async throws -> AuthResponse {
+        loginCalled = true
+        return AuthResponse(accessToken: "mock-token", user: mockUser)
+    }
+}
+```
+
+**Benefits**:
+- No network calls in unit tests
+- Fast and reliable test execution
+- Easy verification of service method calls
+- Isolated testing of business logic
+
+**Test Coverage**:
+- Service protocol conformance tests
+- Mock service implementation tests
+- Dependency injection pattern demonstrations
 
 ## Best Practices Implemented
 
@@ -256,6 +324,7 @@ User Input → View → PostService → NetworkClient → API
 1. **Dependency Injection Container**
    - Replace singletons with proper DI
    - Enable better testing
+   - Consider using a DI framework like Swinject
 
 2. **Repository Pattern**
    - Add caching layer
@@ -265,10 +334,10 @@ User Input → View → PostService → NetworkClient → API
    - Better navigation management
    - Deep linking support
 
-4. **Unit Tests**
-   - Service layer tests
-   - Network layer tests
-   - ViewModel tests
+4. **ViewModels**
+   - Extract business logic from Views
+   - Use protocol-injected services
+   - Enable more comprehensive view testing
 
 5. **SwiftLint Integration**
    - Code style enforcement
@@ -280,7 +349,20 @@ User Input → View → PostService → NetworkClient → API
 
 ## Comparison: Before vs After
 
-### Before Refactoring
+### Before Protocol Layer
+❌ Hardcoded service dependencies  
+❌ Difficult to test services in isolation  
+❌ No dependency inversion  
+❌ Tight coupling between views and concrete services  
+
+### After Protocol Layer
+✅ Protocol-based service contracts  
+✅ Easy mocking for unit tests  
+✅ Follows SOLID principles (DIP)  
+✅ Loose coupling enables flexibility  
+✅ Clear service interfaces documented  
+
+### Original Refactoring
 ❌ Hardcoded URLs in multiple files  
 ❌ No network abstraction  
 ❌ Mixed error types  
@@ -288,7 +370,6 @@ User Input → View → PostService → NetworkClient → API
 ❌ No configuration management  
 ❌ No `.gitignore`  
 
-### After Refactoring
 ✅ Centralized configuration  
 ✅ Clean network layer  
 ✅ Standardized errors  
