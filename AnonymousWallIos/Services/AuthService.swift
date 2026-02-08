@@ -7,7 +7,7 @@
 
 import Foundation
 
-class AuthService {
+class AuthService: AuthServiceProtocol {
     static let shared = AuthService()
     
     private let config = AppConfiguration.shared

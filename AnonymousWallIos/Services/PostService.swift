@@ -7,7 +7,7 @@
 
 import Foundation
 
-class PostService {
+class PostService: PostServiceProtocol {
     static let shared = PostService()
     
     private let config = AppConfiguration.shared
