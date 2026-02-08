@@ -184,8 +184,6 @@ struct WallView: View {
             await loadPosts()
         }
         .onDisappear {
-            // Cancel any ongoing load task when view disappears
-            loadTask?.cancel()
             // Toggle refresh trigger to reload when we come back
             refreshTrigger.toggle()
         }
