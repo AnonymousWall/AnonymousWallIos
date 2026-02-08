@@ -22,6 +22,8 @@ struct ForgotPasswordView: View {
     @State private var countdownTimer: Timer?
     @Environment(\.dismiss) var dismiss
     
+    let authService: AuthServiceProtocol
+    
     var body: some View {
         NavigationStack {
             VStack(spacing: 20) {
@@ -212,7 +214,7 @@ struct ForgotPasswordView: View {
         
         Task {
             do {
-                try await AuthService.shared.requestPasswordReset(email: email)
+                try await authService.requestPasswordReset(email: email)
                 await MainActor.run {
                     isSendingCode = false
                     codeSent = true
@@ -265,7 +267,7 @@ struct ForgotPasswordView: View {
         
         Task {
             do {
-                let response = try await AuthService.shared.resetPassword(email: email, code: verificationCode, newPassword: newPassword)
+                let response = try await authService.resetPassword(email: email, code: verificationCode, newPassword: newPassword)
                 await MainActor.run {
                     isLoading = false
                     // User is now logged in with new password
@@ -283,6 +285,6 @@ struct ForgotPasswordView: View {
 }
 
 #Preview {
-    ForgotPasswordView()
+    ForgotPasswordView(authService: AuthService.shared)
         .environmentObject(AuthState())
 }

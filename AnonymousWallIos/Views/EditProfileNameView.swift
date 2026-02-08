@@ -15,6 +15,8 @@ struct EditProfileNameView: View {
     @State private var isSubmitting = false
     @State private var errorMessage: String?
     
+    let authService: AuthServiceProtocol
+    
     var body: some View {
         NavigationStack {
             Form {
@@ -77,7 +79,7 @@ struct EditProfileNameView: View {
         
         Task {
             do {
-                let updatedUser = try await AuthService.shared.updateProfileName(
+                let updatedUser = try await authService.updateProfileName(
                     profileName: trimmedName,
                     token: token,
                     userId: userId
@@ -104,6 +106,6 @@ struct EditProfileNameView: View {
 }
 
 #Preview {
-    EditProfileNameView()
+    EditProfileNameView(authService: AuthService.shared)
         .environmentObject(AuthState())
 }

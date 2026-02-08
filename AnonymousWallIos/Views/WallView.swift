@@ -160,10 +160,10 @@ struct WallView: View {
             }
         }
         .sheet(isPresented: $showSetPassword) {
-            SetPasswordView()
+            SetPasswordView(authService: AuthService.shared)
         }
         .sheet(isPresented: $showChangePassword) {
-            ChangePasswordView()
+            ChangePasswordView(authService: AuthService.shared)
         }
         .sheet(isPresented: $showCreatePost) {
             CreatePostView(onPostCreated: {

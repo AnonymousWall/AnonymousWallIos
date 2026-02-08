@@ -22,14 +22,16 @@ struct LoginView: View {
     @State private var countdownTimer: Timer?
     
     var prefillEmail: String?
+    let authService: AuthServiceProtocol
     
     enum LoginMethod {
         case password
         case verificationCode
     }
     
-    init(prefillEmail: String? = nil) {
+    init(prefillEmail: String? = nil, authService: AuthServiceProtocol = AuthService.shared) {
         self.prefillEmail = prefillEmail
+        self.authService = authService
     }
     
     var body: some View {
@@ -219,7 +221,7 @@ struct LoginView: View {
             stopCountdownTimer()
         }
         .sheet(isPresented: $showForgotPassword) {
-            ForgotPasswordView()
+            ForgotPasswordView(authService: AuthService.shared)
         }
     }
     
@@ -246,7 +248,7 @@ struct LoginView: View {
         
         Task {
             do {
-                _ = try await AuthService.shared.sendEmailVerificationCode(email: email, purpose: "login")
+                _ = try await authService.sendEmailVerificationCode(email: email, purpose: "login")
                 await MainActor.run {
                     isSendingCode = false
                     successMessage = "Verification code sent to your email!"
@@ -293,9 +295,9 @@ struct LoginView: View {
                 let response: AuthResponse
                 
                 if loginMethod == .password {
-                    response = try await AuthService.shared.loginWithPassword(email: email, password: password)
+                    response = try await authService.loginWithPassword(email: email, password: password)
                 } else {
-                    response = try await AuthService.shared.loginWithEmailCode(email: email, code: verificationCode)
+                    response = try await authService.loginWithEmailCode(email: email, code: verificationCode)
                 }
                 
                 await MainActor.run {
