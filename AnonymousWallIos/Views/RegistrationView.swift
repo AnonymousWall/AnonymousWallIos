@@ -227,8 +227,7 @@ struct RegistrationView: View {
         resendCountdown = 60
         stopCountdownTimer()
         
-        countdownTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
-            guard let self = self else { return }
+        countdownTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
             DispatchQueue.main.async {
                 if self.resendCountdown > 0 {
                     self.resendCountdown -= 1
