@@ -78,19 +78,24 @@ struct WallView: View {
                     } else {
                         LazyVStack(spacing: 12) {
                             ForEach(posts) { post in
-                                NavigationLink(destination: PostDetailView(post: post)) {
-                                    PostRowView(
-                                        post: post,
-                                        isOwnPost: post.author.id == authState.currentUser?.id,
-                                        onLike: { toggleLike(for: post) },
-                                        onDelete: { deletePost(post) }
-                                    )
-                                }
-                                .buttonStyle(PlainButtonStyle())
-                                .onAppear {
-                                    // Load more when the last post appears
-                                    if post.id == posts.last?.id {
-                                        loadMoreIfNeeded()
+                                if let index = posts.firstIndex(where: { $0.id == post.id }) {
+                                    NavigationLink(destination: PostDetailView(post: Binding(
+                                        get: { posts[index] },
+                                        set: { posts[index] = $0 }
+                                    ))) {
+                                        PostRowView(
+                                            post: post,
+                                            isOwnPost: post.author.id == authState.currentUser?.id,
+                                            onLike: { toggleLike(for: post) },
+                                            onDelete: { deletePost(post) }
+                                        )
+                                    }
+                                    .buttonStyle(PlainButtonStyle())
+                                    .onAppear {
+                                        // Load more when the last post appears
+                                        if post.id == posts.last?.id {
+                                            loadMoreIfNeeded()
+                                        }
                                     }
                                 }
                             }
@@ -319,11 +324,10 @@ struct WallView: View {
             do {
                 let response = try await PostService.shared.toggleLike(postId: post.id, token: token, userId: userId)
                 
-                // Update the post locally without reloading the entire list
+                // Update the post locally using the response data
                 await MainActor.run {
                     if let index = posts.firstIndex(where: { $0.id == post.id }) {
-                        let updatedLikes = response.liked ? posts[index].likes + 1 : posts[index].likes - 1
-                        posts[index] = posts[index].withUpdatedLike(liked: response.liked, likes: updatedLikes)
+                        posts[index] = posts[index].withUpdatedLike(liked: response.liked, likes: response.likeCount)
                     }
                 }
             } catch {

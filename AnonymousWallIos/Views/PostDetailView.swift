@@ -11,7 +11,7 @@ struct PostDetailView: View {
     @EnvironmentObject var authState: AuthState
     @Environment(\.dismiss) var dismiss
     
-    let post: Post
+    @Binding var post: Post
     @State private var comments: [Comment] = []
     @State private var isLoadingComments = false
     @State private var isLoadingMoreComments = false
@@ -56,15 +56,26 @@ struct PostDetailView: View {
                             Spacer()
                             
                             HStack(spacing: 16) {
-                                HStack(spacing: 5) {
-                                    Image(systemName: "heart.fill")
-                                        .font(.system(size: 16))
-                                        .foregroundColor(.pink)
-                                    Text("\(post.likes)")
-                                        .font(.subheadline)
-                                        .fontWeight(.semibold)
-                                        .foregroundColor(.pink)
+                                // Like button
+                                Button(action: {
+                                    HapticFeedback.medium()
+                                    toggleLike()
+                                }) {
+                                    HStack(spacing: 5) {
+                                        Image(systemName: post.liked ? "heart.fill" : "heart")
+                                            .font(.system(size: 16))
+                                            .foregroundColor(post.liked ? .pink : .secondary)
+                                        Text("\(post.likes)")
+                                            .font(.subheadline)
+                                            .fontWeight(.semibold)
+                                            .foregroundColor(post.liked ? .pink : .secondary)
+                                    }
+                                    .padding(.horizontal, 10)
+                                    .padding(.vertical, 6)
+                                    .background(post.liked ? Color.pink.opacity(0.15) : Color(.systemGray6))
+                                    .cornerRadius(8)
                                 }
+                                .buttonStyle(.bounce)
                                 
                                 HStack(spacing: 5) {
                                     Image(systemName: "bubble.left.fill")
@@ -243,6 +254,31 @@ struct PostDetailView: View {
     }
     
     // MARK: - Functions
+    
+    /// Toggle like on the post
+    private func toggleLike() {
+        guard let token = authState.authToken,
+              let userId = authState.currentUser?.id else {
+            errorMessage = "Authentication required to like post."
+            return
+        }
+        
+        Task {
+            do {
+                let response = try await PostService.shared.toggleLike(postId: post.id, token: token, userId: userId)
+                
+                // Update the local post state with the response data
+                await MainActor.run {
+                    post = post.withUpdatedLike(liked: response.liked, likes: response.likeCount)
+                    HapticFeedback.success()
+                }
+            } catch {
+                await MainActor.run {
+                    errorMessage = "Failed to update like: \(error.localizedDescription)"
+                }
+            }
+        }
+    }
     
     /// Reset pagination to initial state
     private func resetPagination() {
@@ -506,21 +542,27 @@ struct CommentRowView: View {
 }
 
 #Preview {
-    NavigationStack {
-        PostDetailView(
-            post: Post(
-                id: "1",
-                title: "Sample Post Title",
-                content: "This is a sample post with some interesting content that people might want to comment on!",
-                wall: "CAMPUS",
-                likes: 5,
-                comments: 2,
-                liked: false,
-                author: Post.Author(id: "user123", profileName: "Anonymous", isAnonymous: true),
-                createdAt: ISO8601DateFormatter().string(from: Date()),
-                updatedAt: ISO8601DateFormatter().string(from: Date())
-            )
+    struct PreviewWrapper: View {
+        @State private var post = Post(
+            id: "1",
+            title: "Sample Post Title",
+            content: "This is a sample post with some interesting content that people might want to comment on!",
+            wall: "CAMPUS",
+            likes: 5,
+            comments: 2,
+            liked: false,
+            author: Post.Author(id: "user123", profileName: "Anonymous", isAnonymous: true),
+            createdAt: ISO8601DateFormatter().string(from: Date()),
+            updatedAt: ISO8601DateFormatter().string(from: Date())
         )
-        .environmentObject(AuthState())
+        
+        var body: some View {
+            NavigationStack {
+                PostDetailView(post: $post)
+                    .environmentObject(AuthState())
+            }
+        }
     }
+    
+    return PreviewWrapper()
 }
