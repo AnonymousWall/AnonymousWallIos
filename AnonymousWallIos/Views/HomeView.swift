@@ -104,20 +104,25 @@ struct HomeView: View {
                         .frame(maxWidth: .infinity, minHeight: minimumScrollableHeight)
                     } else {
                         LazyVStack(spacing: 12) {
-                            ForEach(posts.indices, id: \.self) { index in
-                                NavigationLink(destination: PostDetailView(post: $posts[index])) {
-                                    PostRowView(
-                                        post: posts[index],
-                                        isOwnPost: posts[index].author.id == authState.currentUser?.id,
-                                        onLike: { toggleLike(for: posts[index]) },
-                                        onDelete: { deletePost(posts[index]) }
-                                    )
-                                }
-                                .buttonStyle(PlainButtonStyle())
-                                .onAppear {
-                                    // Load more when the last post appears
-                                    if posts[index].id == posts.last?.id {
-                                        loadMoreIfNeeded()
+                            ForEach(posts) { post in
+                                if let index = posts.firstIndex(where: { $0.id == post.id }) {
+                                    NavigationLink(destination: PostDetailView(post: Binding(
+                                        get: { posts[index] },
+                                        set: { posts[index] = $0 }
+                                    ))) {
+                                        PostRowView(
+                                            post: post,
+                                            isOwnPost: post.author.id == authState.currentUser?.id,
+                                            onLike: { toggleLike(for: post) },
+                                            onDelete: { deletePost(post) }
+                                        )
+                                    }
+                                    .buttonStyle(PlainButtonStyle())
+                                    .onAppear {
+                                        // Load more when the last post appears
+                                        if post.id == posts.last?.id {
+                                            loadMoreIfNeeded()
+                                        }
                                     }
                                 }
                             }
