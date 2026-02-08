@@ -537,11 +537,10 @@ struct ProfileView: View {
             do {
                 let response = try await PostService.shared.toggleLike(postId: post.id, token: token, userId: userId)
                 
-                // Update the post locally without reloading the entire list
+                // Update the post locally using the response data
                 await MainActor.run {
                     if let index = myPosts.firstIndex(where: { $0.id == post.id }) {
-                        let updatedLikes = response.liked ? myPosts[index].likes + 1 : myPosts[index].likes - 1
-                        myPosts[index] = myPosts[index].withUpdatedLike(liked: response.liked, likes: updatedLikes)
+                        myPosts[index] = myPosts[index].withUpdatedLike(liked: response.liked, likes: response.likeCount)
                     }
                 }
             } catch {
