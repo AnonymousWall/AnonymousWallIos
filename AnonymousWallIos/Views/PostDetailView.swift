@@ -15,7 +15,6 @@ struct PostDetailView: View {
     @State private var comments: [Comment] = []
     @State private var isLoadingComments = false
     @State private var isLoadingMoreComments = false
-    @State private var isRefreshingPost = false
     @State private var currentPage = 1
     @State private var hasMorePages = true
     @State private var commentText = ""
@@ -235,10 +234,15 @@ struct PostDetailView: View {
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
             Task {
-                // Refresh post data to get latest like count, comment count, and content
-                await refreshPost()
-                // Load comments
-                await loadComments()
+                // Load post details and comments concurrently for better performance
+                await withTaskGroup(of: Void.self) { group in
+                    group.addTask {
+                        await refreshPost()
+                    }
+                    group.addTask {
+                        await loadComments()
+                    }
+                }
             }
         }
         .confirmationDialog(
@@ -362,11 +366,6 @@ struct PostDetailView: View {
         guard let token = authState.authToken,
               let userId = authState.currentUser?.id else {
             return
-        }
-        
-        isRefreshingPost = true
-        defer {
-            isRefreshingPost = false
         }
         
         do {
