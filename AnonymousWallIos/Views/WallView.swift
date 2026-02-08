@@ -19,6 +19,7 @@ struct WallView: View {
     @State private var hasMorePages = true
     @State private var errorMessage: String?
     @State private var loadTask: Task<Void, Never>?
+    @State private var refreshTrigger = false
     
     // Minimum height for scrollable content when list is empty
     // 300 points provides sufficient height to enable pull-to-refresh gesture on all device sizes
@@ -169,7 +170,7 @@ struct WallView: View {
                 }
             })
         }
-        .onAppear {
+        .task(id: refreshTrigger) {
             // Show password setup if needed (only once)
             // Small delay to allow view to fully load before presenting sheet
             if authState.needsPasswordSetup && !authState.hasShownPasswordSetup {
@@ -179,14 +180,14 @@ struct WallView: View {
                 }
             }
             
-            // Load posts
-            loadTask = Task {
-                await loadPosts()
-            }
+            // Load posts - this will re-run when refreshTrigger changes or view appears
+            await loadPosts()
         }
         .onDisappear {
             // Cancel any ongoing load task when view disappears
             loadTask?.cancel()
+            // Toggle refresh trigger to reload when we come back
+            refreshTrigger.toggle()
         }
     }
     

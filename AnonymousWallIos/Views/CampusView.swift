@@ -18,6 +18,7 @@ struct CampusView: View {
     @State private var errorMessage: String?
     @State private var loadTask: Task<Void, Never>?
     @State private var selectedSortOrder: SortOrder = .newest
+    @State private var refreshTrigger = false
     
     // Minimum height for scrollable content when list is empty
     private let minimumScrollableHeight: CGFloat = 300
@@ -153,7 +154,7 @@ struct CampusView: View {
         .sheet(isPresented: $showSetPassword) {
             SetPasswordView()
         }
-        .onAppear {
+        .task(id: refreshTrigger) {
             // Show password setup if needed (only once)
             if authState.needsPasswordSetup && !authState.hasShownPasswordSetup {
                 authState.markPasswordSetupShown()
@@ -162,14 +163,14 @@ struct CampusView: View {
                 }
             }
             
-            // Load posts
-            loadTask = Task {
-                await loadPosts()
-            }
+            // Load posts - this will re-run when refreshTrigger changes or view appears
+            await loadPosts()
         }
         .onDisappear {
             // Cancel any ongoing load task when view disappears
             loadTask?.cancel()
+            // Toggle refresh trigger to reload when we come back
+            refreshTrigger.toggle()
         }
     }
     
