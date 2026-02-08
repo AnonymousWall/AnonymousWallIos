@@ -8,132 +8,6 @@
 import Testing
 @testable import AnonymousWallIos
 
-// MARK: - Mock Service Implementations
-
-/// Mock AuthService for testing
-class MockAuthService: AuthServiceProtocol {
-    var sendEmailVerificationCodeCalled = false
-    var registerWithEmailCalled = false
-    var loginWithEmailCodeCalled = false
-    var loginWithPasswordCalled = false
-    var setPasswordCalled = false
-    
-    func sendEmailVerificationCode(email: String, purpose: String) async throws -> VerificationCodeResponse {
-        sendEmailVerificationCodeCalled = true
-        return VerificationCodeResponse(message: "Mock verification code sent")
-    }
-    
-    func registerWithEmail(email: String, code: String) async throws -> AuthResponse {
-        registerWithEmailCalled = true
-        let mockUser = User(id: "mock-user-id", email: email, profileName: "Anonymous", isVerified: true, passwordSet: false, createdAt: "2026-01-31T00:00:00Z")
-        return AuthResponse(accessToken: "mock-token", user: mockUser)
-    }
-    
-    func loginWithEmailCode(email: String, code: String) async throws -> AuthResponse {
-        loginWithEmailCodeCalled = true
-        let mockUser = User(id: "mock-user-id", email: email, profileName: "Anonymous", isVerified: true, passwordSet: true, createdAt: "2026-01-31T00:00:00Z")
-        return AuthResponse(accessToken: "mock-token", user: mockUser)
-    }
-    
-    func loginWithPassword(email: String, password: String) async throws -> AuthResponse {
-        loginWithPasswordCalled = true
-        let mockUser = User(id: "mock-user-id", email: email, profileName: "Anonymous", isVerified: true, passwordSet: true, createdAt: "2026-01-31T00:00:00Z")
-        return AuthResponse(accessToken: "mock-token", user: mockUser)
-    }
-    
-    func setPassword(password: String, token: String, userId: String) async throws {
-        setPasswordCalled = true
-    }
-    
-    func changePassword(oldPassword: String, newPassword: String, token: String, userId: String) async throws {
-        // Mock implementation
-    }
-    
-    func requestPasswordReset(email: String) async throws {
-        // Mock implementation
-    }
-    
-    func resetPassword(email: String, code: String, newPassword: String) async throws -> AuthResponse {
-        let mockUser = User(id: "mock-user-id", email: email, profileName: "Anonymous", isVerified: true, passwordSet: true, createdAt: "2026-01-31T00:00:00Z")
-        return AuthResponse(accessToken: "mock-token", user: mockUser)
-    }
-    
-    func updateProfileName(profileName: String, token: String, userId: String) async throws -> User {
-        return User(id: userId, email: "test@example.com", profileName: profileName, isVerified: true, passwordSet: true, createdAt: "2026-01-31T00:00:00Z")
-    }
-}
-
-/// Mock PostService for testing
-class MockPostService: PostServiceProtocol {
-    var fetchPostsCalled = false
-    var createPostCalled = false
-    var toggleLikeCalled = false
-    var mockPosts: [Post] = []
-    
-    func fetchPosts(token: String, userId: String, wall: WallType, page: Int, limit: Int, sort: SortOrder) async throws -> PostListResponse {
-        fetchPostsCalled = true
-        return PostListResponse(
-            data: mockPosts,
-            pagination: PaginationInfo(page: page, limit: limit, total: mockPosts.count, totalPages: 1)
-        )
-    }
-    
-    func getPost(postId: String, token: String, userId: String) async throws -> Post {
-        return Post(id: postId, title: "Mock Post", content: "Mock content", wall: "CAMPUS", likes: 0, comments: 0, liked: false,
-                   author: Post.Author(id: userId, profileName: "Mock User", isAnonymous: true),
-                   createdAt: "2026-01-31T00:00:00Z", updatedAt: "2026-01-31T00:00:00Z")
-    }
-    
-    func createPost(title: String, content: String, wall: WallType, token: String, userId: String) async throws -> Post {
-        createPostCalled = true
-        let newPost = Post(id: "new-post-id", title: title, content: content, wall: wall.rawValue, likes: 0, comments: 0, liked: false,
-                          author: Post.Author(id: userId, profileName: "Mock User", isAnonymous: true),
-                          createdAt: "2026-01-31T00:00:00Z", updatedAt: "2026-01-31T00:00:00Z")
-        mockPosts.append(newPost)
-        return newPost
-    }
-    
-    func toggleLike(postId: String, token: String, userId: String) async throws -> LikeResponse {
-        toggleLikeCalled = true
-        return LikeResponse(liked: true, likeCount: 1)
-    }
-    
-    func hidePost(postId: String, token: String, userId: String) async throws -> HidePostResponse {
-        return HidePostResponse(message: "Post hidden successfully")
-    }
-    
-    func addComment(postId: String, text: String, token: String, userId: String) async throws -> Comment {
-        return Comment(id: "new-comment-id", postId: postId, text: text,
-                      author: Post.Author(id: userId, profileName: "Mock User", isAnonymous: true),
-                      createdAt: "2026-01-31T00:00:00Z")
-    }
-    
-    func getComments(postId: String, token: String, userId: String, page: Int, limit: Int, sort: SortOrder) async throws -> CommentListResponse {
-        return CommentListResponse(
-            data: [],
-            pagination: PaginationInfo(page: page, limit: limit, total: 0, totalPages: 0)
-        )
-    }
-    
-    func hideComment(postId: String, commentId: String, token: String, userId: String) async throws -> HidePostResponse {
-        return HidePostResponse(message: "Comment hidden successfully")
-    }
-    
-    func getUserComments(token: String, userId: String, page: Int, limit: Int, sort: SortOrder) async throws -> CommentListResponse {
-        return CommentListResponse(
-            data: [],
-            pagination: PaginationInfo(page: page, limit: limit, total: 0, totalPages: 0)
-        )
-    }
-    
-    func getUserPosts(token: String, userId: String, page: Int, limit: Int, sort: SortOrder) async throws -> PostListResponse {
-        return PostListResponse(
-            data: [],
-            pagination: PaginationInfo(page: page, limit: limit, total: 0, totalPages: 0)
-        )
-    }
-}
-
 // MARK: - Protocol-Based Tests
 
 struct ServiceProtocolTests {
@@ -261,5 +135,180 @@ struct ServiceProtocolTests {
         // Verify mocks were used
         #expect(mockAuth.loginWithPasswordCalled == true)
         #expect(mockPost.fetchPostsCalled == true)
+    }
+    
+    // MARK: - Configurable Mock Behavior Tests
+    
+    @Test func testMockAuthServiceSuccessScenario() async throws {
+        let mockAuthService = MockAuthService()
+        
+        // Default behavior is success
+        let response = try await mockAuthService.loginWithPassword(email: "test@example.com", password: "password")
+        #expect(response.accessToken == "mock-token")
+        #expect(response.user.email == "test@example.com")
+        #expect(mockAuthService.loginWithPasswordCalled == true)
+    }
+    
+    @Test func testMockAuthServiceFailureScenario() async throws {
+        let mockAuthService = MockAuthService()
+        
+        // Configure to fail
+        mockAuthService.loginWithPasswordBehavior = .failure(MockAuthService.MockError.invalidCredentials)
+        
+        do {
+            _ = try await mockAuthService.loginWithPassword(email: "test@example.com", password: "wrong")
+            Issue.record("Expected error to be thrown")
+        } catch let error as MockAuthService.MockError {
+            #expect(error == .invalidCredentials)
+        }
+        
+        #expect(mockAuthService.loginWithPasswordCalled == true)
+    }
+    
+    @Test func testMockAuthServiceEmptyStateScenario() async throws {
+        let mockAuthService = MockAuthService()
+        
+        // Configure to return empty state
+        mockAuthService.registerWithEmailBehavior = .emptyState
+        
+        let response = try await mockAuthService.registerWithEmail(email: "test@example.com", code: "123456")
+        #expect(response.accessToken == "")
+        #expect(response.user.email == "")
+        #expect(response.user.profileName == "")
+        #expect(mockAuthService.registerWithEmailCalled == true)
+    }
+    
+    @Test func testMockPostServiceSuccessScenario() async throws {
+        let mockPostService = MockPostService()
+        
+        // Add some mock posts
+        mockPostService.mockPosts = [
+            Post(id: "1", title: "Post 1", content: "Content 1", wall: "CAMPUS", likes: 5, comments: 2, liked: false,
+                 author: Post.Author(id: "user1", profileName: "User 1", isAnonymous: true),
+                 createdAt: "2026-01-31T00:00:00Z", updatedAt: "2026-01-31T00:00:00Z")
+        ]
+        
+        let response = try await mockPostService.fetchPosts(token: "token", userId: "user", wall: .campus, page: 1, limit: 20, sort: .newest)
+        #expect(response.data.count == 1)
+        #expect(response.data[0].title == "Post 1")
+        #expect(mockPostService.fetchPostsCalled == true)
+    }
+    
+    @Test func testMockPostServiceFailureScenario() async throws {
+        let mockPostService = MockPostService()
+        
+        // Configure to fail
+        mockPostService.createPostBehavior = .failure(MockPostService.MockError.unauthorized)
+        
+        do {
+            _ = try await mockPostService.createPost(title: "Test", content: "Content", wall: .campus, token: "token", userId: "user")
+            Issue.record("Expected error to be thrown")
+        } catch let error as MockPostService.MockError {
+            #expect(error == .unauthorized)
+        }
+        
+        #expect(mockPostService.createPostCalled == true)
+    }
+    
+    @Test func testMockPostServiceEmptyStateScenario() async throws {
+        let mockPostService = MockPostService()
+        
+        // Configure to return empty state
+        mockPostService.fetchPostsBehavior = .emptyState
+        
+        let response = try await mockPostService.fetchPosts(token: "token", userId: "user", wall: .campus, page: 1, limit: 20, sort: .newest)
+        #expect(response.data.isEmpty)
+        #expect(response.pagination.total == 0)
+        #expect(mockPostService.fetchPostsCalled == true)
+    }
+    
+    @Test func testMockAuthServiceCustomResponse() async throws {
+        let mockAuthService = MockAuthService()
+        
+        // Configure custom user
+        let customUser = User(id: "custom-id", email: "custom@example.com", profileName: "Custom User", isVerified: true, passwordSet: true, createdAt: "2026-02-01T00:00:00Z")
+        mockAuthService.mockUser = customUser
+        
+        let response = try await mockAuthService.loginWithPassword(email: "any@example.com", password: "any")
+        #expect(response.user.id == "custom-id")
+        #expect(response.user.profileName == "Custom User")
+    }
+    
+    @Test func testMockPostServiceCustomResponse() async throws {
+        let mockPostService = MockPostService()
+        
+        // Configure custom like response
+        mockPostService.mockLikeResponse = LikeResponse(liked: true, likeCount: 42)
+        
+        let response = try await mockPostService.toggleLike(postId: "post-1", token: "token", userId: "user")
+        #expect(response.liked == true)
+        #expect(response.likeCount == 42)
+        #expect(mockPostService.toggleLikeCalled == true)
+    }
+    
+    @Test func testMockAuthServiceResetHelpers() async throws {
+        let mockAuthService = MockAuthService()
+        
+        // Call some methods
+        _ = try await mockAuthService.loginWithPassword(email: "test@example.com", password: "password")
+        _ = try await mockAuthService.registerWithEmail(email: "test@example.com", code: "123456")
+        #expect(mockAuthService.loginWithPasswordCalled == true)
+        #expect(mockAuthService.registerWithEmailCalled == true)
+        
+        // Reset call tracking
+        mockAuthService.resetCallTracking()
+        #expect(mockAuthService.loginWithPasswordCalled == false)
+        #expect(mockAuthService.registerWithEmailCalled == false)
+    }
+    
+    @Test func testMockPostServiceResetHelpers() async throws {
+        let mockPostService = MockPostService()
+        
+        // Add some data
+        _ = try await mockPostService.createPost(title: "Test", content: "Content", wall: .campus, token: "token", userId: "user")
+        #expect(mockPostService.mockPosts.count == 1)
+        #expect(mockPostService.createPostCalled == true)
+        
+        // Clear mock data
+        mockPostService.clearMockData()
+        #expect(mockPostService.mockPosts.isEmpty)
+        
+        // Reset call tracking
+        mockPostService.resetCallTracking()
+        #expect(mockPostService.createPostCalled == false)
+    }
+    
+    @Test func testMockAuthServiceConfigureAllToFail() async throws {
+        let mockAuthService = MockAuthService()
+        
+        // Configure all methods to fail
+        mockAuthService.configureAllToFail(with: MockAuthService.MockError.networkError)
+        
+        do {
+            _ = try await mockAuthService.loginWithPassword(email: "test@example.com", password: "password")
+            Issue.record("Expected error to be thrown")
+        } catch let error as MockAuthService.MockError {
+            #expect(error == .networkError)
+        }
+        
+        do {
+            _ = try await mockAuthService.registerWithEmail(email: "test@example.com", code: "123456")
+            Issue.record("Expected error to be thrown")
+        } catch let error as MockAuthService.MockError {
+            #expect(error == .networkError)
+        }
+    }
+    
+    @Test func testMockPostServiceConfigureAllToEmptyState() async throws {
+        let mockPostService = MockPostService()
+        
+        // Configure all methods to return empty state
+        mockPostService.configureAllToEmptyState()
+        
+        let postResponse = try await mockPostService.fetchPosts(token: "token", userId: "user", wall: .campus, page: 1, limit: 20, sort: .newest)
+        #expect(postResponse.data.isEmpty)
+        
+        let commentResponse = try await mockPostService.getComments(postId: "post-1", token: "token", userId: "user", page: 1, limit: 20, sort: .newest)
+        #expect(commentResponse.data.isEmpty)
     }
 }

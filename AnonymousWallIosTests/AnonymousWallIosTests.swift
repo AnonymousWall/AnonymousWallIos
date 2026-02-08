@@ -5,6 +5,7 @@
 //  Created by Ziyi Huang on 1/30/26.
 //
 
+import Foundation
 import Testing
 @testable import AnonymousWallIos
 
@@ -188,7 +189,7 @@ struct AnonymousWallIosTests {
         let data = json.data(using: .utf8)!
         let decoder = JSONDecoder()
         
-        let comment = try decoder.decode(Comment.self, from: data)
+        let comment = try decoder.decode(AnonymousWallIos.Comment.self, from: data)
         #expect(comment.id == "comment-123")
         #expect(comment.postId == "post-456")
         #expect(comment.text == "This is a test comment")

@@ -125,6 +125,16 @@ The app follows a clean, industry-standard iOS architecture with clear separatio
   - Uses NetworkClient for API communication
   - Implements proper error handling
 
+### Mocks (for Testing)
+- `MockAuthService` - Mock implementation of AuthServiceProtocol
+  - Configurable stub responses (success/failure/empty state)
+  - Call tracking for test verification
+  - No network dependency
+- `MockPostService` - Mock implementation of PostServiceProtocol
+  - Configurable stub responses (success/failure/empty state)
+  - Stateful mock data for realistic testing
+  - Call tracking for test verification
+
 ### Views
 - `AuthenticationView` - Landing page
 - `RegistrationView` - Registration with email + code
@@ -150,9 +160,50 @@ The app follows a clean, industry-standard iOS architecture with clear separatio
 
 ## Testing
 
-Run tests:
+### Running Tests
+
+Run tests in Xcode:
 ```bash
 xcodebuild test -scheme AnonymousWallIos -destination 'platform=iOS Simulator,name=iPhone 15'
+```
+
+Or use Xcode's Test Navigator (⌘+6).
+
+### Mock Services
+
+The project includes comprehensive mock implementations for unit testing:
+
+- **`MockAuthService`** - Mock implementation of `AuthServiceProtocol`
+  - All 9 authentication methods
+  - Configurable success/failure/empty state scenarios
+  - Call tracking for test verification
+  - Custom response configuration
+
+- **`MockPostService`** - Mock implementation of `PostServiceProtocol`
+  - All 12 post/comment/user methods
+  - Configurable success/failure/empty state scenarios
+  - Stateful mock data (posts, comments)
+  - Call tracking for test verification
+
+**Features:**
+- ✅ Fast, deterministic tests without network dependency
+- ✅ Protocol-based dependency injection
+- ✅ Comprehensive test coverage for all scenarios
+- ✅ Helper methods for batch configuration
+
+See `AnonymousWallIos/Mocks/README.md` for detailed usage examples and API reference.
+
+**Example:**
+```swift
+let mockAuth = MockAuthService()
+mockAuth.loginWithPasswordBehavior = .failure(MockAuthService.MockError.invalidCredentials)
+
+do {
+    _ = try await mockAuth.loginWithPassword(email: "test@test.com", password: "wrong")
+    Issue.record("Expected error")
+} catch {
+    // Verify error handling
+}
 ```
 
 ## License
