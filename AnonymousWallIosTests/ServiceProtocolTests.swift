@@ -226,8 +226,8 @@ struct ServiceProtocolTests {
         let mockAuthService = MockAuthService()
         
         // Configure custom user
-        let expectedCustomUser = User(id: "custom-id", email: "custom@example.com", profileName: "Custom User", isVerified: true, passwordSet: true, createdAt: "2026-02-01T00:00:00Z")
-        mockAuthService.mockUser = expectedCustomUser
+        let customUser = User(id: "custom-id", email: "custom@example.com", profileName: "Custom User", isVerified: true, passwordSet: true, createdAt: "2026-02-01T00:00:00Z")
+        mockAuthService.mockUser = customUser
         
         let response = try await mockAuthService.loginWithPassword(email: "any@example.com", password: "any")
         #expect(response.user.id == "custom-id")
