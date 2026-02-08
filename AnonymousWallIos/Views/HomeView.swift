@@ -104,19 +104,19 @@ struct HomeView: View {
                         .frame(maxWidth: .infinity, minHeight: minimumScrollableHeight)
                     } else {
                         LazyVStack(spacing: 12) {
-                            ForEach(posts) { post in
-                                NavigationLink(destination: PostDetailView(post: post)) {
+                            ForEach(posts.indices, id: \.self) { index in
+                                NavigationLink(destination: PostDetailView(post: $posts[index])) {
                                     PostRowView(
-                                        post: post,
-                                        isOwnPost: post.author.id == authState.currentUser?.id,
-                                        onLike: { toggleLike(for: post) },
-                                        onDelete: { deletePost(post) }
+                                        post: posts[index],
+                                        isOwnPost: posts[index].author.id == authState.currentUser?.id,
+                                        onLike: { toggleLike(for: posts[index]) },
+                                        onDelete: { deletePost(posts[index]) }
                                     )
                                 }
                                 .buttonStyle(PlainButtonStyle())
                                 .onAppear {
                                     // Load more when the last post appears
-                                    if post.id == posts.last?.id {
+                                    if posts[index].id == posts.last?.id {
                                         loadMoreIfNeeded()
                                     }
                                 }
@@ -287,11 +287,10 @@ struct HomeView: View {
             do {
                 let response = try await PostService.shared.toggleLike(postId: post.id, token: token, userId: userId)
                 
-                // Update the post locally without reloading the entire list
+                // Update the post locally using the response data
                 await MainActor.run {
                     if let index = posts.firstIndex(where: { $0.id == post.id }) {
-                        let updatedLikes = response.liked ? posts[index].likes + 1 : posts[index].likes - 1
-                        posts[index] = posts[index].withUpdatedLike(liked: response.liked, likes: updatedLikes)
+                        posts[index] = posts[index].withUpdatedLike(liked: response.liked, likes: response.likeCount)
                     }
                 }
             } catch {

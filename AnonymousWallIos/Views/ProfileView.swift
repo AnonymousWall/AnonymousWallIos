@@ -226,19 +226,19 @@ struct ProfileView: View {
                             .frame(maxWidth: .infinity, minHeight: 300)
                         } else {
                             LazyVStack(spacing: 12) {
-                                ForEach(myPosts) { post in
-                                    NavigationLink(destination: PostDetailView(post: post)) {
+                                ForEach(myPosts.indices, id: \.self) { index in
+                                    NavigationLink(destination: PostDetailView(post: $myPosts[index])) {
                                         PostRowView(
-                                            post: post,
+                                            post: myPosts[index],
                                             isOwnPost: true,
-                                            onLike: { toggleLike(for: post) },
-                                            onDelete: { deletePost(post) }
+                                            onLike: { toggleLike(for: myPosts[index]) },
+                                            onDelete: { deletePost(myPosts[index]) }
                                         )
                                     }
                                     .buttonStyle(PlainButtonStyle())
                                     .onAppear {
                                         // Load more when the last post appears
-                                        if post.id == myPosts.last?.id {
+                                        if myPosts[index].id == myPosts.last?.id {
                                             loadMorePostsIfNeeded()
                                         }
                                     }
@@ -285,7 +285,7 @@ struct ProfileView: View {
                             LazyVStack(spacing: 12) {
                                 ForEach(myComments) { comment in
                                     if let post = commentPostMap[comment.postId] {
-                                        NavigationLink(destination: PostDetailView(post: post)) {
+                                        NavigationLink(destination: PostDetailView(post: .constant(post))) {
                                             ProfileCommentRowView(comment: comment)
                                         }
                                         .buttonStyle(PlainButtonStyle())
@@ -537,11 +537,10 @@ struct ProfileView: View {
             do {
                 let response = try await PostService.shared.toggleLike(postId: post.id, token: token, userId: userId)
                 
-                // Update the post locally without reloading the entire list
+                // Update the post locally using the response data
                 await MainActor.run {
                     if let index = myPosts.firstIndex(where: { $0.id == post.id }) {
-                        let updatedLikes = response.liked ? myPosts[index].likes + 1 : myPosts[index].likes - 1
-                        myPosts[index] = myPosts[index].withUpdatedLike(liked: response.liked, likes: updatedLikes)
+                        myPosts[index] = myPosts[index].withUpdatedLike(liked: response.liked, likes: response.likeCount)
                     }
                 }
             } catch {
