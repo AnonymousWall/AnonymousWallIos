@@ -190,6 +190,7 @@ struct RegistrationView: View {
         } message: {
             Text("You are now logged in. Please set up your password to secure your account.")
         }
+        }
     }
     
     private func sendVerificationCode() {
