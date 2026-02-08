@@ -156,7 +156,7 @@ struct CampusView: View {
             .navigationBarTitleDisplayMode(.inline)
         }
         .sheet(isPresented: $showSetPassword) {
-            SetPasswordView()
+            SetPasswordView(authService: AuthService.shared)
         }
         .onAppear {
             // Show password setup if needed (only once)

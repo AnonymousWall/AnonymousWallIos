@@ -368,13 +368,13 @@ struct ProfileView: View {
             }
         }
         .sheet(isPresented: $showSetPassword) {
-            SetPasswordView()
+            SetPasswordView(authService: AuthService.shared)
         }
         .sheet(isPresented: $showChangePassword) {
-            ChangePasswordView()
+            ChangePasswordView(authService: AuthService.shared)
         }
         .sheet(isPresented: $showEditProfileName) {
-            EditProfileNameView()
+            EditProfileNameView(authService: AuthService.shared)
         }
         .onAppear {
             // Show password setup if needed (only once)

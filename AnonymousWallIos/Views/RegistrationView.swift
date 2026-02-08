@@ -19,6 +19,12 @@ struct RegistrationView: View {
     @State private var resendCountdown = 0
     @State private var countdownTimer: Timer?
     
+    let authService: AuthServiceProtocol
+    
+    init(authService: AuthServiceProtocol = AuthService.shared) {
+        self.authService = authService
+    }
+    
     var body: some View {
         NavigationStack {
             ScrollView {
@@ -207,7 +213,7 @@ struct RegistrationView: View {
         
         Task {
             do {
-                _ = try await AuthService.shared.sendEmailVerificationCode(email: email, purpose: "register")
+                _ = try await authService.sendEmailVerificationCode(email: email, purpose: "register")
                 await MainActor.run {
                     HapticFeedback.success()
                     isSendingCode = false
@@ -251,7 +257,7 @@ struct RegistrationView: View {
         
         Task {
             do {
-                let response = try await AuthService.shared.registerWithEmail(email: email, code: verificationCode)
+                let response = try await authService.registerWithEmail(email: email, code: verificationCode)
                 await MainActor.run {
                     HapticFeedback.success()
                     isLoading = false

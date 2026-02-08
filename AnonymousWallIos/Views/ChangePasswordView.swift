@@ -17,6 +17,8 @@ struct ChangePasswordView: View {
     @State private var showSuccess = false
     @Environment(\.dismiss) var dismiss
     
+    let authService: AuthServiceProtocol
+    
     var body: some View {
         NavigationStack {
             VStack(spacing: 20) {
@@ -166,7 +168,7 @@ struct ChangePasswordView: View {
         
         Task {
             do {
-                try await AuthService.shared.changePassword(oldPassword: oldPassword, newPassword: newPassword, token: token, userId: userId)
+                try await authService.changePassword(oldPassword: oldPassword, newPassword: newPassword, token: token, userId: userId)
                 await MainActor.run {
                     isLoading = false
                     showSuccess = true
@@ -182,6 +184,6 @@ struct ChangePasswordView: View {
 }
 
 #Preview {
-    ChangePasswordView()
+    ChangePasswordView(authService: AuthService.shared)
         .environmentObject(AuthState())
 }
