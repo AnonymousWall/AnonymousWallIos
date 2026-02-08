@@ -471,12 +471,14 @@ struct PostDetailView: View {
         
         Task {
             do {
-                let response = try await PostService.shared.toggleLike(postId: currentPost.id, token: token, userId: userId)
+                _ = try await PostService.shared.toggleLike(postId: currentPost.id, token: token, userId: userId)
                 
-                // Update the post locally
+                // Fetch the updated post from server to get accurate like count
+                let updatedPost = try await PostService.shared.getPost(postId: currentPost.id, token: token, userId: userId)
+                
+                // Update the post with server state
                 await MainActor.run {
-                    let updatedLikes = response.liked ? currentPost.likes + 1 : currentPost.likes - 1
-                    currentPost = currentPost.withUpdatedLike(liked: response.liked, likes: updatedLikes)
+                    currentPost = updatedPost
                 }
             } catch is CancellationError {
                 // Silently handle cancellation

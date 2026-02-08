@@ -285,13 +285,15 @@ struct CampusView: View {
         
         Task {
             do {
-                let response = try await PostService.shared.toggleLike(postId: post.id, token: token, userId: userId)
+                _ = try await PostService.shared.toggleLike(postId: post.id, token: token, userId: userId)
                 
-                // Update the post locally without reloading the entire list
+                // Fetch the updated post from server to get accurate like count
+                let updatedPost = try await PostService.shared.getPost(postId: post.id, token: token, userId: userId)
+                
+                // Update the post in the list with server state
                 await MainActor.run {
                     if let index = posts.firstIndex(where: { $0.id == post.id }) {
-                        let updatedLikes = response.liked ? posts[index].likes + 1 : posts[index].likes - 1
-                        posts[index] = posts[index].withUpdatedLike(liked: response.liked, likes: updatedLikes)
+                        posts[index] = updatedPost
                     }
                 }
             } catch {
