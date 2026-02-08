@@ -495,5 +495,25 @@ struct AnonymousWallIosTests {
         #expect(sorted[1].id == "3")
         #expect(sorted[2].id == "2") // Most recent
     }
+    
+    // MARK: - Protocol Conformance Tests
+    
+    @Test func testAuthServiceConformsToProtocol() async throws {
+        // Test that AuthService conforms to AuthServiceProtocol
+        let authService: AuthServiceProtocol = AuthService.shared
+        
+        // Verify the service can be assigned to protocol type
+        // This validates the protocol conformance and enables dependency injection
+        #expect(authService is AuthService)
+    }
+    
+    @Test func testPostServiceConformsToProtocol() async throws {
+        // Test that PostService conforms to PostServiceProtocol
+        let postService: PostServiceProtocol = PostService.shared
+        
+        // Verify the service can be assigned to protocol type
+        // This validates the protocol conformance and enables dependency injection
+        #expect(postService is PostService)
+    }
 
 }
