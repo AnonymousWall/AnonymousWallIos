@@ -18,6 +18,8 @@ struct LoginView: View {
     @State private var successMessage: String?
     @State private var loginMethod: LoginMethod = .password
     @State private var showForgotPassword = false
+    @State private var resendCountdown = 0
+    @State private var countdownTimer: Timer?
     
     var prefillEmail: String?
     
@@ -128,6 +130,9 @@ struct LoginView: View {
                             if isSendingCode {
                                 ProgressView()
                                     .progressViewStyle(CircularProgressViewStyle())
+                            } else if resendCountdown > 0 {
+                                Text("\(resendCountdown)s")
+                                    .fontWeight(.semibold)
                             } else {
                                 Text("Get Code")
                                     .fontWeight(.semibold)
@@ -135,10 +140,10 @@ struct LoginView: View {
                         }
                         .padding(.horizontal, 16)
                         .padding(.vertical, 12)
-                        .background(email.isEmpty ? Color.gray : Color.blue)
+                        .background((email.isEmpty || resendCountdown > 0) ? Color.gray : Color.blue)
                         .foregroundColor(.white)
                         .cornerRadius(10)
-                        .disabled(email.isEmpty || isSendingCode)
+                        .disabled(email.isEmpty || isSendingCode || resendCountdown > 0)
                     }
                 }
                 .padding(.horizontal)
@@ -210,6 +215,9 @@ struct LoginView: View {
                 email = prefillEmail
             }
         }
+        .onDisappear {
+            stopCountdownTimer()
+        }
         .sheet(isPresented: $showForgotPassword) {
             ForgotPasswordView()
         }
@@ -242,6 +250,7 @@ struct LoginView: View {
                 await MainActor.run {
                     isSendingCode = false
                     successMessage = "Verification code sent to your email!"
+                    startCountdownTimer()
                 }
             } catch {
                 await MainActor.run {
@@ -250,6 +259,26 @@ struct LoginView: View {
                 }
             }
         }
+    }
+    
+    private func startCountdownTimer() {
+        resendCountdown = 60
+        stopCountdownTimer()
+        
+        countdownTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
+            DispatchQueue.main.async {
+                if self.resendCountdown > 0 {
+                    self.resendCountdown -= 1
+                } else {
+                    self.stopCountdownTimer()
+                }
+            }
+        }
+    }
+    
+    private func stopCountdownTimer() {
+        countdownTimer?.invalidate()
+        countdownTimer = nil
     }
     
     private func loginUser() {
