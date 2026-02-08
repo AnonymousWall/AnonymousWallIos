@@ -81,12 +81,18 @@ class MockAuthService: AuthServiceProtocol {
     // MARK: - Helper Methods for Creating Responses
     
     /// Helper to create VerificationCodeResponse from message string
+    /// - Note: This uses JSONDecoder since VerificationCodeResponse only has init(from:)
     private func createVerificationCodeResponse(message: String) -> VerificationCodeResponse {
         let json = """
         "\(message)"
         """
-        let data = json.data(using: .utf8)!
-        return try! JSONDecoder().decode(VerificationCodeResponse.self, from: data)
+        guard let data = json.data(using: .utf8),
+              let response = try? JSONDecoder().decode(VerificationCodeResponse.self, from: data) else {
+            // Fallback: create a response manually if decoding fails
+            // This should never happen with valid UTF-8 strings, but provides safety
+            fatalError("Failed to create VerificationCodeResponse - this is a programming error in the mock")
+        }
+        return response
     }
     
     // MARK: - Protocol Methods
