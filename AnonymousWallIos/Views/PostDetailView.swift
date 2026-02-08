@@ -471,14 +471,11 @@ struct PostDetailView: View {
         
         Task {
             do {
-                _ = try await PostService.shared.toggleLike(postId: currentPost.id, token: token, userId: userId)
+                let response = try await PostService.shared.toggleLike(postId: currentPost.id, token: token, userId: userId)
                 
-                // Fetch the updated post from server to get accurate like count
-                let updatedPost = try await PostService.shared.getPost(postId: currentPost.id, token: token, userId: userId)
-                
-                // Update the post with server state
+                // Update the post with response data (no need for second API call)
                 await MainActor.run {
-                    currentPost = updatedPost
+                    currentPost = currentPost.withUpdatedLike(liked: response.liked, likes: response.likeCount)
                 }
             } catch is CancellationError {
                 // Silently handle cancellation

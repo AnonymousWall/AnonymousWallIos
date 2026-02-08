@@ -317,15 +317,12 @@ struct WallView: View {
         
         Task {
             do {
-                _ = try await PostService.shared.toggleLike(postId: post.id, token: token, userId: userId)
+                let response = try await PostService.shared.toggleLike(postId: post.id, token: token, userId: userId)
                 
-                // Fetch the updated post from server to get accurate like count
-                let updatedPost = try await PostService.shared.getPost(postId: post.id, token: token, userId: userId)
-                
-                // Update the post in the list with server state
+                // Update the post in the list with response data (no need for second API call)
                 await MainActor.run {
                     if let index = posts.firstIndex(where: { $0.id == post.id }) {
-                        posts[index] = updatedPost
+                        posts[index] = posts[index].withUpdatedLike(liked: response.liked, likes: response.likeCount)
                     }
                 }
             } catch {

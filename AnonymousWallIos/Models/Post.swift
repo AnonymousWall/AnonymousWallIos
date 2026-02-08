@@ -99,6 +99,7 @@ struct CreateCommentRequest: Codable {
 
 struct LikeResponse: Codable {
     let liked: Bool
+    let likeCount: Int
 }
 
 struct HidePostResponse: Codable {

@@ -580,16 +580,18 @@ struct AnonymousWallIosTests {
     }
     
     @Test func testLikeResponseDecoding() async throws {
-        // Test that LikeResponse can be decoded from API
+        // Test that LikeResponse can be decoded from API with both liked and likeCount
         let likedJson = """
         {
-            "liked": true
+            "liked": true,
+            "likeCount": 42
         }
         """
         
         let unlikedJson = """
         {
-            "liked": false
+            "liked": false,
+            "likeCount": 41
         }
         """
         
@@ -597,9 +599,11 @@ struct AnonymousWallIosTests {
         
         let likedResponse = try decoder.decode(LikeResponse.self, from: likedJson.data(using: .utf8)!)
         #expect(likedResponse.liked == true)
+        #expect(likedResponse.likeCount == 42)
         
         let unlikedResponse = try decoder.decode(LikeResponse.self, from: unlikedJson.data(using: .utf8)!)
         #expect(unlikedResponse.liked == false)
+        #expect(unlikedResponse.likeCount == 41)
     }
 
 }
