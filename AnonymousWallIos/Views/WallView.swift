@@ -240,8 +240,10 @@ struct WallView: View {
             let response = try await PostService.shared.fetchPosts(
                 token: token,
                 userId: userId,
+                wall: .campus,
                 page: currentPage,
-                limit: 20
+                limit: 20,
+                sort: .newest
             )
             // Replace posts (used for initial load and refresh)
             posts = response.data
@@ -290,8 +292,10 @@ struct WallView: View {
             let response = try await PostService.shared.fetchPosts(
                 token: token,
                 userId: userId,
+                wall: .campus,
                 page: nextPage,
-                limit: 20
+                limit: 20,
+                sort: .newest
             )
             
             // Update page number only after successful response
