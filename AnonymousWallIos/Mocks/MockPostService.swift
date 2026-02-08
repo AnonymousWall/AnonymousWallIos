@@ -9,26 +9,26 @@
 import Foundation
 
 /// Mock PostService for testing with configurable responses
-public class MockPostService: PostServiceProtocol {
+class MockPostService: PostServiceProtocol {
     
     // MARK: - Configuration
     
     /// Configuration for mock behavior
-    public enum MockBehavior {
+    enum MockBehavior {
         case success
         case failure(Error)
         case emptyState
     }
     
     /// Default error for failure scenarios
-    public enum MockError: Error, LocalizedError {
+    enum MockError: Error, LocalizedError {
         case postNotFound
         case unauthorized
         case networkError
         case serverError
         case invalidInput
         
-        public var errorDescription: String? {
+        var errorDescription: String? {
             switch self {
             case .postNotFound:
                 return "Post not found"
@@ -46,50 +46,50 @@ public class MockPostService: PostServiceProtocol {
     
     // MARK: - State Tracking
     
-    public var fetchPostsCalled = false
-    public var getPostCalled = false
-    public var createPostCalled = false
-    public var toggleLikeCalled = false
-    public var hidePostCalled = false
-    public var unhidePostCalled = false
-    public var addCommentCalled = false
-    public var getCommentsCalled = false
-    public var hideCommentCalled = false
-    public var unhideCommentCalled = false
-    public var getUserCommentsCalled = false
-    public var getUserPostsCalled = false
+    var fetchPostsCalled = false
+    var getPostCalled = false
+    var createPostCalled = false
+    var toggleLikeCalled = false
+    var hidePostCalled = false
+    var unhidePostCalled = false
+    var addCommentCalled = false
+    var getCommentsCalled = false
+    var hideCommentCalled = false
+    var unhideCommentCalled = false
+    var getUserCommentsCalled = false
+    var getUserPostsCalled = false
     
     // MARK: - Configurable Behavior
     
-    public var fetchPostsBehavior: MockBehavior = .success
-    public var getPostBehavior: MockBehavior = .success
-    public var createPostBehavior: MockBehavior = .success
-    public var toggleLikeBehavior: MockBehavior = .success
-    public var hidePostBehavior: MockBehavior = .success
-    public var unhidePostBehavior: MockBehavior = .success
-    public var addCommentBehavior: MockBehavior = .success
-    public var getCommentsBehavior: MockBehavior = .success
-    public var hideCommentBehavior: MockBehavior = .success
-    public var unhideCommentBehavior: MockBehavior = .success
-    public var getUserCommentsBehavior: MockBehavior = .success
-    public var getUserPostsBehavior: MockBehavior = .success
+    var fetchPostsBehavior: MockBehavior = .success
+    var getPostBehavior: MockBehavior = .success
+    var createPostBehavior: MockBehavior = .success
+    var toggleLikeBehavior: MockBehavior = .success
+    var hidePostBehavior: MockBehavior = .success
+    var unhidePostBehavior: MockBehavior = .success
+    var addCommentBehavior: MockBehavior = .success
+    var getCommentsBehavior: MockBehavior = .success
+    var hideCommentBehavior: MockBehavior = .success
+    var unhideCommentBehavior: MockBehavior = .success
+    var getUserCommentsBehavior: MockBehavior = .success
+    var getUserPostsBehavior: MockBehavior = .success
     
     // MARK: - Configurable State
     
-    public var mockPosts: [Post] = []
-    public var mockComments: [Comment] = []
-    public var mockPost: Post?
-    public var mockComment: Comment?
-    public var mockLikeResponse: LikeResponse?
-    public var mockHideResponse: HidePostResponse?
+    var mockPosts: [Post] = []
+    var mockComments: [Comment] = []
+    var mockPost: Post?
+    var mockComment: Comment?
+    var mockLikeResponse: LikeResponse?
+    var mockHideResponse: HidePostResponse?
     
     // MARK: - Initialization
     
-    public init() {}
+    init() {}
     
     // MARK: - Post Operations
     
-    public func fetchPosts(
+    func fetchPosts(
         token: String,
         userId: String,
         wall: WallType,
@@ -103,7 +103,7 @@ public class MockPostService: PostServiceProtocol {
         case .success:
             return PostListResponse(
                 data: mockPosts,
-                pagination: PaginationInfo(
+                pagination: PostListResponse.Pagination(
                     page: page,
                     limit: limit,
                     total: mockPosts.count,
@@ -115,12 +115,12 @@ public class MockPostService: PostServiceProtocol {
         case .emptyState:
             return PostListResponse(
                 data: [],
-                pagination: PaginationInfo(page: page, limit: limit, total: 0, totalPages: 0)
+                pagination: PostListResponse.Pagination(page: page, limit: limit, total: 0, totalPages: 0)
             )
         }
     }
     
-    public func getPost(
+    func getPost(
         postId: String,
         token: String,
         userId: String
@@ -159,7 +159,7 @@ public class MockPostService: PostServiceProtocol {
         }
     }
     
-    public func createPost(
+    func createPost(
         title: String,
         content: String,
         wall: WallType,
@@ -202,7 +202,7 @@ public class MockPostService: PostServiceProtocol {
         }
     }
     
-    public func toggleLike(
+    func toggleLike(
         postId: String,
         token: String,
         userId: String
@@ -219,7 +219,7 @@ public class MockPostService: PostServiceProtocol {
         }
     }
     
-    public func hidePost(
+    func hidePost(
         postId: String,
         token: String,
         userId: String
@@ -236,7 +236,7 @@ public class MockPostService: PostServiceProtocol {
         }
     }
     
-    public func unhidePost(
+    func unhidePost(
         postId: String,
         token: String,
         userId: String
@@ -255,7 +255,7 @@ public class MockPostService: PostServiceProtocol {
     
     // MARK: - Comment Operations
     
-    public func addComment(
+    func addComment(
         postId: String,
         text: String,
         token: String,
@@ -287,7 +287,7 @@ public class MockPostService: PostServiceProtocol {
         }
     }
     
-    public func getComments(
+    func getComments(
         postId: String,
         token: String,
         userId: String,
@@ -302,7 +302,7 @@ public class MockPostService: PostServiceProtocol {
             let postComments = mockComments.filter { $0.postId == postId }
             return CommentListResponse(
                 data: postComments,
-                pagination: PaginationInfo(
+                pagination: PostListResponse.Pagination(
                     page: page,
                     limit: limit,
                     total: postComments.count,
@@ -314,12 +314,12 @@ public class MockPostService: PostServiceProtocol {
         case .emptyState:
             return CommentListResponse(
                 data: [],
-                pagination: PaginationInfo(page: page, limit: limit, total: 0, totalPages: 0)
+                pagination: PostListResponse.Pagination(page: page, limit: limit, total: 0, totalPages: 0)
             )
         }
     }
     
-    public func hideComment(
+    func hideComment(
         postId: String,
         commentId: String,
         token: String,
@@ -337,7 +337,7 @@ public class MockPostService: PostServiceProtocol {
         }
     }
     
-    public func unhideComment(
+    func unhideComment(
         postId: String,
         commentId: String,
         token: String,
@@ -357,7 +357,7 @@ public class MockPostService: PostServiceProtocol {
     
     // MARK: - User Operations
     
-    public func getUserComments(
+    func getUserComments(
         token: String,
         userId: String,
         page: Int,
@@ -370,7 +370,7 @@ public class MockPostService: PostServiceProtocol {
         case .success:
             return CommentListResponse(
                 data: mockComments,
-                pagination: PaginationInfo(
+                pagination: PostListResponse.Pagination(
                     page: page,
                     limit: limit,
                     total: mockComments.count,
@@ -382,12 +382,12 @@ public class MockPostService: PostServiceProtocol {
         case .emptyState:
             return CommentListResponse(
                 data: [],
-                pagination: PaginationInfo(page: page, limit: limit, total: 0, totalPages: 0)
+                pagination: PostListResponse.Pagination(page: page, limit: limit, total: 0, totalPages: 0)
             )
         }
     }
     
-    public func getUserPosts(
+    func getUserPosts(
         token: String,
         userId: String,
         page: Int,
@@ -400,7 +400,7 @@ public class MockPostService: PostServiceProtocol {
         case .success:
             return PostListResponse(
                 data: mockPosts,
-                pagination: PaginationInfo(
+                pagination: PostListResponse.Pagination(
                     page: page,
                     limit: limit,
                     total: mockPosts.count,
@@ -412,7 +412,7 @@ public class MockPostService: PostServiceProtocol {
         case .emptyState:
             return PostListResponse(
                 data: [],
-                pagination: PaginationInfo(page: page, limit: limit, total: 0, totalPages: 0)
+                pagination: PostListResponse.Pagination(page: page, limit: limit, total: 0, totalPages: 0)
             )
         }
     }
@@ -420,7 +420,7 @@ public class MockPostService: PostServiceProtocol {
     // MARK: - Helper Methods
     
     /// Reset all call tracking flags
-    public func resetCallTracking() {
+    func resetCallTracking() {
         fetchPostsCalled = false
         getPostCalled = false
         createPostCalled = false
@@ -436,7 +436,7 @@ public class MockPostService: PostServiceProtocol {
     }
     
     /// Reset all behaviors to success
-    public func resetBehaviors() {
+    func resetBehaviors() {
         fetchPostsBehavior = .success
         getPostBehavior = .success
         createPostBehavior = .success
@@ -452,7 +452,7 @@ public class MockPostService: PostServiceProtocol {
     }
     
     /// Configure all methods to fail with specific error
-    public func configureAllToFail(with error: Error) {
+    func configureAllToFail(with error: Error) {
         fetchPostsBehavior = .failure(error)
         getPostBehavior = .failure(error)
         createPostBehavior = .failure(error)
@@ -468,7 +468,7 @@ public class MockPostService: PostServiceProtocol {
     }
     
     /// Configure all methods to return empty state
-    public func configureAllToEmptyState() {
+    func configureAllToEmptyState() {
         fetchPostsBehavior = .emptyState
         getPostBehavior = .emptyState
         createPostBehavior = .emptyState
@@ -484,7 +484,7 @@ public class MockPostService: PostServiceProtocol {
     }
     
     /// Clear all stored mock data
-    public func clearMockData() {
+    func clearMockData() {
         mockPosts.removeAll()
         mockComments.removeAll()
         mockPost = nil

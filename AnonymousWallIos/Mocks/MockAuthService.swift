@@ -9,26 +9,26 @@
 import Foundation
 
 /// Mock AuthService for testing with configurable responses
-public class MockAuthService: AuthServiceProtocol {
+class MockAuthService: AuthServiceProtocol {
     
     // MARK: - Configuration
     
     /// Configuration for mock behavior
-    public enum MockBehavior {
+    enum MockBehavior {
         case success
         case failure(Error)
         case emptyState
     }
     
     /// Default error for failure scenarios
-    public enum MockError: Error, LocalizedError {
+    enum MockError: Error, LocalizedError {
         case invalidCredentials
         case networkError
         case serverError
         case userNotFound
         case invalidCode
         
-        public var errorDescription: String? {
+        var errorDescription: String? {
             switch self {
             case .invalidCredentials:
                 return "Invalid credentials"
@@ -46,56 +46,67 @@ public class MockAuthService: AuthServiceProtocol {
     
     // MARK: - State Tracking
     
-    public var sendEmailVerificationCodeCalled = false
-    public var registerWithEmailCalled = false
-    public var loginWithEmailCodeCalled = false
-    public var loginWithPasswordCalled = false
-    public var setPasswordCalled = false
-    public var changePasswordCalled = false
-    public var requestPasswordResetCalled = false
-    public var resetPasswordCalled = false
-    public var updateProfileNameCalled = false
+    var sendEmailVerificationCodeCalled = false
+    var registerWithEmailCalled = false
+    var loginWithEmailCodeCalled = false
+    var loginWithPasswordCalled = false
+    var setPasswordCalled = false
+    var changePasswordCalled = false
+    var requestPasswordResetCalled = false
+    var resetPasswordCalled = false
+    var updateProfileNameCalled = false
     
     // MARK: - Configurable Behavior
     
-    public var sendEmailVerificationCodeBehavior: MockBehavior = .success
-    public var registerWithEmailBehavior: MockBehavior = .success
-    public var loginWithEmailCodeBehavior: MockBehavior = .success
-    public var loginWithPasswordBehavior: MockBehavior = .success
-    public var setPasswordBehavior: MockBehavior = .success
-    public var changePasswordBehavior: MockBehavior = .success
-    public var requestPasswordResetBehavior: MockBehavior = .success
-    public var resetPasswordBehavior: MockBehavior = .success
-    public var updateProfileNameBehavior: MockBehavior = .success
+    var sendEmailVerificationCodeBehavior: MockBehavior = .success
+    var registerWithEmailBehavior: MockBehavior = .success
+    var loginWithEmailCodeBehavior: MockBehavior = .success
+    var loginWithPasswordBehavior: MockBehavior = .success
+    var setPasswordBehavior: MockBehavior = .success
+    var changePasswordBehavior: MockBehavior = .success
+    var requestPasswordResetBehavior: MockBehavior = .success
+    var resetPasswordBehavior: MockBehavior = .success
+    var updateProfileNameBehavior: MockBehavior = .success
     
     // MARK: - Configurable Responses
     
-    public var mockVerificationCodeResponse: VerificationCodeResponse?
-    public var mockAuthResponse: AuthResponse?
-    public var mockUser: User?
+    var mockVerificationCodeResponse: VerificationCodeResponse?
+    var mockAuthResponse: AuthResponse?
+    var mockUser: User?
     
     // MARK: - Initialization
     
-    public init() {}
+    init() {}
+    
+    // MARK: - Helper Methods for Creating Responses
+    
+    /// Helper to create VerificationCodeResponse from message string
+    private func createVerificationCodeResponse(message: String) -> VerificationCodeResponse {
+        let json = """
+        "\(message)"
+        """
+        let data = json.data(using: .utf8)!
+        return try! JSONDecoder().decode(VerificationCodeResponse.self, from: data)
+    }
     
     // MARK: - Protocol Methods
     
-    public func sendEmailVerificationCode(email: String, purpose: String) async throws -> VerificationCodeResponse {
+    func sendEmailVerificationCode(email: String, purpose: String) async throws -> VerificationCodeResponse {
         sendEmailVerificationCodeCalled = true
         
         switch sendEmailVerificationCodeBehavior {
         case .success:
-            return mockVerificationCodeResponse ?? VerificationCodeResponse(
+            return mockVerificationCodeResponse ?? createVerificationCodeResponse(
                 message: "Mock verification code sent to \(email)"
             )
         case .failure(let error):
             throw error
         case .emptyState:
-            return VerificationCodeResponse(message: "")
+            return createVerificationCodeResponse(message: "")
         }
     }
     
-    public func registerWithEmail(email: String, code: String) async throws -> AuthResponse {
+    func registerWithEmail(email: String, code: String) async throws -> AuthResponse {
         registerWithEmailCalled = true
         
         switch registerWithEmailBehavior {
@@ -124,7 +135,7 @@ public class MockAuthService: AuthServiceProtocol {
         }
     }
     
-    public func loginWithEmailCode(email: String, code: String) async throws -> AuthResponse {
+    func loginWithEmailCode(email: String, code: String) async throws -> AuthResponse {
         loginWithEmailCodeCalled = true
         
         switch loginWithEmailCodeBehavior {
@@ -153,7 +164,7 @@ public class MockAuthService: AuthServiceProtocol {
         }
     }
     
-    public func loginWithPassword(email: String, password: String) async throws -> AuthResponse {
+    func loginWithPassword(email: String, password: String) async throws -> AuthResponse {
         loginWithPasswordCalled = true
         
         switch loginWithPasswordBehavior {
@@ -182,7 +193,7 @@ public class MockAuthService: AuthServiceProtocol {
         }
     }
     
-    public func setPassword(password: String, token: String, userId: String) async throws {
+    func setPassword(password: String, token: String, userId: String) async throws {
         setPasswordCalled = true
         
         switch setPasswordBehavior {
@@ -195,7 +206,7 @@ public class MockAuthService: AuthServiceProtocol {
         }
     }
     
-    public func changePassword(oldPassword: String, newPassword: String, token: String, userId: String) async throws {
+    func changePassword(oldPassword: String, newPassword: String, token: String, userId: String) async throws {
         changePasswordCalled = true
         
         switch changePasswordBehavior {
@@ -208,7 +219,7 @@ public class MockAuthService: AuthServiceProtocol {
         }
     }
     
-    public func requestPasswordReset(email: String) async throws {
+    func requestPasswordReset(email: String) async throws {
         requestPasswordResetCalled = true
         
         switch requestPasswordResetBehavior {
@@ -221,7 +232,7 @@ public class MockAuthService: AuthServiceProtocol {
         }
     }
     
-    public func resetPassword(email: String, code: String, newPassword: String) async throws -> AuthResponse {
+    func resetPassword(email: String, code: String, newPassword: String) async throws -> AuthResponse {
         resetPasswordCalled = true
         
         switch resetPasswordBehavior {
@@ -250,7 +261,7 @@ public class MockAuthService: AuthServiceProtocol {
         }
     }
     
-    public func updateProfileName(profileName: String, token: String, userId: String) async throws -> User {
+    func updateProfileName(profileName: String, token: String, userId: String) async throws -> User {
         updateProfileNameCalled = true
         
         switch updateProfileNameBehavior {
@@ -280,7 +291,7 @@ public class MockAuthService: AuthServiceProtocol {
     // MARK: - Helper Methods
     
     /// Reset all call tracking flags
-    public func resetCallTracking() {
+    func resetCallTracking() {
         sendEmailVerificationCodeCalled = false
         registerWithEmailCalled = false
         loginWithEmailCodeCalled = false
@@ -293,7 +304,7 @@ public class MockAuthService: AuthServiceProtocol {
     }
     
     /// Reset all behaviors to success
-    public func resetBehaviors() {
+    func resetBehaviors() {
         sendEmailVerificationCodeBehavior = .success
         registerWithEmailBehavior = .success
         loginWithEmailCodeBehavior = .success
@@ -306,7 +317,7 @@ public class MockAuthService: AuthServiceProtocol {
     }
     
     /// Configure all methods to fail with specific error
-    public func configureAllToFail(with error: Error) {
+    func configureAllToFail(with error: Error) {
         sendEmailVerificationCodeBehavior = .failure(error)
         registerWithEmailBehavior = .failure(error)
         loginWithEmailCodeBehavior = .failure(error)
@@ -319,7 +330,7 @@ public class MockAuthService: AuthServiceProtocol {
     }
     
     /// Configure all methods to return empty state
-    public func configureAllToEmptyState() {
+    func configureAllToEmptyState() {
         sendEmailVerificationCodeBehavior = .emptyState
         registerWithEmailBehavior = .emptyState
         loginWithEmailCodeBehavior = .emptyState

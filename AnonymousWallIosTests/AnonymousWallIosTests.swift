@@ -5,6 +5,7 @@
 //  Created by Ziyi Huang on 1/30/26.
 //
 
+import Foundation
 import Testing
 @testable import AnonymousWallIos
 
