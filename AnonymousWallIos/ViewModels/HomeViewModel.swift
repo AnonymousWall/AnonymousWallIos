@@ -21,6 +21,14 @@ class HomeViewModel: ObservableObject {
     private var hasMorePages = true
     private var loadTask: Task<Void, Never>?
     
+    // MARK: - Dependencies
+    private let postService: PostServiceProtocol
+    
+    // MARK: - Initialization
+    init(postService: PostServiceProtocol = PostService.shared) {
+        self.postService = postService
+    }
+    
     // MARK: - Public Methods
     
     /// Load initial posts
@@ -73,7 +81,7 @@ class HomeViewModel: ObservableObject {
         
         Task {
             do {
-                let response = try await PostService.shared.toggleLike(
+                let response = try await postService.toggleLike(
                     postId: post.id,
                     token: token,
                     userId: userId
@@ -102,7 +110,7 @@ class HomeViewModel: ObservableObject {
         
         Task {
             do {
-                _ = try await PostService.shared.hidePost(
+                _ = try await postService.hidePost(
                     postId: post.id,
                     token: token,
                     userId: userId
@@ -160,7 +168,7 @@ class HomeViewModel: ObservableObject {
         }
         
         do {
-            let response = try await PostService.shared.fetchPosts(
+            let response = try await postService.fetchPosts(
                 token: token,
                 userId: userId,
                 wall: .national,
@@ -194,7 +202,7 @@ class HomeViewModel: ObservableObject {
         let nextPage = currentPage + 1
         
         do {
-            let response = try await PostService.shared.fetchPosts(
+            let response = try await postService.fetchPosts(
                 token: token,
                 userId: userId,
                 wall: .national,
