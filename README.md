@@ -54,6 +54,7 @@ iOS app for college student anonymous posting platform (similar to Blind).
 
 - **[API_DOCUMENTATION.md](API_DOCUMENTATION.md)** - Complete API endpoint documentation
 - **[POST_FEED_DOCUMENTATION.md](POST_FEED_DOCUMENTATION.md)** - Post feed feature documentation
+- **[LOGGER_USAGE.md](LOGGER_USAGE.md)** - Centralized logging usage guide
 - **[AUTHENTICATION.md](AUTHENTICATION.md)** - Legacy authentication documentation
 - **[UI_DOCUMENTATION.md](UI_DOCUMENTATION.md)** - UI flow and design specifications
 - **[UI_SCREENSHOTS.md](UI_SCREENSHOTS.md)** - Visual UI representations
@@ -149,6 +150,13 @@ The app follows a clean, industry-standard iOS architecture with clear separatio
 ### Utils
 - `KeychainHelper` - Secure storage for sensitive data
 - `ValidationUtils` - Input validation utilities
+- `Logger` - Centralized logging infrastructure
+  - Structured logging with os.log integration
+  - Multiple log levels (Debug, Info, Warning, Error)
+  - Environment-aware logging (respects AppConfiguration)
+  - Category-based organization (Networking, Authentication, UI, Data, General)
+  - Automatic file/function/line context
+  - See [LOGGER_USAGE.md](LOGGER_USAGE.md) for detailed usage guide
 
 ### Security
 - JWT tokens stored in iOS Keychain (encrypted)
