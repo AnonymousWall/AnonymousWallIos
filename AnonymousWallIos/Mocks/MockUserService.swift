@@ -106,7 +106,7 @@ class MockUserService: UserServiceProtocol {
             let totalPages = mockComments.isEmpty ? 1 : (mockComments.count + limit - 1) / limit
             return CommentListResponse(
                 data: mockComments,
-                pagination: PaginationInfo(
+                pagination: PostListResponse.Pagination(
                     page: page,
                     limit: limit,
                     total: mockComments.count,
@@ -118,7 +118,7 @@ class MockUserService: UserServiceProtocol {
         case .emptyState:
             return CommentListResponse(
                 data: [],
-                pagination: PaginationInfo(
+                pagination: PostListResponse.Pagination(
                     page: 1,
                     limit: limit,
                     total: 0,
@@ -142,7 +142,7 @@ class MockUserService: UserServiceProtocol {
             let totalPages = mockPosts.isEmpty ? 1 : (mockPosts.count + limit - 1) / limit
             return PostListResponse(
                 data: mockPosts,
-                pagination: PaginationInfo(
+                pagination: PostListResponse.Pagination(
                     page: page,
                     limit: limit,
                     total: mockPosts.count,
@@ -154,7 +154,7 @@ class MockUserService: UserServiceProtocol {
         case .emptyState:
             return PostListResponse(
                 data: [],
-                pagination: PaginationInfo(
+                pagination: PostListResponse.Pagination(
                     page: 1,
                     limit: limit,
                     total: 0,
