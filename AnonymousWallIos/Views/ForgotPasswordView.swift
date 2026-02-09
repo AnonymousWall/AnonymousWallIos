@@ -146,7 +146,9 @@ struct ForgotPasswordView: View {
                 
                 // Reset password button (shown after code is sent)
                 if viewModel.codeSent {
-                    Button(action: { viewModel.resetPassword(onSuccess: { dismiss() }) }) {
+                    Button(action: { 
+                        viewModel.resetPassword(authState: authState, onSuccess: { dismiss() }) 
+                    }) {
                         if viewModel.isLoading {
                             ProgressView()
                                 .progressViewStyle(CircularProgressViewStyle(tint: .white))
@@ -176,101 +178,14 @@ struct ForgotPasswordView: View {
             }
             .navigationBarHidden(true)
             .onDisappear {
-                stopCountdownTimer()
+                viewModel.cleanup()
             }
-            .alert("Password Reset Successful", isPresented: $showSuccess) {
+            .alert("Password Reset Successful", isPresented: $viewModel.showSuccess) {
                 Button("OK") {
                     dismiss()
                 }
             } message: {
                 Text("Your password has been reset. You are now logged in.")
-            }
-        }
-    }
-    
-    private var isResetButtonDisabled: Bool {
-        verificationCode.isEmpty || newPassword.isEmpty || confirmPassword.isEmpty || isLoading
-    }
-    
-    private func requestReset() {
-        guard !email.isEmpty else { return }
-        
-        // Validate email format
-        guard ValidationUtils.isValidEmail(email) else {
-            errorMessage = "Please enter a valid email address"
-            return
-        }
-        
-        isSendingCode = true
-        errorMessage = nil
-        
-        Task {
-            do {
-                try await authService.requestPasswordReset(email: email)
-                await MainActor.run {
-                    isSendingCode = false
-                    codeSent = true
-                    startCountdownTimer()
-                }
-            } catch {
-                await MainActor.run {
-                    isSendingCode = false
-                    errorMessage = error.localizedDescription
-                }
-            }
-        }
-    }
-    
-    private func startCountdownTimer() {
-        resendCountdown = 60
-        stopCountdownTimer()
-        
-        countdownTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
-            DispatchQueue.main.async {
-                if self.resendCountdown > 0 {
-                    self.resendCountdown -= 1
-                } else {
-                    self.stopCountdownTimer()
-                }
-            }
-        }
-    }
-    
-    private func stopCountdownTimer() {
-        countdownTimer?.invalidate()
-        countdownTimer = nil
-    }
-    
-    private func resetPassword() {
-        // Validate passwords match
-        guard newPassword == confirmPassword else {
-            errorMessage = "Passwords do not match"
-            return
-        }
-        
-        // Validate password length
-        guard newPassword.count >= 8 else {
-            errorMessage = "Password must be at least 8 characters"
-            return
-        }
-        
-        isLoading = true
-        errorMessage = nil
-        
-        Task {
-            do {
-                let response = try await authService.resetPassword(email: email, code: verificationCode, newPassword: newPassword)
-                await MainActor.run {
-                    isLoading = false
-                    // User is now logged in with new password
-                    authState.login(user: response.user, token: response.accessToken)
-                    showSuccess = true
-                }
-            } catch {
-                await MainActor.run {
-                    isLoading = false
-                    errorMessage = error.localizedDescription
-                }
             }
         }
     }
