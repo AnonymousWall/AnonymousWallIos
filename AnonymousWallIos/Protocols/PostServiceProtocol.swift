@@ -59,4 +59,12 @@ protocol PostServiceProtocol {
     
     /// Unhide a comment (restore from soft delete)
     func unhideComment(postId: String, commentId: String, token: String, userId: String) async throws -> HidePostResponse
+    
+    // MARK: - Report Operations
+    
+    /// Report a post
+    func reportPost(postId: String, reason: String?, token: String, userId: String) async throws -> ReportResponse
+    
+    /// Report a comment
+    func reportComment(postId: String, commentId: String, reason: String?, token: String, userId: String) async throws -> ReportResponse
 }

@@ -18,6 +18,10 @@ struct CampusView: View {
     @State private var errorMessage: String?
     @State private var loadTask: Task<Void, Never>?
     @State private var selectedSortOrder: SortOrder = .newest
+    @State private var showReportDialog = false
+    @State private var postToReport: Post?
+    @State private var reportReason = ""
+    @State private var showReportSuccess = false
     
     // Minimum height for scrollable content when list is empty
     private let minimumScrollableHeight: CGFloat = 300
@@ -112,7 +116,8 @@ struct CampusView: View {
                                         post: post,
                                         isOwnPost: post.author.id == authState.currentUser?.id,
                                         onLike: { toggleLike(for: post) },
-                                        onDelete: { deletePost(post) }
+                                        onDelete: { deletePost(post) },
+                                        onReport: { reportPost(post) }
                                     )
                                 }
                                 .buttonStyle(PlainButtonStyle())
@@ -170,6 +175,23 @@ struct CampusView: View {
         }
         .sheet(isPresented: $coordinator.showSetPassword) {
             SetPasswordView(authService: AuthService.shared)
+        }
+        .alert("Report Post", isPresented: $showReportDialog) {
+            TextField("Reason (optional)", text: $reportReason)
+            Button("Report", role: .destructive) {
+                submitReport()
+            }
+            Button("Cancel", role: .cancel) {
+                reportReason = ""
+                postToReport = nil
+            }
+        } message: {
+            Text("Why are you reporting this post?")
+        }
+        .alert("Post Reported", isPresented: $showReportSuccess) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("Thank you for reporting. We will review this content.")
         }
         .onAppear {
             // Show password setup if needed (only once)
@@ -348,6 +370,55 @@ struct CampusView: View {
                         }
                     } else {
                         errorMessage = "Failed to delete post. Please try again."
+                    }
+                }
+            }
+        }
+    }
+    
+    private func reportPost(_ post: Post) {
+        postToReport = post
+        showReportDialog = true
+    }
+    
+    private func submitReport() {
+        guard let post = postToReport,
+              let token = authState.authToken,
+              let userId = authState.currentUser?.id else {
+            errorMessage = "Authentication required to report post."
+            return
+        }
+        
+        Task {
+            do {
+                _ = try await PostService.shared.reportPost(
+                    postId: post.id,
+                    reason: reportReason.isEmpty ? nil : reportReason,
+                    token: token,
+                    userId: userId
+                )
+                await MainActor.run {
+                    showReportSuccess = true
+                    reportReason = ""
+                    postToReport = nil
+                }
+            } catch {
+                await MainActor.run {
+                    if let networkError = error as? NetworkError {
+                        switch networkError {
+                        case .unauthorized:
+                            errorMessage = "Session expired. Please log in again."
+                        case .forbidden:
+                            errorMessage = "You don't have permission to report this post."
+                        case .notFound:
+                            errorMessage = "Post not found."
+                        case .noConnection:
+                            errorMessage = "No internet connection. Please check your network."
+                        default:
+                            errorMessage = "Failed to report post. Please try again."
+                        }
+                    } else {
+                        errorMessage = "Failed to report post. Please try again."
                     }
                 }
             }

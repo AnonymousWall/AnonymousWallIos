@@ -197,7 +197,8 @@ struct ProfileView: View {
                                             post: post,
                                             isOwnPost: true,
                                             onLike: { viewModel.toggleLikePost(post, authState: authState) },
-                                            onDelete: { viewModel.deletePost(post, authState: authState) }
+                                            onDelete: { viewModel.deletePost(post, authState: authState) },
+                                            onReport: {} // User can't report their own posts
                                         )
                                     }
                                     .buttonStyle(PlainButtonStyle())

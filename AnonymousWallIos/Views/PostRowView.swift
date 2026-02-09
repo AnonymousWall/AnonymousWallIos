@@ -12,6 +12,7 @@ struct PostRowView: View {
     let isOwnPost: Bool
     var onLike: () -> Void
     var onDelete: () -> Void
+    var onReport: () -> Void
     
     @State private var showDeleteConfirmation = false
     
@@ -143,6 +144,21 @@ struct PostRowView: View {
                         Text("Are you sure you want to delete this post?")
                     }
                 }
+                // Report button (only for other users' posts)
+                else {
+                    Button(action: { 
+                        HapticFeedback.warning()
+                        onReport()
+                    }) {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .font(.system(size: 16))
+                            .foregroundColor(.white)
+                            .padding(6)
+                            .background(Color.orange)
+                            .cornerRadius(8)
+                    }
+                    .buttonStyle(.bounce)
+                }
             }
         }
         .padding(16)
@@ -174,7 +190,8 @@ struct PostRowView: View {
         ),
         isOwnPost: false,
         onLike: {},
-        onDelete: {}
+        onDelete: {},
+        onReport: {}
     )
     .padding()
 }

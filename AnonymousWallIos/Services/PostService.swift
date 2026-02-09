@@ -218,4 +218,42 @@ class PostService: PostServiceProtocol {
         
         return try await networkClient.performRequest(request)
     }
+    
+    // MARK: - Report Operations
+    
+    /// Report a post
+    func reportPost(postId: String, reason: String? = nil, token: String, userId: String) async throws -> ReportResponse {
+        guard let url = URL(string: "\(config.fullAPIBaseURL)/posts/\(postId)/reports") else {
+            throw NetworkError.invalidURL
+        }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        request.setValue(userId, forHTTPHeaderField: "X-User-Id")
+        
+        let body = ReportRequest(reason: reason)
+        request.httpBody = try JSONEncoder().encode(body)
+        
+        return try await networkClient.performRequest(request)
+    }
+    
+    /// Report a comment
+    func reportComment(postId: String, commentId: String, reason: String? = nil, token: String, userId: String) async throws -> ReportResponse {
+        guard let url = URL(string: "\(config.fullAPIBaseURL)/posts/\(postId)/comments/\(commentId)/reports") else {
+            throw NetworkError.invalidURL
+        }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        request.setValue(userId, forHTTPHeaderField: "X-User-Id")
+        
+        let body = ReportRequest(reason: reason)
+        request.httpBody = try JSONEncoder().encode(body)
+        
+        return try await networkClient.performRequest(request)
+    }
 }

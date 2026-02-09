@@ -14,6 +14,7 @@ class WallViewModel: ObservableObject {
     @Published var isLoadingPosts = false
     @Published var isLoadingMore = false
     @Published var errorMessage: String?
+    @Published var showReportSuccess = false
     
     // MARK: - Private Properties
     private var currentPage = 1
@@ -98,6 +99,44 @@ class WallViewModel: ObservableObject {
                     }
                 } else {
                     errorMessage = "Failed to delete post. Please try again."
+                }
+            }
+        }
+    }
+    
+    func reportPost(_ post: Post, reason: String?, authState: AuthState) {
+        guard let token = authState.authToken,
+              let userId = authState.currentUser?.id else {
+            errorMessage = "Authentication required to report post."
+            return
+        }
+        
+        Task {
+            do {
+                _ = try await PostService.shared.reportPost(
+                    postId: post.id,
+                    reason: reason,
+                    token: token,
+                    userId: userId
+                )
+                showReportSuccess = true
+            } catch {
+                // Provide user-friendly error message
+                if let networkError = error as? NetworkError {
+                    switch networkError {
+                    case .unauthorized:
+                        errorMessage = "Session expired. Please log in again."
+                    case .forbidden:
+                        errorMessage = "You don't have permission to report this post."
+                    case .notFound:
+                        errorMessage = "Post not found."
+                    case .noConnection:
+                        errorMessage = "No internet connection. Please check your network."
+                    default:
+                        errorMessage = "Failed to report post. Please try again."
+                    }
+                } else {
+                    errorMessage = "Failed to report post. Please try again."
                 }
             }
         }

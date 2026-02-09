@@ -11,6 +11,9 @@ struct HomeView: View {
     @EnvironmentObject var authState: AuthState
     @StateObject private var viewModel = HomeViewModel()
     @ObservedObject var coordinator: HomeCoordinator
+    @State private var showReportDialog = false
+    @State private var postToReport: Post?
+    @State private var reportReason = ""
     
     // Minimum height for scrollable content when list is empty
     private let minimumScrollableHeight: CGFloat = 300
@@ -99,7 +102,11 @@ struct HomeView: View {
                                         post: post,
                                         isOwnPost: post.author.id == authState.currentUser?.id,
                                         onLike: { viewModel.toggleLike(for: post, authState: authState) },
-                                        onDelete: { viewModel.deletePost(post, authState: authState) }
+                                        onDelete: { viewModel.deletePost(post, authState: authState) },
+                                        onReport: { 
+                                            postToReport = post
+                                            showReportDialog = true
+                                        }
                                     )
                                 }
                                 .buttonStyle(PlainButtonStyle())
@@ -155,6 +162,27 @@ struct HomeView: View {
         }
         .sheet(isPresented: $coordinator.showSetPassword) {
             SetPasswordView(authService: AuthService.shared)
+        }
+        .alert("Report Post", isPresented: $showReportDialog) {
+            TextField("Reason (optional)", text: $reportReason)
+            Button("Report", role: .destructive) {
+                if let post = postToReport {
+                    viewModel.reportPost(post, reason: reportReason.isEmpty ? nil : reportReason, authState: authState)
+                    reportReason = ""
+                    postToReport = nil
+                }
+            }
+            Button("Cancel", role: .cancel) {
+                reportReason = ""
+                postToReport = nil
+            }
+        } message: {
+            Text("Why are you reporting this post?")
+        }
+        .alert("Post Reported", isPresented: $viewModel.showReportSuccess) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("Thank you for reporting. We will review this content.")
         }
         .onAppear {
             // Show password setup if needed (only once)
