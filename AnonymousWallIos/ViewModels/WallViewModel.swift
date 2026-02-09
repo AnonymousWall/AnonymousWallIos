@@ -20,6 +20,13 @@ class WallViewModel: ObservableObject {
     private var hasMorePages = true
     private var loadTask: Task<Void, Never>?
     
+    deinit {
+        #if DEBUG
+        Logger.app.debug("✅ WallViewModel deinitialized")
+        #endif
+        cleanup()
+    }
+    
     // MARK: - Public Methods
     func loadPosts(authState: AuthState) {
         loadTask?.cancel()

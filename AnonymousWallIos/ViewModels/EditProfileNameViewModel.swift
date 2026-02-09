@@ -22,6 +22,12 @@ class EditProfileNameViewModel: ObservableObject {
         self.userService = userService
     }
     
+    deinit {
+        #if DEBUG
+        Logger.app.debug("✅ EditProfileNameViewModel deinitialized")
+        #endif
+    }
+    
     // MARK: - Public Methods
     func loadCurrentProfileName(from user: User?) {
         if let currentUser = user {

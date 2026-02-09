@@ -28,6 +28,12 @@ class CreatePostViewModel: ObservableObject {
         self.postService = postService
     }
     
+    deinit {
+        #if DEBUG
+        Logger.app.debug("✅ CreatePostViewModel deinitialized")
+        #endif
+    }
+    
     // MARK: - Computed Properties
     var titleCharacterCount: Int {
         postTitle.count
