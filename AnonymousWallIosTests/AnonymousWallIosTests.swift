@@ -13,7 +13,7 @@ struct AnonymousWallIosTests {
 
     @Test func testAuthStateInitialization() async throws {
         // Test that AuthState initializes with not authenticated
-        let authState = AuthState()
+        let authState = AuthState(loadPersistedState: false)
         #expect(authState.isAuthenticated == false)
         #expect(authState.currentUser == nil)
         #expect(authState.authToken == nil)
@@ -22,7 +22,7 @@ struct AnonymousWallIosTests {
     
     @Test func testAuthStateLogin() async throws {
         // Test that login updates authentication state
-        let authState = AuthState()
+        let authState = AuthState(loadPersistedState: false)
         let testUser = User(id: "test-123", email: "test@example.com", profileName: "Test User", isVerified: true, passwordSet: false, createdAt: "2026-01-31T00:00:00Z")
         let testToken = "test-token-abc"
         
@@ -38,7 +38,7 @@ struct AnonymousWallIosTests {
     
     @Test func testAuthStateLogout() async throws {
         // Test that logout clears authentication state
-        let authState = AuthState()
+        let authState = AuthState(loadPersistedState: false)
         let testUser = User(id: "test-123", email: "test@example.com", profileName: "Anonymous", isVerified: true, passwordSet: true, createdAt: "2026-01-31T00:00:00Z")
         
         // Login first
@@ -144,7 +144,7 @@ struct AnonymousWallIosTests {
     
     @Test func testPasswordSetupStatus() async throws {
         // Test password setup status update
-        let authState = AuthState()
+        let authState = AuthState(loadPersistedState: false)
         let testUser = User(id: "test-123", email: "test@example.com", profileName: "Test User", isVerified: true, passwordSet: false, createdAt: "2026-01-31T00:00:00Z")
         
         // Login with password setup needed (passwordSet is false)
@@ -310,7 +310,7 @@ struct AnonymousWallIosTests {
     
     @Test func testUpdateUserMethod() async throws {
         // Test that updateUser updates the current user and persists changes
-        let authState = AuthState()
+        let authState = AuthState(loadPersistedState: false)
         let initialUser = User(id: "test-123", email: "test@example.com", profileName: "Anonymous", isVerified: true, passwordSet: true, createdAt: "2026-01-31T00:00:00Z")
         
         // Login first

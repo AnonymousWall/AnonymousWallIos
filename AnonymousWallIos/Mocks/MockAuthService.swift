@@ -27,6 +27,8 @@ class MockAuthService: AuthServiceProtocol {
         case serverError
         case userNotFound
         case invalidCode
+        case unauthorized
+        case userAlreadyExists
         
         var errorDescription: String? {
             switch self {
@@ -40,6 +42,10 @@ class MockAuthService: AuthServiceProtocol {
                 return "User not found"
             case .invalidCode:
                 return "Invalid verification code"
+            case .unauthorized:
+                return "Unauthorized"
+            case .userAlreadyExists:
+                return "User already exists"
             }
         }
     }

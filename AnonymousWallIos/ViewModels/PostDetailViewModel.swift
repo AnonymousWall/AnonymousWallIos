@@ -19,9 +19,17 @@ class PostDetailViewModel: ObservableObject {
     @Published var commentToDelete: Comment?
     @Published var selectedSortOrder: SortOrder = .newest
     
+    // MARK: - Dependencies
+    private let postService: PostServiceProtocol
+    
     // MARK: - Private Properties
     private var currentPage = 1
     private var hasMorePages = true
+    
+    // MARK: - Initialization
+    init(postService: PostServiceProtocol = PostService.shared) {
+        self.postService = postService
+    }
     
     // MARK: - Public Methods
     func loadComments(postId: String, authState: AuthState) {
@@ -74,7 +82,7 @@ class PostDetailViewModel: ObservableObject {
         
         Task {
             do {
-                _ = try await PostService.shared.addComment(postId: postId, text: trimmedText, token: token, userId: userId)
+                _ = try await postService.addComment(postId: postId, text: trimmedText, token: token, userId: userId)
                 HapticFeedback.success()
                 isSubmitting = false
                 commentText = ""
@@ -97,7 +105,7 @@ class PostDetailViewModel: ObservableObject {
         
         Task {
             do {
-                let response = try await PostService.shared.toggleLike(postId: post.wrappedValue.id, token: token, userId: userId)
+                let response = try await postService.toggleLike(postId: post.wrappedValue.id, token: token, userId: userId)
                 post.wrappedValue = post.wrappedValue.withUpdatedLike(liked: response.liked, likes: response.likeCount)
             } catch {
                 errorMessage = error.localizedDescription
@@ -114,7 +122,7 @@ class PostDetailViewModel: ObservableObject {
         
         Task {
             do {
-                _ = try await PostService.shared.hidePost(postId: post.id, token: token, userId: userId)
+                _ = try await postService.hidePost(postId: post.id, token: token, userId: userId)
                 HapticFeedback.success()
                 onSuccess()
             } catch {
@@ -132,7 +140,7 @@ class PostDetailViewModel: ObservableObject {
         
         Task {
             do {
-                _ = try await PostService.shared.hideComment(postId: postId, commentId: comment.id, token: token, userId: userId)
+                _ = try await postService.hideComment(postId: postId, commentId: comment.id, token: token, userId: userId)
                 HapticFeedback.success()
                 // Reload comments to remove the deleted one
                 resetPagination()
@@ -163,7 +171,7 @@ class PostDetailViewModel: ObservableObject {
         }
         
         do {
-            let response = try await PostService.shared.getComments(
+            let response = try await postService.getComments(
                 postId: postId,
                 token: token,
                 userId: userId,
@@ -192,7 +200,7 @@ class PostDetailViewModel: ObservableObject {
         let nextPage = currentPage + 1
         
         do {
-            let response = try await PostService.shared.getComments(
+            let response = try await postService.getComments(
                 postId: postId,
                 token: token,
                 userId: userId,

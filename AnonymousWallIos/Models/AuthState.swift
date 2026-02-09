@@ -18,9 +18,11 @@ class AuthState: ObservableObject {
     private let config = AppConfiguration.shared
     private let keychainAuthTokenKey: String
     
-    init() {
+    init(loadPersistedState: Bool = true) {
         self.keychainAuthTokenKey = config.authTokenKey
-        loadAuthState()
+        if loadPersistedState {
+            loadAuthState()
+        }
     }
     
     func login(user: User, token: String) {
@@ -61,6 +63,11 @@ class AuthState: ObservableObject {
         self.isAuthenticated = false
         self.needsPasswordSetup = false
         self.hasShownPasswordSetup = false
+        clearAuthState()
+    }
+    
+    /// Clears all persisted authentication state. Useful for testing.
+    func clearPersistedState() {
         clearAuthState()
     }
     
