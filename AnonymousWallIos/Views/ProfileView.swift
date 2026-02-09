@@ -9,28 +9,10 @@ import SwiftUI
 
 struct ProfileView: View {
     @EnvironmentObject var authState: AuthState
-    @State private var selectedSegment = 0
-    @State private var myPosts: [Post] = []
-    @State private var myComments: [Comment] = []
-    @State private var commentPostMap: [String: Post] = [:] // Map comment postId to Post
-    @State private var isLoading = false
-    @State private var errorMessage: String?
+    @StateObject private var viewModel = ProfileViewModel()
     @State private var showChangePassword = false
     @State private var showSetPassword = false
     @State private var showEditProfileName = false
-    @State private var loadTask: Task<Void, Never>?
-    @State private var postSortOrder: SortOrder = .newest
-    @State private var commentSortOrder: SortOrder = .newest
-    
-    // Pagination state for posts
-    @State private var currentPostsPage = 1
-    @State private var hasMorePosts = true
-    @State private var isLoadingMorePosts = false
-    
-    // Pagination state for comments
-    @State private var currentCommentsPage = 1
-    @State private var hasMoreComments = true
-    @State private var isLoadingMoreComments = false
     
     var body: some View {
         NavigationStack {
@@ -95,20 +77,15 @@ struct ProfileView: View {
                 .padding(.vertical, 20)
                 
                 // Segment control
-                Picker("Content Type", selection: $selectedSegment) {
+                Picker("Content Type", selection: $viewModel.selectedSegment) {
                     Text("Posts").tag(0)
                     Text("Comments").tag(1)
                 }
                 .pickerStyle(SegmentedPickerStyle())
                 .padding(.horizontal)
                 .padding(.bottom, 10)
-                .onChange(of: selectedSegment) { _, _ in
-                    HapticFeedback.selection()
-                    loadTask?.cancel()
-                    resetPagination()
-                    loadTask = Task {
-                        await loadContent()
-                    }
+                .onChange(of: viewModel.selectedSegment) { _, _ in
+                    viewModel.segmentChanged(authState: authState)
                 }
                 
                 // Sorting dropdown menu
@@ -118,20 +95,16 @@ struct ProfileView: View {
                         .foregroundColor(.secondary)
                     
                     Menu {
-                        if selectedSegment == 0 {
+                        if viewModel.selectedSegment == 0 {
                             // Posts sorting options
                             ForEach(SortOrder.feedOptions, id: \.self) { option in
                                 Button {
-                                    postSortOrder = option
-                                    loadTask?.cancel()
-                                    resetPagination()
-                                    loadTask = Task {
-                                        await loadContent()
-                                    }
+                                    viewModel.postSortOrder = option
+                                    viewModel.postSortChanged(authState: authState)
                                 } label: {
                                     HStack {
                                         Text(option.displayName)
-                                        if postSortOrder == option {
+                                        if viewModel.postSortOrder == option {
                                             Image(systemName: "checkmark")
                                         }
                                     }
@@ -140,32 +113,24 @@ struct ProfileView: View {
                         } else {
                             // Comments sorting options - only newest/oldest supported
                             Button {
-                                commentSortOrder = .newest
-                                loadTask?.cancel()
-                                resetPagination()
-                                loadTask = Task {
-                                    await loadContent()
-                                }
+                                viewModel.commentSortOrder = .newest
+                                viewModel.commentSortChanged(authState: authState)
                             } label: {
                                 HStack {
                                     Text(SortOrder.newest.displayName)
-                                    if commentSortOrder == .newest {
+                                    if viewModel.commentSortOrder == .newest {
                                         Image(systemName: "checkmark")
                                     }
                                 }
                             }
                             
                             Button {
-                                commentSortOrder = .oldest
-                                loadTask?.cancel()
-                                resetPagination()
-                                loadTask = Task {
-                                    await loadContent()
-                                }
+                                viewModel.commentSortOrder = .oldest
+                                viewModel.commentSortChanged(authState: authState)
                             } label: {
                                 HStack {
                                     Text(SortOrder.oldest.displayName)
-                                    if commentSortOrder == .oldest {
+                                    if viewModel.commentSortOrder == .oldest {
                                         Image(systemName: "checkmark")
                                     }
                                 }
@@ -173,7 +138,7 @@ struct ProfileView: View {
                         }
                     } label: {
                         HStack {
-                            Text(selectedSegment == 0 ? postSortOrder.displayName : commentSortOrder.displayName)
+                            Text(viewModel.selectedSegment == 0 ? viewModel.postSortOrder.displayName : viewModel.commentSortOrder.displayName)
                                 .foregroundColor(.blue)
                             Image(systemName: "chevron.down")
                                 .font(.caption)
@@ -192,16 +157,16 @@ struct ProfileView: View {
                 
                 // Content area
                 ScrollView {
-                    if isLoading {
+                    if viewModel.isLoading {
                         VStack {
                             Spacer()
                             ProgressView("Loading...")
                             Spacer()
                         }
                         .frame(maxWidth: .infinity, minHeight: 300)
-                    } else if selectedSegment == 0 {
+                    } else if viewModel.selectedSegment == 0 {
                         // Posts section
-                        if myPosts.isEmpty {
+                        if viewModel.myPosts.isEmpty {
                             VStack(spacing: 20) {
                                 ZStack {
                                     Circle()
@@ -226,31 +191,28 @@ struct ProfileView: View {
                             .frame(maxWidth: .infinity, minHeight: 300)
                         } else {
                             LazyVStack(spacing: 12) {
-                                ForEach(myPosts) { post in
-                                    if let index = myPosts.firstIndex(where: { $0.id == post.id }) {
+                                ForEach(viewModel.myPosts) { post in
+                                    if let index = viewModel.myPosts.firstIndex(where: { $0.id == post.id }) {
                                         NavigationLink(destination: PostDetailView(post: Binding(
-                                            get: { myPosts[index] },
-                                            set: { myPosts[index] = $0 }
+                                            get: { viewModel.myPosts[index] },
+                                            set: { viewModel.myPosts[index] = $0 }
                                         ))) {
                                             PostRowView(
                                                 post: post,
                                                 isOwnPost: true,
-                                                onLike: { toggleLike(for: post) },
-                                                onDelete: { deletePost(post) }
+                                                onLike: { viewModel.toggleLikePost(post, authState: authState) },
+                                                onDelete: { viewModel.deletePost(post, authState: authState) }
                                             )
                                         }
                                         .buttonStyle(PlainButtonStyle())
                                         .onAppear {
-                                            // Load more when the last post appears
-                                            if post.id == myPosts.last?.id {
-                                                loadMorePostsIfNeeded()
-                                            }
+                                            viewModel.loadMorePostsIfNeeded(for: post, authState: authState)
                                         }
                                     }
                                 }
                                 
                                 // Loading indicator at bottom
-                                if isLoadingMorePosts {
+                                if viewModel.isLoadingMorePosts {
                                     HStack {
                                         Spacer()
                                         ProgressView()
@@ -263,7 +225,7 @@ struct ProfileView: View {
                         }
                     } else {
                         // Comments section
-                        if myComments.isEmpty {
+                        if viewModel.myComments.isEmpty {
                             VStack(spacing: 20) {
                                 ZStack {
                                     Circle()
@@ -288,31 +250,25 @@ struct ProfileView: View {
                             .frame(maxWidth: .infinity, minHeight: 300)
                         } else {
                             LazyVStack(spacing: 12) {
-                                ForEach(myComments) { comment in
-                                    if let post = commentPostMap[comment.postId] {
+                                ForEach(viewModel.myComments) { comment in
+                                    if let post = viewModel.commentPostMap[comment.postId] {
                                         NavigationLink(destination: PostDetailView(post: .constant(post))) {
                                             ProfileCommentRowView(comment: comment)
                                         }
                                         .buttonStyle(PlainButtonStyle())
                                         .onAppear {
-                                            // Load more when the last comment appears
-                                            if comment.id == myComments.last?.id {
-                                                loadMoreCommentsIfNeeded()
-                                            }
+                                            viewModel.loadMoreCommentsIfNeeded(for: comment, authState: authState)
                                         }
                                     } else {
                                         ProfileCommentRowView(comment: comment)
                                             .onAppear {
-                                                // Load more when the last comment appears
-                                                if comment.id == myComments.last?.id {
-                                                    loadMoreCommentsIfNeeded()
-                                                }
+                                                viewModel.loadMoreCommentsIfNeeded(for: comment, authState: authState)
                                             }
                                     }
                                 }
                                 
                                 // Loading indicator at bottom
-                                if isLoadingMoreComments {
+                                if viewModel.isLoadingMoreComments {
                                     HStack {
                                         Spacer()
                                         ProgressView()
@@ -326,11 +282,11 @@ struct ProfileView: View {
                     }
                 }
                 .refreshable {
-                    await refreshContent()
+                    await viewModel.refreshContent(authState: authState)
                 }
                 
                 // Error message
-                if let errorMessage = errorMessage {
+                if let errorMessage = viewModel.errorMessage {
                     Text(errorMessage)
                         .foregroundColor(.red)
                         .font(.caption)
@@ -386,364 +342,10 @@ struct ProfileView: View {
             }
             
             // Load content
-            loadTask = Task {
-                await loadContent()
-            }
+            viewModel.loadContent(authState: authState)
         }
         .onDisappear {
-            // Cancel any ongoing load task when view disappears
-            loadTask?.cancel()
-        }
-    }
-    
-    // MARK: - Functions
-    
-    /// Reset pagination to initial state
-    private func resetPagination() {
-        if selectedSegment == 0 {
-            // Reset posts pagination
-            currentPostsPage = 1
-            hasMorePosts = true
-            myPosts = []
-        } else {
-            // Reset comments pagination
-            currentCommentsPage = 1
-            hasMoreComments = true
-            myComments = []
-            commentPostMap = [:]
-        }
-    }
-    
-    @MainActor
-    private func refreshContent() async {
-        loadTask?.cancel()
-        resetPagination()
-        loadTask = Task {
-            await loadContent()
-        }
-        await loadTask?.value
-    }
-    
-    @MainActor
-    private func loadContent() async {
-        guard let token = authState.authToken,
-              let userId = authState.currentUser?.id else {
-            return
-        }
-        
-        isLoading = true
-        errorMessage = nil
-        
-        defer {
-            isLoading = false
-        }
-        
-        if selectedSegment == 0 {
-            // Load user's posts
-            await loadMyPosts(token: token, userId: userId)
-        } else {
-            // Load user's comments (we'll need to fetch all posts and their comments)
-            await loadMyComments(token: token, userId: userId)
-        }
-    }
-    
-    @MainActor
-    private func loadMyPosts(token: String, userId: String) async {
-        do {
-            // Use the new user endpoint to fetch posts with pagination
-            // This endpoint returns posts from both campus and national walls
-            let postsResponse = try await UserService.shared.getUserPosts(
-                token: token,
-                userId: userId,
-                page: currentPostsPage,
-                limit: 20,
-                sort: postSortOrder
-            )
-            
-            // Replace posts (used for initial load and refresh)
-            myPosts = postsResponse.data
-            hasMorePosts = currentPostsPage < postsResponse.pagination.totalPages
-        } catch is CancellationError {
-            // If task was cancelled, keep existing state
-            return
-        } catch NetworkError.cancelled {
-            // If network request was cancelled, keep existing state
-            return
-        } catch {
-            errorMessage = error.localizedDescription
-        }
-    }
-    
-    @MainActor
-    private func loadMyComments(token: String, userId: String) async {
-        do {
-            // Use the new user endpoint to fetch comments with pagination
-            let commentResponse = try await UserService.shared.getUserComments(
-                token: token,
-                userId: userId,
-                page: currentCommentsPage,
-                limit: 20,
-                sort: commentSortOrder
-            )
-            
-            // Replace comments (used for initial load and refresh)
-            myComments = commentResponse.data
-            hasMoreComments = currentCommentsPage < commentResponse.pagination.totalPages
-            
-            // Fetch posts for these comments to enable navigation
-            // Get unique post IDs from comments
-            let uniquePostIds = Set(commentResponse.data.map { $0.postId })
-            
-            // Fetch posts concurrently using TaskGroup for better performance
-            var tempPostMap: [String: Post] = [:]
-            await withTaskGroup(of: (String, Post?).self) { group in
-                for postId in uniquePostIds {
-                    group.addTask {
-                        do {
-                            let post = try await PostService.shared.getPost(
-                                postId: postId,
-                                token: token,
-                                userId: userId
-                            )
-                            return (postId, post)
-                        } catch {
-                            // Return nil for failed fetches
-                            return (postId, nil)
-                        }
-                    }
-                }
-                
-                // Collect results
-                for await (postId, post) in group {
-                    if let post = post {
-                        tempPostMap[postId] = post
-                    }
-                }
-            }
-            
-            commentPostMap = tempPostMap
-            
-        } catch is CancellationError {
-            return
-        } catch NetworkError.cancelled {
-            return
-        } catch {
-            errorMessage = error.localizedDescription
-        }
-    }
-    
-    private func toggleLike(for post: Post) {
-        guard let token = authState.authToken,
-              let userId = authState.currentUser?.id else {
-            return
-        }
-        
-        Task {
-            do {
-                let response = try await PostService.shared.toggleLike(postId: post.id, token: token, userId: userId)
-                
-                // Update the post locally using the response data
-                await MainActor.run {
-                    if let index = myPosts.firstIndex(where: { $0.id == post.id }) {
-                        myPosts[index] = myPosts[index].withUpdatedLike(liked: response.liked, likes: response.likeCount)
-                    }
-                }
-            } catch {
-                await MainActor.run {
-                    errorMessage = error.localizedDescription
-                }
-            }
-        }
-    }
-    
-    private func deletePost(_ post: Post) {
-        guard let token = authState.authToken,
-              let userId = authState.currentUser?.id else {
-            errorMessage = "Authentication required to delete post."
-            return
-        }
-        
-        Task {
-            do {
-                _ = try await PostService.shared.hidePost(postId: post.id, token: token, userId: userId)
-                await loadMyPosts(token: token, userId: userId)
-            } catch {
-                await MainActor.run {
-                    if let networkError = error as? NetworkError {
-                        switch networkError {
-                        case .unauthorized:
-                            errorMessage = "Session expired. Please log in again."
-                        case .forbidden:
-                            errorMessage = "You don't have permission to delete this post."
-                        case .notFound:
-                            errorMessage = "Post not found."
-                        case .noConnection:
-                            errorMessage = "No internet connection. Please check your network."
-                        default:
-                            errorMessage = "Failed to delete post. Please try again."
-                        }
-                    } else {
-                        errorMessage = "Failed to delete post. Please try again."
-                    }
-                }
-            }
-        }
-    }
-    
-    // MARK: - Helper Functions
-    
-    /// Sort posts according to the selected sort order
-    private func sortedPosts(_ posts: [Post], by order: SortOrder) -> [Post] {
-        switch order {
-        case .newest:
-            return posts.sorted { $0.createdAt > $1.createdAt }
-        case .oldest:
-            return posts.sorted { $0.createdAt < $1.createdAt }
-        case .mostLiked:
-            return posts.sorted { $0.likes > $1.likes }
-        case .leastLiked:
-            return posts.sorted { $0.likes < $1.likes }
-        }
-    }
-    
-    // MARK: - Pagination Functions
-    
-    private func loadMorePostsIfNeeded() {
-        guard !isLoadingMorePosts && hasMorePosts else { return }
-        
-        Task { @MainActor in
-            // Check again inside the task to prevent race condition
-            guard !isLoadingMorePosts && hasMorePosts else { return }
-            
-            isLoadingMorePosts = true
-            await loadMorePosts()
-        }
-    }
-    
-    @MainActor
-    private func loadMorePosts() async {
-        guard let token = authState.authToken,
-              let userId = authState.currentUser?.id else {
-            isLoadingMorePosts = false
-            return
-        }
-        
-        defer {
-            isLoadingMorePosts = false
-        }
-        
-        // Calculate next page
-        let nextPage = currentPostsPage + 1
-        
-        do {
-            // Use the new user endpoint to fetch next page of posts
-            let postsResponse = try await UserService.shared.getUserPosts(
-                token: token,
-                userId: userId,
-                page: nextPage,
-                limit: 20,
-                sort: postSortOrder
-            )
-            
-            // Update page number only after successful response
-            currentPostsPage = nextPage
-            
-            // Append new posts to existing list
-            myPosts.append(contentsOf: postsResponse.data)
-            
-            // Update hasMorePosts flag
-            hasMorePosts = currentPostsPage < postsResponse.pagination.totalPages
-        } catch is CancellationError {
-            return
-        } catch NetworkError.cancelled {
-            return
-        } catch {
-            errorMessage = error.localizedDescription
-            return
-        }
-    }
-    
-    private func loadMoreCommentsIfNeeded() {
-        guard !isLoadingMoreComments && hasMoreComments else { return }
-        
-        Task { @MainActor in
-            // Check again inside the task to prevent race condition
-            guard !isLoadingMoreComments && hasMoreComments else { return }
-            
-            isLoadingMoreComments = true
-            await loadMoreComments()
-        }
-    }
-    
-    @MainActor
-    private func loadMoreComments() async {
-        guard let token = authState.authToken,
-              let userId = authState.currentUser?.id else {
-            isLoadingMoreComments = false
-            return
-        }
-        
-        defer {
-            isLoadingMoreComments = false
-        }
-        
-        // Calculate next page
-        let nextPage = currentCommentsPage + 1
-        
-        do {
-            // Use the new user endpoint to fetch more comments
-            let commentResponse = try await UserService.shared.getUserComments(
-                token: token,
-                userId: userId,
-                page: nextPage,
-                limit: 20,
-                sort: commentSortOrder
-            )
-            
-            // Update page number only after successful response
-            currentCommentsPage = nextPage
-            
-            // Append new comments
-            myComments.append(contentsOf: commentResponse.data)
-            hasMoreComments = currentCommentsPage < commentResponse.pagination.totalPages
-            
-            // Fetch posts for new comments to enable navigation
-            let uniquePostIds = Set(commentResponse.data.map { $0.postId })
-            
-            // Fetch posts concurrently using TaskGroup for better performance
-            // Only fetch posts we don't already have
-            let postsToFetch = uniquePostIds.filter { commentPostMap[$0] == nil }
-            
-            await withTaskGroup(of: (String, Post?).self) { group in
-                for postId in postsToFetch {
-                    group.addTask {
-                        do {
-                            let post = try await PostService.shared.getPost(
-                                postId: postId,
-                                token: token,
-                                userId: userId
-                            )
-                            return (postId, post)
-                        } catch {
-                            // Return nil for failed fetches
-                            return (postId, nil)
-                        }
-                    }
-                }
-                
-                // Collect results and add to commentPostMap
-                for await (postId, post) in group {
-                    if let post = post {
-                        commentPostMap[postId] = post
-                    }
-                }
-            }
-        } catch is CancellationError {
-            return
-        } catch NetworkError.cancelled {
-            return
-        } catch {
-            errorMessage = error.localizedDescription
+            viewModel.cleanup()
         }
     }
 }

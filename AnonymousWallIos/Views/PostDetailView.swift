@@ -12,17 +12,8 @@ struct PostDetailView: View {
     @Environment(\.dismiss) var dismiss
     
     @Binding var post: Post
-    @State private var comments: [Comment] = []
-    @State private var isLoadingComments = false
-    @State private var isLoadingMoreComments = false
-    @State private var currentPage = 1
-    @State private var hasMorePages = true
-    @State private var commentText = ""
-    @State private var isSubmitting = false
-    @State private var errorMessage: String?
+    @StateObject private var viewModel = PostDetailViewModel()
     @State private var showDeleteConfirmation = false
-    @State private var commentToDelete: Comment?
-    @State private var selectedSortOrder: SortOrder = .newest
     
     var body: some View {
         VStack(spacing: 0) {
@@ -59,7 +50,7 @@ struct PostDetailView: View {
                                 // Like button
                                 Button(action: {
                                     HapticFeedback.medium()
-                                    toggleLike()
+                                    viewModel.toggleLike(post: $post, authState: authState)
                                 }) {
                                     HStack(spacing: 5) {
                                         Image(systemName: post.liked ? "heart.fill" : "heart")
@@ -111,31 +102,28 @@ struct PostDetailView: View {
                         Spacer()
                         
                         // Sort order picker for comments
-                        if !comments.isEmpty {
-                            Picker("Sort", selection: $selectedSortOrder) {
+                        if !viewModel.comments.isEmpty {
+                            Picker("Sort", selection: $viewModel.selectedSortOrder) {
                                 Text("Newest").tag(SortOrder.newest)
                                 Text("Oldest").tag(SortOrder.oldest)
                             }
                             .pickerStyle(.menu)
-                            .onChange(of: selectedSortOrder) { _, _ in
-                                Task {
-                                    resetPagination()
-                                    await loadComments()
-                                }
+                            .onChange(of: viewModel.selectedSortOrder) { _, _ in
+                                viewModel.sortOrderChanged(postId: post.id, authState: authState)
                             }
                         }
                     }
                     .padding(.horizontal)
                     .padding(.bottom, 8)
                     
-                    if isLoadingComments && comments.isEmpty {
+                    if viewModel.isLoadingComments && viewModel.comments.isEmpty {
                         HStack {
                             Spacer()
                             ProgressView("Loading comments...")
                             Spacer()
                         }
                         .padding()
-                    } else if comments.isEmpty {
+                    } else if viewModel.comments.isEmpty {
                         VStack(spacing: 12) {
                             Image(systemName: "bubble.left.and.bubble.right")
                                 .font(.system(size: 40))
@@ -151,25 +139,23 @@ struct PostDetailView: View {
                         .padding(.vertical, 32)
                     } else {
                         VStack(alignment: .leading, spacing: 12) {
-                            ForEach(comments) { comment in
+                            ForEach(viewModel.comments) { comment in
                                 CommentRowView(
                                     comment: comment,
                                     isOwnComment: comment.author.id == authState.currentUser?.id,
                                     onDelete: {
-                                        commentToDelete = comment
+                                        viewModel.commentToDelete = comment
                                         showDeleteConfirmation = true
                                     }
                                 )
                                 .onAppear {
                                     // Load more when the last comment appears
-                                    if comment.id == comments.last?.id {
-                                        loadMoreCommentsIfNeeded()
-                                    }
+                                    viewModel.loadMoreCommentsIfNeeded(for: comment, postId: post.id, authState: authState)
                                 }
                             }
                             
                             // Loading indicator at bottom
-                            if isLoadingMoreComments {
+                            if viewModel.isLoadingMoreComments {
                                 HStack {
                                     Spacer()
                                     ProgressView()
@@ -187,7 +173,7 @@ struct PostDetailView: View {
             }
             
             // Error message
-            if let errorMessage = errorMessage {
+            if let errorMessage = viewModel.errorMessage {
                 Text(errorMessage)
                     .foregroundColor(.red)
                     .font(.caption)
@@ -199,33 +185,33 @@ struct PostDetailView: View {
             
             // Comment input
             HStack(spacing: 12) {
-                TextField("Add a comment...", text: $commentText, axis: .vertical)
+                TextField("Add a comment...", text: $viewModel.commentText, axis: .vertical)
                     .textFieldStyle(.roundedBorder)
                     .lineLimit(1...4)
-                    .disabled(isSubmitting)
+                    .disabled(viewModel.isSubmitting)
                     .accessibilityLabel("Comment text field")
                 
                 Button(action: {
                     HapticFeedback.light()
-                    submitComment()
+                    viewModel.submitComment(postId: post.id, authState: authState, onSuccess: {})
                 }) {
-                    if isSubmitting {
+                    if viewModel.isSubmitting {
                         ProgressView()
                             .frame(width: 32, height: 32)
                     } else {
                         ZStack {
                             Circle()
-                                .fill(commentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? AnyShapeStyle(Color.gray.opacity(0.3)) : AnyShapeStyle(Color.purplePinkGradient))
+                                .fill(viewModel.commentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? AnyShapeStyle(Color.gray.opacity(0.3)) : AnyShapeStyle(Color.purplePinkGradient))
                                 .frame(width: 36, height: 36)
                             
                             Image(systemName: "arrow.up")
                                 .font(.system(size: 16, weight: .bold))
                                 .foregroundColor(.white)
                         }
-                        .shadow(color: commentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? Color.clear : Color.primaryPurple.opacity(0.3), radius: 4, x: 0, y: 2)
+                        .shadow(color: viewModel.commentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? Color.clear : Color.primaryPurple.opacity(0.3), radius: 4, x: 0, y: 2)
                     }
                 }
-                .disabled(commentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isSubmitting)
+                .disabled(viewModel.commentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || viewModel.isSubmitting)
             }
             .padding()
             .background(Color(.systemBackground))
@@ -233,17 +219,10 @@ struct PostDetailView: View {
         .navigationTitle("Post Details")
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
-            Task {
-                // Load post details and comments concurrently for better performance
-                await withTaskGroup(of: Void.self) { group in
-                    group.addTask {
-                        await refreshPost()
-                    }
-                    group.addTask {
-                        await loadComments()
-                    }
-                }
-            }
+            viewModel.loadComments(postId: post.id, authState: authState)
+        }
+        .refreshable {
+            await viewModel.refreshComments(postId: post.id, authState: authState)
         }
         .confirmationDialog(
             "Delete Comment",
@@ -251,284 +230,13 @@ struct PostDetailView: View {
             titleVisibility: .visible
         ) {
             Button("Delete", role: .destructive) {
-                if let comment = commentToDelete {
-                    deleteComment(comment)
+                if let comment = viewModel.commentToDelete {
+                    viewModel.deleteComment(comment, postId: post.id, authState: authState)
                 }
             }
             Button("Cancel", role: .cancel) {}
         } message: {
             Text("Are you sure you want to delete this comment?")
-        }
-    }
-    
-    // MARK: - Functions
-    
-    /// Toggle like on the post
-    private func toggleLike() {
-        guard let token = authState.authToken,
-              let userId = authState.currentUser?.id else {
-            errorMessage = "Authentication required to like post."
-            return
-        }
-        
-        Task {
-            do {
-                let response = try await PostService.shared.toggleLike(postId: post.id, token: token, userId: userId)
-                
-                // Update the local post state with the response data
-                await MainActor.run {
-                    post = post.withUpdatedLike(liked: response.liked, likes: response.likeCount)
-                    HapticFeedback.success()
-                }
-            } catch {
-                await MainActor.run {
-                    errorMessage = "Failed to update like: \(error.localizedDescription)"
-                }
-            }
-        }
-    }
-    
-    /// Reset pagination to initial state
-    private func resetPagination() {
-        currentPage = 1
-        hasMorePages = true
-    }
-    
-    @MainActor
-    private func loadComments() async {
-        guard let token = authState.authToken,
-              let userId = authState.currentUser?.id else {
-            errorMessage = "Authentication required to load comments."
-            return
-        }
-        
-        isLoadingComments = true
-        errorMessage = nil
-        
-        defer {
-            isLoadingComments = false
-        }
-        
-        do {
-            let response = try await PostService.shared.getComments(
-                postId: post.id,
-                token: token,
-                userId: userId,
-                page: currentPage,
-                limit: 20,
-                sort: selectedSortOrder
-            )
-            // Replace comments (used for initial load and refresh)
-            comments = response.data
-            hasMorePages = currentPage < response.pagination.totalPages
-        } catch is CancellationError {
-            // Silently handle cancellation - this is expected behavior
-            return
-        } catch NetworkError.cancelled {
-            // Silently handle network cancellation - this is expected behavior during refresh
-            return
-        } catch {
-            errorMessage = "Failed to load comments: \(error.localizedDescription)"
-        }
-    }
-    
-    @MainActor
-    private func refreshComments() async {
-        // Create a new task that won't be cancelled by the refreshable gesture
-        // This ensures refresh works correctly when user releases before completion
-        resetPagination()
-        let task = Task {
-            await loadComments()
-        }
-        
-        // Wait for the task to complete
-        await task.value
-    }
-    
-    @MainActor
-    private func refreshContent() async {
-        // Refresh both post details and comments
-        await withTaskGroup(of: Void.self) { group in
-            // Refresh post data
-            group.addTask {
-                await self.refreshPost()
-            }
-            
-            // Refresh comments
-            group.addTask {
-                await self.refreshComments()
-            }
-        }
-    }
-    
-    @MainActor
-    private func refreshPost() async {
-        guard let token = authState.authToken,
-              let userId = authState.currentUser?.id else {
-            return
-        }
-        
-        do {
-            let updatedPost = try await PostService.shared.getPost(
-                postId: post.id,
-                token: token,
-                userId: userId
-            )
-            post = updatedPost
-        } catch is CancellationError {
-            // Silently handle cancellation
-            return
-        } catch NetworkError.cancelled {
-            // Silently handle network cancellation
-            return
-        } catch {
-            // Silently fail to avoid disrupting the user experience
-            // The existing post data will remain visible
-            print("Failed to refresh post: \(error.localizedDescription)")
-        }
-    }
-    
-    private func loadMoreCommentsIfNeeded() {
-        guard !isLoadingMoreComments && hasMorePages else { return }
-        
-        Task { @MainActor in
-            // Check again inside the task to prevent race condition
-            guard !isLoadingMoreComments && hasMorePages else { return }
-            
-            isLoadingMoreComments = true
-            await loadMoreComments()
-        }
-    }
-    
-    @MainActor
-    private func loadMoreComments() async {
-        guard let token = authState.authToken,
-              let userId = authState.currentUser?.id else {
-            isLoadingMoreComments = false
-            return
-        }
-        
-        defer {
-            isLoadingMoreComments = false
-        }
-        
-        // Calculate next page
-        let nextPage = currentPage + 1
-        
-        do {
-            let response = try await PostService.shared.getComments(
-                postId: post.id,
-                token: token,
-                userId: userId,
-                page: nextPage,
-                limit: 20,
-                sort: selectedSortOrder
-            )
-            
-            // Update page number only after successful response
-            currentPage = nextPage
-            
-            comments.append(contentsOf: response.data)
-            hasMorePages = currentPage < response.pagination.totalPages
-        } catch is CancellationError {
-            return
-        } catch NetworkError.cancelled {
-            return
-        } catch {
-            errorMessage = error.localizedDescription
-        }
-    }
-    
-    private func submitComment() {
-        let trimmedText = commentText.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmedText.isEmpty,
-              let token = authState.authToken,
-              let userId = authState.currentUser?.id else {
-            return
-        }
-        
-        isSubmitting = true
-        errorMessage = nil
-        
-        Task {
-            do {
-                _ = try await PostService.shared.addComment(
-                    postId: post.id,
-                    text: trimmedText,
-                    token: token,
-                    userId: userId
-                )
-                
-                await MainActor.run {
-                    HapticFeedback.success()
-                    commentText = ""
-                    isSubmitting = false
-                }
-                
-                // Reload comments
-                await loadComments()
-            } catch is CancellationError {
-                // Silently handle cancellation - user likely navigated away
-                await MainActor.run {
-                    isSubmitting = false
-                }
-            } catch NetworkError.cancelled {
-                // Silently handle network cancellation
-                await MainActor.run {
-                    isSubmitting = false
-                }
-            } catch {
-                await MainActor.run {
-                    isSubmitting = false
-                    errorMessage = "Failed to post comment: \(error.localizedDescription)"
-                }
-            }
-        }
-    }
-    
-    private func deleteComment(_ comment: Comment) {
-        guard let token = authState.authToken,
-              let userId = authState.currentUser?.id else {
-            errorMessage = "Authentication required to delete comment."
-            return
-        }
-        
-        Task {
-            do {
-                _ = try await PostService.shared.hideComment(
-                    postId: post.id,
-                    commentId: comment.id,
-                    token: token,
-                    userId: userId
-                )
-                // Reload comments
-                await loadComments()
-            } catch is CancellationError {
-                // Silently handle cancellation - user likely navigated away
-                return
-            } catch NetworkError.cancelled {
-                // Silently handle network cancellation
-                return
-            } catch {
-                await MainActor.run {
-                    if let networkError = error as? NetworkError {
-                        switch networkError {
-                        case .unauthorized:
-                            errorMessage = "Session expired. Please log in again."
-                        case .forbidden:
-                            errorMessage = "You don't have permission to delete this comment."
-                        case .notFound:
-                            errorMessage = "Comment not found."
-                        case .noConnection:
-                            errorMessage = "No internet connection. Please check your network."
-                        default:
-                            errorMessage = "Failed to delete comment. Please try again."
-                        }
-                    } else {
-                        errorMessage = "Failed to delete comment. Please try again."
-                    }
-                }
-            }
         }
     }
 }

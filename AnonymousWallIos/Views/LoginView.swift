@@ -9,29 +9,15 @@ import SwiftUI
 
 struct LoginView: View {
     @EnvironmentObject var authState: AuthState
-    @State private var email = ""
-    @State private var password = ""
-    @State private var verificationCode = ""
-    @State private var isLoading = false
-    @State private var isSendingCode = false
-    @State private var errorMessage: String?
-    @State private var successMessage: String?
-    @State private var loginMethod: LoginMethod = .password
+    @StateObject private var viewModel: LoginViewModel
     @State private var showForgotPassword = false
-    @State private var resendCountdown = 0
-    @State private var countdownTimer: Timer?
-    
-    var prefillEmail: String?
-    let authService: AuthServiceProtocol
-    
-    enum LoginMethod {
-        case password
-        case verificationCode
-    }
     
     init(prefillEmail: String? = nil, authService: AuthServiceProtocol = AuthService.shared) {
-        self.prefillEmail = prefillEmail
-        self.authService = authService
+        let vm = LoginViewModel(authService: authService)
+        _viewModel = StateObject(wrappedValue: vm)
+        if let email = prefillEmail {
+            vm.email = email
+        }
     }
     
     var body: some View {
@@ -65,9 +51,9 @@ struct LoginView: View {
                 .padding(.top, 40)
                 
                 // Login method selector
-                Picker("Login Method", selection: $loginMethod) {
-                    Text("Password").tag(LoginMethod.password)
-                    Text("Verification Code").tag(LoginMethod.verificationCode)
+                Picker("Login Method", selection: $viewModel.loginMethod) {
+                    Text("Password").tag(LoginViewModel.LoginMethod.password)
+                    Text("Verification Code").tag(LoginViewModel.LoginMethod.verificationCode)
                 }
                 .pickerStyle(SegmentedPickerStyle())
                 .padding(.horizontal)
@@ -78,7 +64,7 @@ struct LoginView: View {
                         .font(.system(size: 15, weight: .semibold))
                         .foregroundColor(.primary)
                     
-                    TextField("Enter your email", text: $email)
+                    TextField("Enter your email", text: $viewModel.email)
                         .textInputAutocapitalization(.never)
                         .keyboardType(.emailAddress)
                         .autocorrectionDisabled()
@@ -89,13 +75,13 @@ struct LoginView: View {
                 .padding(.horizontal)
             
             // Password or Verification Code based on selected method
-            if loginMethod == .password {
+            if viewModel.loginMethod == .password {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Password")
                         .font(.headline)
                         .foregroundColor(.primary)
                     
-                    SecureField("Enter your password", text: $password)
+                    SecureField("Enter your password", text: $viewModel.password)
                         .autocorrectionDisabled()
                         .padding()
                         .background(Color(.systemGray6))
@@ -121,19 +107,19 @@ struct LoginView: View {
                         .foregroundColor(.primary)
                     
                     HStack {
-                        TextField("Enter 6-digit code", text: $verificationCode)
+                        TextField("Enter 6-digit code", text: $viewModel.verificationCode)
                             .keyboardType(.numberPad)
                             .autocorrectionDisabled()
                             .padding()
                             .background(Color(.systemGray6))
                             .cornerRadius(10)
                         
-                        Button(action: requestVerificationCode) {
-                            if isSendingCode {
+                        Button(action: { viewModel.requestVerificationCode() }) {
+                            if viewModel.isSendingCode {
                                 ProgressView()
                                     .progressViewStyle(CircularProgressViewStyle())
-                            } else if resendCountdown > 0 {
-                                Text("\(resendCountdown)s")
+                            } else if viewModel.resendCountdown > 0 {
+                                Text("\(viewModel.resendCountdown)s")
                                     .fontWeight(.semibold)
                             } else {
                                 Text("Get Code")
@@ -142,17 +128,17 @@ struct LoginView: View {
                         }
                         .padding(.horizontal, 16)
                         .padding(.vertical, 12)
-                        .background((email.isEmpty || resendCountdown > 0) ? Color.gray : Color.blue)
+                        .background((viewModel.email.isEmpty || viewModel.resendCountdown > 0) ? Color.gray : Color.blue)
                         .foregroundColor(.white)
                         .cornerRadius(10)
-                        .disabled(email.isEmpty || isSendingCode || resendCountdown > 0)
+                        .disabled(viewModel.email.isEmpty || viewModel.isSendingCode || viewModel.resendCountdown > 0)
                     }
                 }
                 .padding(.horizontal)
             }
             
             // Success message
-            if let successMessage = successMessage {
+            if let successMessage = viewModel.successMessage {
                 Text(successMessage)
                     .foregroundColor(.green)
                     .font(.caption)
@@ -160,7 +146,7 @@ struct LoginView: View {
             }
             
             // Error message
-            if let errorMessage = errorMessage {
+            if let errorMessage = viewModel.errorMessage {
                 Text(errorMessage)
                     .foregroundColor(.red)
                     .font(.caption)
@@ -170,9 +156,9 @@ struct LoginView: View {
             // Login button
             Button(action: {
                 HapticFeedback.light()
-                loginUser()
+                viewModel.login(authState: authState)
             }) {
-                if isLoading {
+                if viewModel.isLoading {
                     ProgressView()
                         .progressViewStyle(CircularProgressViewStyle(tint: .white))
                         .frame(maxWidth: .infinity)
@@ -189,15 +175,15 @@ struct LoginView: View {
             }
             .frame(height: 56)
             .background(
-                isLoginButtonDisabled 
+                viewModel.isLoginButtonDisabled 
                 ? AnyShapeStyle(Color.gray)
                 : AnyShapeStyle(Color.purplePinkGradient)
             )
             .foregroundColor(.white)
             .cornerRadius(16)
-            .shadow(color: isLoginButtonDisabled ? Color.clear : Color.primaryPurple.opacity(0.3), radius: 8, x: 0, y: 4)
+            .shadow(color: viewModel.isLoginButtonDisabled ? Color.clear : Color.primaryPurple.opacity(0.3), radius: 8, x: 0, y: 4)
             .padding(.horizontal)
-            .disabled(isLoginButtonDisabled)
+            .disabled(viewModel.isLoginButtonDisabled)
             
             Spacer(minLength: 20)
             
@@ -212,106 +198,11 @@ struct LoginView: View {
             }
         }
         .navigationBarTitleDisplayMode(.inline)
-        .onAppear {
-            if let prefillEmail = prefillEmail {
-                email = prefillEmail
-            }
-        }
         .onDisappear {
-            stopCountdownTimer()
+            viewModel.cleanup()
         }
         .sheet(isPresented: $showForgotPassword) {
             ForgotPasswordView(authService: AuthService.shared)
-        }
-    }
-    
-    private var isLoginButtonDisabled: Bool {
-        if loginMethod == .password {
-            return email.isEmpty || password.isEmpty || isLoading
-        } else {
-            return email.isEmpty || verificationCode.isEmpty || isLoading
-        }
-    }
-    
-    private func requestVerificationCode() {
-        guard !email.isEmpty else { return }
-        
-        // Validate email format
-        guard ValidationUtils.isValidEmail(email) else {
-            errorMessage = "Please enter a valid email address"
-            return
-        }
-        
-        isSendingCode = true
-        errorMessage = nil
-        successMessage = nil
-        
-        Task {
-            do {
-                _ = try await authService.sendEmailVerificationCode(email: email, purpose: "login")
-                await MainActor.run {
-                    isSendingCode = false
-                    successMessage = "Verification code sent to your email!"
-                    startCountdownTimer()
-                }
-            } catch {
-                await MainActor.run {
-                    isSendingCode = false
-                    errorMessage = error.localizedDescription
-                }
-            }
-        }
-    }
-    
-    private func startCountdownTimer() {
-        resendCountdown = 60
-        stopCountdownTimer()
-        
-        countdownTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
-            DispatchQueue.main.async {
-                if self.resendCountdown > 0 {
-                    self.resendCountdown -= 1
-                } else {
-                    self.stopCountdownTimer()
-                }
-            }
-        }
-    }
-    
-    private func stopCountdownTimer() {
-        countdownTimer?.invalidate()
-        countdownTimer = nil
-    }
-    
-    private func loginUser() {
-        guard !email.isEmpty else { return }
-        
-        isLoading = true
-        errorMessage = nil
-        successMessage = nil
-        
-        Task {
-            do {
-                let response: AuthResponse
-                
-                if loginMethod == .password {
-                    response = try await authService.loginWithPassword(email: email, password: password)
-                } else {
-                    response = try await authService.loginWithEmailCode(email: email, code: verificationCode)
-                }
-                
-                await MainActor.run {
-                    HapticFeedback.success()
-                    isLoading = false
-                    // User is logging in - passwordSet from API indicates password status
-                    authState.login(user: response.user, token: response.accessToken)
-                }
-            } catch {
-                await MainActor.run {
-                    isLoading = false
-                    errorMessage = error.localizedDescription
-                }
-            }
         }
     }
 }
