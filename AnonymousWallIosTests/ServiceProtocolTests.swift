@@ -343,7 +343,7 @@ struct ServiceProtocolTests {
         ]
         mockUserService.mockComments = [
             Comment(id: "1", postId: "post1", text: "Comment 1",
-                    author: Comment.Author(id: "user1", profileName: "User 1", isAnonymous: true),
+                    author: Post.Author(id: "user1", profileName: "User 1", isAnonymous: true),
                     createdAt: "2026-02-09T00:00:00Z")
         ]
         
