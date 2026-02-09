@@ -163,7 +163,7 @@ class PostDetailViewModel: ObservableObject {
         }
         
         do {
-            let response = try await PostService.shared.fetchComments(
+            let response = try await PostService.shared.getComments(
                 postId: postId,
                 token: token,
                 userId: userId,
@@ -192,7 +192,7 @@ class PostDetailViewModel: ObservableObject {
         let nextPage = currentPage + 1
         
         do {
-            let response = try await PostService.shared.fetchComments(
+            let response = try await PostService.shared.getComments(
                 postId: postId,
                 token: token,
                 userId: userId,

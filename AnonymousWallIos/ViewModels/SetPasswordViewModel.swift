@@ -46,7 +46,8 @@ class SetPasswordViewModel: ObservableObject {
             return
         }
         
-        guard let token = authState.authToken else {
+        guard let token = authState.authToken,
+              let userId = authState.currentUser?.id else {
             errorMessage = "Not authenticated"
             return
         }
@@ -56,11 +57,10 @@ class SetPasswordViewModel: ObservableObject {
         
         Task {
             do {
-                let response = try await authService.setPassword(password: password, token: token)
+                try await authService.setPassword(password: password, token: token, userId: userId)
                 HapticFeedback.success()
                 isLoading = false
                 showSuccess = true
-                authState.updateUser(response.user)
                 
                 try? await Task.sleep(nanoseconds: 1_000_000_000)
                 onSuccess()

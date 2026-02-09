@@ -68,7 +68,7 @@ class RegistrationViewModel: ObservableObject {
         
         Task {
             do {
-                let response = try await authService.register(email: email, code: verificationCode)
+                let response = try await authService.registerWithEmail(email: email, code: verificationCode)
                 HapticFeedback.success()
                 isLoading = false
                 showingSuccess = true

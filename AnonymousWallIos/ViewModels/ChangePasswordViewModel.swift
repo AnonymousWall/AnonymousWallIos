@@ -47,7 +47,8 @@ class ChangePasswordViewModel: ObservableObject {
             return
         }
         
-        guard let token = authState.authToken else {
+        guard let token = authState.authToken,
+              let userId = authState.currentUser?.id else {
             errorMessage = "Not authenticated"
             return
         }
@@ -57,7 +58,7 @@ class ChangePasswordViewModel: ObservableObject {
         
         Task {
             do {
-                _ = try await authService.changePassword(oldPassword: oldPassword, newPassword: newPassword, token: token)
+                try await authService.changePassword(oldPassword: oldPassword, newPassword: newPassword, token: token, userId: userId)
                 HapticFeedback.success()
                 isLoading = false
                 showSuccess = true

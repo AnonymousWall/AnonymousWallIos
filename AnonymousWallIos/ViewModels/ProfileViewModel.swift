@@ -197,7 +197,7 @@ class ProfileViewModel: ObservableObject {
         }
         
         do {
-            let response = try await PostService.shared.fetchUserPosts(
+            let response = try await PostService.shared.getUserPosts(
                 token: token,
                 userId: userId,
                 page: currentPostsPage,
@@ -229,7 +229,7 @@ class ProfileViewModel: ObservableObject {
         let nextPage = currentPostsPage + 1
         
         do {
-            let response = try await PostService.shared.fetchUserPosts(
+            let response = try await PostService.shared.getUserPosts(
                 token: token,
                 userId: userId,
                 page: nextPage,
@@ -263,7 +263,7 @@ class ProfileViewModel: ObservableObject {
         }
         
         do {
-            let response = try await PostService.shared.fetchUserComments(
+            let response = try await PostService.shared.getUserComments(
                 token: token,
                 userId: userId,
                 page: currentCommentsPage,
@@ -298,7 +298,7 @@ class ProfileViewModel: ObservableObject {
         let nextPage = currentCommentsPage + 1
         
         do {
-            let response = try await PostService.shared.fetchUserComments(
+            let response = try await PostService.shared.getUserComments(
                 token: token,
                 userId: userId,
                 page: nextPage,
@@ -334,7 +334,7 @@ class ProfileViewModel: ObservableObject {
         // Fetch missing posts
         for postId in missingPostIds {
             do {
-                let post = try await PostService.shared.fetchPostById(postId: postId, token: token, userId: userId)
+                let post = try await PostService.shared.getPost(postId: postId, token: token, userId: userId)
                 commentPostMap[postId] = post
             } catch {
                 // Silently fail for individual post fetches
