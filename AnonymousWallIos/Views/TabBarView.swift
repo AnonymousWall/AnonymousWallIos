@@ -9,21 +9,21 @@ import SwiftUI
 
 struct TabBarView: View {
     @EnvironmentObject var authState: AuthState
-    @State private var selectedTab = 0
+    @ObservedObject var coordinator: TabCoordinator
     
     var body: some View {
-        TabView(selection: $selectedTab) {
+        TabView(selection: $coordinator.selectedTab) {
             // Tab 1: Home (National Wall)
-            HomeView()
+            HomeView(coordinator: coordinator.homeCoordinator)
                 .tabItem {
-                    Label("Home", systemImage: selectedTab == 0 ? "house.fill" : "house")
+                    Label("Home", systemImage: coordinator.selectedTab == 0 ? "house.fill" : "house")
                 }
                 .tag(0)
             
             // Tab 2: Campus Wall
-            CampusView()
+            CampusView(coordinator: coordinator.campusCoordinator)
                 .tabItem {
-                    Label("Campus", systemImage: selectedTab == 1 ? "building.2.fill" : "building.2")
+                    Label("Campus", systemImage: coordinator.selectedTab == 1 ? "building.2.fill" : "building.2")
                 }
                 .tag(1)
             
@@ -35,34 +35,34 @@ struct TabBarView: View {
                 .tag(2)
             
             // Tab 4: Profile
-            ProfileView()
+            ProfileView(coordinator: coordinator.profileCoordinator)
                 .tabItem {
-                    Label("Profile", systemImage: selectedTab == 3 ? "person.fill" : "person")
+                    Label("Profile", systemImage: coordinator.selectedTab == 3 ? "person.fill" : "person")
                 }
                 .tag(3)
             
             // Tab 5: Market (dummy)
             MarketView()
                 .tabItem {
-                    Label("Market", systemImage: selectedTab == 4 ? "cart.fill" : "cart")
+                    Label("Market", systemImage: coordinator.selectedTab == 4 ? "cart.fill" : "cart")
                 }
                 .tag(4)
             
             // Tab 6: Internship (dummy)
             InternshipView()
                 .tabItem {
-                    Label("Internship", systemImage: selectedTab == 5 ? "briefcase.fill" : "briefcase")
+                    Label("Internship", systemImage: coordinator.selectedTab == 5 ? "briefcase.fill" : "briefcase")
                 }
                 .tag(5)
         }
         .accentColor(.primaryPurple)
-        .onChange(of: selectedTab) { _, _ in
+        .onChange(of: coordinator.selectedTab) { _, _ in
             HapticFeedback.selection()
         }
     }
 }
 
 #Preview {
-    TabBarView()
+    TabBarView(coordinator: TabCoordinator())
         .environmentObject(AuthState())
 }

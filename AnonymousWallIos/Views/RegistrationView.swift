@@ -10,14 +10,15 @@ import SwiftUI
 struct RegistrationView: View {
     @EnvironmentObject var authState: AuthState
     @StateObject private var viewModel: RegistrationViewModel
+    @ObservedObject var coordinator: AuthCoordinator
     
-    init(authService: AuthServiceProtocol = AuthService.shared) {
+    init(coordinator: AuthCoordinator, authService: AuthServiceProtocol = AuthService.shared) {
+        self.coordinator = coordinator
         _viewModel = StateObject(wrappedValue: RegistrationViewModel(authService: authService))
     }
     
     var body: some View {
-        NavigationStack {
-            ScrollView {
+        ScrollView {
                 VStack(spacing: 24) {
                     // Header
                     VStack(spacing: 16) {
@@ -186,11 +187,10 @@ struct RegistrationView: View {
         } message: {
             Text("You are now logged in. Please set up your password to secure your account.")
         }
-        }
     }
 }
 
 #Preview {
-    RegistrationView()
+    RegistrationView(coordinator: AuthCoordinator())
         .environmentObject(AuthState())
 }

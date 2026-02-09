@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct Post: Codable, Identifiable {
+struct Post: Codable, Identifiable, Hashable {
     let id: String
     /// Post title (required, 1-255 characters)
     let title: String
@@ -20,10 +20,19 @@ struct Post: Codable, Identifiable {
     let createdAt: String
     let updatedAt: String
     
-    struct Author: Codable {
+    struct Author: Codable, Hashable {
         let id: String
         let profileName: String
         let isAnonymous: Bool
+    }
+    
+    // Hashable conformance based on id
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(id)
+    }
+    
+    static func == (lhs: Post, rhs: Post) -> Bool {
+        lhs.id == rhs.id
     }
     
     enum CodingKeys: String, CodingKey {

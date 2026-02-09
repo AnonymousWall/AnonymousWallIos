@@ -8,10 +8,10 @@
 import SwiftUI
 
 struct AuthenticationView: View {
-    @State private var showLogin = false
+    @ObservedObject var coordinator: AuthCoordinator
     
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $coordinator.path) {
             ZStack {
                 // Gradient background
                 Color.purplePinkGradient
@@ -52,7 +52,9 @@ struct AuthenticationView: View {
                     
                     VStack(spacing: 16) {
                         // Get Started Button
-                        NavigationLink(destination: RegistrationView()) {
+                        Button {
+                            coordinator.navigate(to: .registration)
+                        } label: {
                             HStack {
                                 Text("Get Started")
                                     .fontWeight(.bold)
@@ -70,7 +72,9 @@ struct AuthenticationView: View {
                         .padding(.horizontal, 30)
                         
                         // Login Button
-                        NavigationLink(destination: LoginView()) {
+                        Button {
+                            coordinator.navigate(to: .login)
+                        } label: {
                             Text("Login")
                                 .fontWeight(.semibold)
                                 .font(.system(size: 18))
@@ -90,10 +94,23 @@ struct AuthenticationView: View {
                 }
             }
             .navigationBarHidden(true)
+            .navigationDestination(for: AuthCoordinator.Destination.self) { destination in
+                switch destination {
+                case .login:
+                    LoginView(coordinator: coordinator)
+                case .registration:
+                    RegistrationView(coordinator: coordinator)
+                case .forgotPassword:
+                    EmptyView() // Handled as a sheet
+                }
+            }
+        }
+        .sheet(isPresented: $coordinator.showForgotPassword) {
+            ForgotPasswordView(authService: AuthService.shared)
         }
     }
 }
 
 #Preview {
-    AuthenticationView()
+    AuthenticationView(coordinator: AuthCoordinator())
 }
