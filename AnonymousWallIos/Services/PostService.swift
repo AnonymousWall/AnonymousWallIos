@@ -53,7 +53,7 @@ class PostService: PostServiceProtocol {
         } catch {
             // If backend returns a different structure, try to handle gracefully
             // This can happen if backend hasn't been updated yet
-            print("⚠️ Failed to decode PostListResponse: \(error.localizedDescription)")
+            Logger.data.warning("Failed to decode PostListResponse: \(error.localizedDescription)")
             throw error
         }
     }

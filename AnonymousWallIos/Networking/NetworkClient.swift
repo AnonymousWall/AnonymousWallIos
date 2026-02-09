@@ -114,30 +114,33 @@ class NetworkClient: NetworkClientProtocol {
     private func logRequest(_ request: URLRequest) {
         guard config.enableLogging else { return }
         
-        print("🌐 [Network Request]")
-        print("   URL: \(request.url?.absoluteString ?? "unknown")")
-        print("   Method: \(request.httpMethod ?? "GET")")
+        let logger = Logger.network
+        var message = "Request\n   URL: \(request.url?.absoluteString ?? "unknown")\n   Method: \(request.httpMethod ?? "GET")"
         
         if let headers = request.allHTTPHeaderFields, !headers.isEmpty {
-            print("   Headers: \(headers)")
+            message += "\n   Headers: \(headers)"
         }
         
         if let body = request.httpBody,
            let bodyString = String(data: body, encoding: .utf8) {
-            print("   Body: \(bodyString)")
+            message += "\n   Body: \(bodyString)"
         }
+        
+        logger.debug(message)
     }
     
     private func logResponse(_ response: URLResponse, data: Data) {
         guard config.enableLogging else { return }
         
         if let httpResponse = response as? HTTPURLResponse {
-            print("📡 [Network Response]")
-            print("   Status: \(httpResponse.statusCode)")
+            let logger = Logger.network
+            var message = "Response\n   Status: \(httpResponse.statusCode)"
             
             if let dataString = String(data: data, encoding: .utf8) {
-                print("   Body: \(dataString)")
+                message += "\n   Body: \(dataString)"
             }
+            
+            logger.debug(message)
         }
     }
 }
