@@ -9,7 +9,7 @@ import SwiftUI
 
 struct CampusView: View {
     @EnvironmentObject var authState: AuthState
-    @State private var showSetPassword = false
+    @ObservedObject var coordinator: CampusCoordinator
     @State private var posts: [Post] = []
     @State private var isLoadingPosts = false
     @State private var isLoadingMore = false
@@ -23,7 +23,7 @@ struct CampusView: View {
     private let minimumScrollableHeight: CGFloat = 300
     
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $coordinator.path) {
             VStack(spacing: 0) {
                 // Password setup alert banner
                 if authState.needsPasswordSetup {
@@ -35,7 +35,7 @@ struct CampusView: View {
                             .foregroundColor(.primary)
                         Spacer()
                         Button("Set Now") {
-                            showSetPassword = true
+                            coordinator.navigate(to: .setPassword)
                         }
                         .font(.caption)
                         .fontWeight(.semibold)
@@ -105,24 +105,21 @@ struct CampusView: View {
                     } else {
                         LazyVStack(spacing: 12) {
                             ForEach(posts) { post in
-                                if let index = posts.firstIndex(where: { $0.id == post.id }) {
-                                    NavigationLink(destination: PostDetailView(post: Binding(
-                                        get: { posts[index] },
-                                        set: { posts[index] = $0 }
-                                    ))) {
-                                        PostRowView(
-                                            post: post,
-                                            isOwnPost: post.author.id == authState.currentUser?.id,
-                                            onLike: { toggleLike(for: post) },
-                                            onDelete: { deletePost(post) }
-                                        )
-                                    }
-                                    .buttonStyle(PlainButtonStyle())
-                                    .onAppear {
-                                        // Load more when the last post appears
-                                        if post.id == posts.last?.id {
-                                            loadMoreIfNeeded()
-                                        }
+                                Button {
+                                    coordinator.navigate(to: .postDetail(post))
+                                } label: {
+                                    PostRowView(
+                                        post: post,
+                                        isOwnPost: post.author.id == authState.currentUser?.id,
+                                        onLike: { toggleLike(for: post) },
+                                        onDelete: { deletePost(post) }
+                                    )
+                                }
+                                .buttonStyle(PlainButtonStyle())
+                                .onAppear {
+                                    // Load more when the last post appears
+                                    if post.id == posts.last?.id {
+                                        loadMoreIfNeeded()
                                     }
                                 }
                             }
@@ -154,8 +151,24 @@ struct CampusView: View {
             }
             .navigationTitle("Campus")
             .navigationBarTitleDisplayMode(.inline)
+            .navigationDestination(for: CampusCoordinator.Destination.self) { destination in
+                switch destination {
+                case .postDetail(let post):
+                    if let index = posts.firstIndex(where: { $0.id == post.id }) {
+                        PostDetailView(post: Binding(
+                            get: { posts[index] },
+                            set: { posts[index] = $0 }
+                        ))
+                    } else {
+                        // Fallback if post is not found in the list
+                        PostDetailView(post: .constant(post))
+                    }
+                case .setPassword:
+                    EmptyView() // Handled as a sheet
+                }
+            }
         }
-        .sheet(isPresented: $showSetPassword) {
+        .sheet(isPresented: $coordinator.showSetPassword) {
             SetPasswordView(authService: AuthService.shared)
         }
         .onAppear {
@@ -163,7 +176,7 @@ struct CampusView: View {
             if authState.needsPasswordSetup && !authState.hasShownPasswordSetup {
                 authState.markPasswordSetupShown()
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                    showSetPassword = true
+                    coordinator.navigate(to: .setPassword)
                 }
             }
             
@@ -343,6 +356,6 @@ struct CampusView: View {
 }
 
 #Preview {
-    CampusView()
+    CampusView(coordinator: CampusCoordinator())
         .environmentObject(AuthState())
 }

@@ -10,13 +10,13 @@ import SwiftUI
 struct HomeView: View {
     @EnvironmentObject var authState: AuthState
     @StateObject private var viewModel = HomeViewModel()
-    @State private var showSetPassword = false
+    @ObservedObject var coordinator: HomeCoordinator
     
     // Minimum height for scrollable content when list is empty
     private let minimumScrollableHeight: CGFloat = 300
     
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $coordinator.path) {
             VStack(spacing: 0) {
                 // Password setup alert banner
                 if authState.needsPasswordSetup {
@@ -28,7 +28,7 @@ struct HomeView: View {
                             .foregroundColor(.primary)
                         Spacer()
                         Button("Set Now") {
-                            showSetPassword = true
+                            coordinator.navigate(to: .setPassword)
                         }
                         .font(.caption)
                         .fontWeight(.semibold)
@@ -92,23 +92,20 @@ struct HomeView: View {
                     } else {
                         LazyVStack(spacing: 12) {
                             ForEach(viewModel.posts) { post in
-                                if let index = viewModel.posts.firstIndex(where: { $0.id == post.id }) {
-                                    NavigationLink(destination: PostDetailView(post: Binding(
-                                        get: { viewModel.posts[index] },
-                                        set: { viewModel.posts[index] = $0 }
-                                    ))) {
-                                        PostRowView(
-                                            post: post,
-                                            isOwnPost: post.author.id == authState.currentUser?.id,
-                                            onLike: { viewModel.toggleLike(for: post, authState: authState) },
-                                            onDelete: { viewModel.deletePost(post, authState: authState) }
-                                        )
-                                    }
-                                    .buttonStyle(PlainButtonStyle())
-                                    .onAppear {
-                                        // Load more when the last post appears
-                                        viewModel.loadMoreIfNeeded(for: post, authState: authState)
-                                    }
+                                Button {
+                                    coordinator.navigate(to: .postDetail(post))
+                                } label: {
+                                    PostRowView(
+                                        post: post,
+                                        isOwnPost: post.author.id == authState.currentUser?.id,
+                                        onLike: { viewModel.toggleLike(for: post, authState: authState) },
+                                        onDelete: { viewModel.deletePost(post, authState: authState) }
+                                    )
+                                }
+                                .buttonStyle(PlainButtonStyle())
+                                .onAppear {
+                                    // Load more when the last post appears
+                                    viewModel.loadMoreIfNeeded(for: post, authState: authState)
                                 }
                             }
                             
@@ -139,8 +136,24 @@ struct HomeView: View {
             }
             .navigationTitle("National")
             .navigationBarTitleDisplayMode(.inline)
+            .navigationDestination(for: HomeCoordinator.Destination.self) { destination in
+                switch destination {
+                case .postDetail(let post):
+                    if let index = viewModel.posts.firstIndex(where: { $0.id == post.id }) {
+                        PostDetailView(post: Binding(
+                            get: { viewModel.posts[index] },
+                            set: { viewModel.posts[index] = $0 }
+                        ))
+                    } else {
+                        // Fallback if post is not found in the list
+                        PostDetailView(post: .constant(post))
+                    }
+                case .setPassword:
+                    EmptyView() // Handled as a sheet
+                }
+            }
         }
-        .sheet(isPresented: $showSetPassword) {
+        .sheet(isPresented: $coordinator.showSetPassword) {
             SetPasswordView(authService: AuthService.shared)
         }
         .onAppear {
@@ -148,7 +161,7 @@ struct HomeView: View {
             if authState.needsPasswordSetup && !authState.hasShownPasswordSetup {
                 authState.markPasswordSetupShown()
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                    showSetPassword = true
+                    coordinator.navigate(to: .setPassword)
                 }
             }
             
@@ -163,6 +176,6 @@ struct HomeView: View {
 }
 
 #Preview {
-    HomeView()
+    HomeView(coordinator: HomeCoordinator())
         .environmentObject(AuthState())
 }

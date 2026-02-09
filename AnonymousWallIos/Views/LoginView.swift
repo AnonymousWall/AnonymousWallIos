@@ -10,9 +10,10 @@ import SwiftUI
 struct LoginView: View {
     @EnvironmentObject var authState: AuthState
     @StateObject private var viewModel: LoginViewModel
-    @State private var showForgotPassword = false
+    @ObservedObject var coordinator: AuthCoordinator
     
-    init(prefillEmail: String? = nil, authService: AuthServiceProtocol = AuthService.shared) {
+    init(coordinator: AuthCoordinator, prefillEmail: String? = nil, authService: AuthServiceProtocol = AuthService.shared) {
+        self.coordinator = coordinator
         let vm = LoginViewModel(authService: authService)
         _viewModel = StateObject(wrappedValue: vm)
         if let email = prefillEmail {
@@ -92,7 +93,7 @@ struct LoginView: View {
                 // Forgot password link
                 HStack {
                     Spacer()
-                    Button(action: { showForgotPassword = true }) {
+                    Button(action: { coordinator.navigate(to: .forgotPassword) }) {
                         Text("Forgot Password?")
                             .font(.caption)
                             .foregroundColor(.blue)
@@ -191,8 +192,10 @@ struct LoginView: View {
             HStack {
                 Text("Don't have an account?")
                     .foregroundColor(.gray)
-                NavigationLink("Sign Up", destination: RegistrationView())
-                    .fontWeight(.semibold)
+                Button("Sign Up") {
+                    coordinator.navigate(to: .registration)
+                }
+                .fontWeight(.semibold)
             }
             .padding(.bottom, 20)
             }
@@ -201,13 +204,10 @@ struct LoginView: View {
         .onDisappear {
             viewModel.cleanup()
         }
-        .sheet(isPresented: $showForgotPassword) {
-            ForgotPasswordView(authService: AuthService.shared)
-        }
     }
 }
 
 #Preview {
-    LoginView()
+    LoginView(coordinator: AuthCoordinator())
         .environmentObject(AuthState())
 }

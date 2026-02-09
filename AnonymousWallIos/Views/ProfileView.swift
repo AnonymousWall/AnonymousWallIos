@@ -10,12 +10,10 @@ import SwiftUI
 struct ProfileView: View {
     @EnvironmentObject var authState: AuthState
     @StateObject private var viewModel = ProfileViewModel()
-    @State private var showChangePassword = false
-    @State private var showSetPassword = false
-    @State private var showEditProfileName = false
+    @ObservedObject var coordinator: ProfileCoordinator
     
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $coordinator.path) {
             VStack(spacing: 0) {
                 // Password setup alert banner
                 if authState.needsPasswordSetup {
@@ -27,7 +25,7 @@ struct ProfileView: View {
                             .foregroundColor(.primary)
                         Spacer()
                         Button("Set Now") {
-                            showSetPassword = true
+                            coordinator.navigate(to: .setPassword)
                         }
                         .font(.caption)
                         .fontWeight(.semibold)
@@ -192,22 +190,19 @@ struct ProfileView: View {
                         } else {
                             LazyVStack(spacing: 12) {
                                 ForEach(viewModel.myPosts) { post in
-                                    if let index = viewModel.myPosts.firstIndex(where: { $0.id == post.id }) {
-                                        NavigationLink(destination: PostDetailView(post: Binding(
-                                            get: { viewModel.myPosts[index] },
-                                            set: { viewModel.myPosts[index] = $0 }
-                                        ))) {
-                                            PostRowView(
-                                                post: post,
-                                                isOwnPost: true,
-                                                onLike: { viewModel.toggleLikePost(post, authState: authState) },
-                                                onDelete: { viewModel.deletePost(post, authState: authState) }
-                                            )
-                                        }
-                                        .buttonStyle(PlainButtonStyle())
-                                        .onAppear {
-                                            viewModel.loadMorePostsIfNeeded(for: post, authState: authState)
-                                        }
+                                    Button {
+                                        coordinator.navigate(to: .postDetail(post))
+                                    } label: {
+                                        PostRowView(
+                                            post: post,
+                                            isOwnPost: true,
+                                            onLike: { viewModel.toggleLikePost(post, authState: authState) },
+                                            onDelete: { viewModel.deletePost(post, authState: authState) }
+                                        )
+                                    }
+                                    .buttonStyle(PlainButtonStyle())
+                                    .onAppear {
+                                        viewModel.loadMorePostsIfNeeded(for: post, authState: authState)
                                     }
                                 }
                                 
@@ -252,7 +247,9 @@ struct ProfileView: View {
                             LazyVStack(spacing: 12) {
                                 ForEach(viewModel.myComments) { comment in
                                     if let post = viewModel.commentPostMap[comment.postId] {
-                                        NavigationLink(destination: PostDetailView(post: .constant(post))) {
+                                        Button {
+                                            coordinator.navigate(to: .postDetail(post))
+                                        } label: {
                                             ProfileCommentRowView(comment: comment)
                                         }
                                         .buttonStyle(PlainButtonStyle())
@@ -295,17 +292,37 @@ struct ProfileView: View {
             }
             .navigationTitle("Profile")
             .navigationBarTitleDisplayMode(.inline)
+            .navigationDestination(for: ProfileCoordinator.Destination.self) { destination in
+                switch destination {
+                case .postDetail(let post):
+                    if let index = viewModel.myPosts.firstIndex(where: { $0.id == post.id }) {
+                        PostDetailView(post: Binding(
+                            get: { viewModel.myPosts[index] },
+                            set: { viewModel.myPosts[index] = $0 }
+                        ))
+                    } else {
+                        // Fallback if post is not found in the list
+                        PostDetailView(post: .constant(post))
+                    }
+                case .setPassword:
+                    EmptyView() // Handled as a sheet
+                case .changePassword:
+                    EmptyView() // Handled as a sheet
+                case .editProfileName:
+                    EmptyView() // Handled as a sheet
+                }
+            }
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Menu {
                         // Edit profile name option
-                        Button(action: { showEditProfileName = true }) {
+                        Button(action: { coordinator.navigate(to: .editProfileName) }) {
                             Label("Edit Profile Name", systemImage: "person.text.rectangle")
                         }
                         
                         // Change password option (only if password is set)
                         if !authState.needsPasswordSetup {
-                            Button(action: { showChangePassword = true }) {
+                            Button(action: { coordinator.navigate(to: .changePassword) }) {
                                 Label("Change Password", systemImage: "lock.shield")
                             }
                         }
@@ -323,13 +340,13 @@ struct ProfileView: View {
                 }
             }
         }
-        .sheet(isPresented: $showSetPassword) {
+        .sheet(isPresented: $coordinator.showSetPassword) {
             SetPasswordView(authService: AuthService.shared)
         }
-        .sheet(isPresented: $showChangePassword) {
+        .sheet(isPresented: $coordinator.showChangePassword) {
             ChangePasswordView(authService: AuthService.shared)
         }
-        .sheet(isPresented: $showEditProfileName) {
+        .sheet(isPresented: $coordinator.showEditProfileName) {
             EditProfileNameView(userService: UserService.shared)
         }
         .onAppear {
@@ -337,7 +354,7 @@ struct ProfileView: View {
             if authState.needsPasswordSetup && !authState.hasShownPasswordSetup {
                 authState.markPasswordSetupShown()
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                    showSetPassword = true
+                    coordinator.navigate(to: .setPassword)
                 }
             }
             
@@ -382,6 +399,6 @@ struct ProfileCommentRowView: View {
 }
 
 #Preview {
-    ProfileView()
+    ProfileView(coordinator: ProfileCoordinator())
         .environmentObject(AuthState())
 }
