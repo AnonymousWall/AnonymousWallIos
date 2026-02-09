@@ -171,8 +171,10 @@ struct RegistrationView: View {
                 HStack {
                     Text("Already have an account?")
                         .foregroundColor(.gray)
-                    NavigationLink("Login", destination: LoginView())
-                        .fontWeight(.semibold)
+                    Button("Login") {
+                        coordinator.navigate(to: .login)
+                    }
+                    .fontWeight(.semibold)
                 }
                 .padding(.bottom, 20)
             }
