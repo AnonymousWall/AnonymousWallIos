@@ -244,8 +244,8 @@ struct PostDetailViewModelTests {
         return authState
     }
     
-    private func createMockComment(id: String, text: String) -> Comment {
-        return Comment(
+    private func createMockComment(id: String, text: String) -> AnonymousWallIos.Comment {
+        return AnonymousWallIos.Comment(
             id: id,
             postId: "post-1",
             text: text,
