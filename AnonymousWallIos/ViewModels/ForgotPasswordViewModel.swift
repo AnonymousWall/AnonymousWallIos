@@ -59,7 +59,7 @@ class ForgotPasswordViewModel: ObservableObject {
         }
     }
     
-    func resetPassword(onSuccess: @escaping () -> Void) {
+    func resetPassword(authState: AuthState, onSuccess: @escaping () -> Void) {
         guard !email.isEmpty, !verificationCode.isEmpty, !newPassword.isEmpty, !confirmPassword.isEmpty else {
             errorMessage = "Please fill in all fields"
             return
@@ -80,10 +80,13 @@ class ForgotPasswordViewModel: ObservableObject {
         
         Task {
             do {
-                _ = try await authService.resetPassword(email: email, code: verificationCode, newPassword: newPassword)
+                let response = try await authService.resetPassword(email: email, code: verificationCode, newPassword: newPassword)
                 HapticFeedback.success()
                 isLoading = false
                 showSuccess = true
+                
+                // Log the user in with the new credentials
+                authState.login(user: response.user, token: response.accessToken)
                 
                 try? await Task.sleep(nanoseconds: 1_000_000_000)
                 onSuccess()

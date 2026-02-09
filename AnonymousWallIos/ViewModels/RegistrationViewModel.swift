@@ -46,7 +46,7 @@ class RegistrationViewModel: ObservableObject {
         
         Task {
             do {
-                _ = try await authService.sendEmailVerificationCode(email: email, purpose: "registration")
+                _ = try await authService.sendEmailVerificationCode(email: email, purpose: "register")
                 isSendingCode = false
                 codeSent = true
                 startCountdownTimer()
