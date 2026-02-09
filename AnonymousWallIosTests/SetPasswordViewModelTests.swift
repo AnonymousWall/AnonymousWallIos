@@ -140,7 +140,7 @@ struct SetPasswordViewModelTests {
             successCalled = true
         }
         
-        try await Task.sleep(nanoseconds: 1_200_000_000) // Wait for success callback
+        try await Task.sleep(nanoseconds: 1_500_000_000) // Wait for success callback (includes 1s delay in ViewModel)
         
         #expect(mockAuthService.setPasswordCalled == true)
         #expect(viewModel.isLoading == false)
