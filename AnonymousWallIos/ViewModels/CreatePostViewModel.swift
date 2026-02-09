@@ -16,9 +16,17 @@ class CreatePostViewModel: ObservableObject {
     @Published var isPosting = false
     @Published var errorMessage: String?
     
+    // MARK: - Dependencies
+    private let postService: PostServiceProtocol
+    
     // MARK: - Constants
     private let maxTitleCharacters = 255
     private let maxContentCharacters = 5000
+    
+    // MARK: - Initialization
+    init(postService: PostServiceProtocol = PostService.shared) {
+        self.postService = postService
+    }
     
     // MARK: - Computed Properties
     var titleCharacterCount: Int {
@@ -89,7 +97,7 @@ class CreatePostViewModel: ObservableObject {
         
         Task {
             do {
-                _ = try await PostService.shared.createPost(title: trimmedTitle, content: trimmedContent, wall: selectedWall, token: token, userId: userId)
+                _ = try await postService.createPost(title: trimmedTitle, content: trimmedContent, wall: selectedWall, token: token, userId: userId)
                 HapticFeedback.success()
                 isPosting = false
                 onSuccess()

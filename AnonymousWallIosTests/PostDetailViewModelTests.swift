@@ -14,7 +14,8 @@ struct PostDetailViewModelTests {
     // MARK: - Initialization Tests
     
     @Test func testViewModelInitialization() async throws {
-        let viewModel = PostDetailViewModel()
+        let mockPostService = MockPostService()
+        let viewModel = PostDetailViewModel(postService: mockPostService)
         
         #expect(viewModel.comments.isEmpty)
         #expect(viewModel.isLoadingComments == false)
@@ -29,7 +30,8 @@ struct PostDetailViewModelTests {
     // MARK: - Submit Comment Tests
     
     @Test func testSubmitCommentWithEmptyText() async throws {
-        let viewModel = PostDetailViewModel()
+        let mockPostService = MockPostService()
+        let viewModel = PostDetailViewModel(postService: mockPostService)
         let authState = createMockAuthState()
         
         viewModel.commentText = ""
@@ -44,7 +46,8 @@ struct PostDetailViewModelTests {
     }
     
     @Test func testSubmitCommentWithWhitespaceOnly() async throws {
-        let viewModel = PostDetailViewModel()
+        let mockPostService = MockPostService()
+        let viewModel = PostDetailViewModel(postService: mockPostService)
         let authState = createMockAuthState()
         
         viewModel.commentText = "   \n  "
@@ -59,7 +62,8 @@ struct PostDetailViewModelTests {
     }
     
     @Test func testSubmitCommentWithoutAuthentication() async throws {
-        let viewModel = PostDetailViewModel()
+        let mockPostService = MockPostService()
+        let viewModel = PostDetailViewModel(postService: mockPostService)
         let authState = AuthState(loadPersistedState: false) // Not authenticated
         
         viewModel.commentText = "Test comment"
@@ -74,7 +78,8 @@ struct PostDetailViewModelTests {
     }
     
     @Test func testSubmitCommentSuccess() async throws {
-        let viewModel = PostDetailViewModel()
+        let mockPostService = MockPostService()
+        let viewModel = PostDetailViewModel(postService: mockPostService)
         let authState = createMockAuthState()
         
         viewModel.commentText = "Great post!"
@@ -96,7 +101,8 @@ struct PostDetailViewModelTests {
     // MARK: - Validation Tests
     
     @Test func testCommentTextTrimming() async throws {
-        let viewModel = PostDetailViewModel()
+        let mockPostService = MockPostService()
+        let viewModel = PostDetailViewModel(postService: mockPostService)
         let authState = createMockAuthState()
         
         viewModel.commentText = "  Test comment with spaces  "
@@ -116,7 +122,8 @@ struct PostDetailViewModelTests {
     // MARK: - Error Handling Tests
     
     @Test func testErrorMessageClearedOnNewSubmit() async throws {
-        let viewModel = PostDetailViewModel()
+        let mockPostService = MockPostService()
+        let viewModel = PostDetailViewModel(postService: mockPostService)
         let authState = createMockAuthState()
         
         // First attempt with empty comment
@@ -136,7 +143,8 @@ struct PostDetailViewModelTests {
     // MARK: - Sorting Tests
     
     @Test func testSortOrderChanged() async throws {
-        let viewModel = PostDetailViewModel()
+        let mockPostService = MockPostService()
+        let viewModel = PostDetailViewModel(postService: mockPostService)
         let authState = createMockAuthState()
         
         #expect(viewModel.selectedSortOrder == .newest)
@@ -151,7 +159,8 @@ struct PostDetailViewModelTests {
     }
     
     @Test func testSortOrderChangeClearsComments() async throws {
-        let viewModel = PostDetailViewModel()
+        let mockPostService = MockPostService()
+        let viewModel = PostDetailViewModel(postService: mockPostService)
         let authState = createMockAuthState()
         
         // Add some comments manually to simulate loaded state
@@ -171,7 +180,8 @@ struct PostDetailViewModelTests {
     // MARK: - State Management Tests
     
     @Test func testInitialState() async throws {
-        let viewModel = PostDetailViewModel()
+        let mockPostService = MockPostService()
+        let viewModel = PostDetailViewModel(postService: mockPostService)
         
         #expect(viewModel.comments.isEmpty)
         #expect(viewModel.isLoadingComments == false)
@@ -181,7 +191,8 @@ struct PostDetailViewModelTests {
     }
     
     @Test func testCommentTextClearedAfterSuccessfulSubmit() async throws {
-        let viewModel = PostDetailViewModel()
+        let mockPostService = MockPostService()
+        let viewModel = PostDetailViewModel(postService: mockPostService)
         let authState = createMockAuthState()
         
         viewModel.commentText = "Test comment"
@@ -197,8 +208,9 @@ struct PostDetailViewModelTests {
     // MARK: - Authentication Tests
     
     @Test func testSubmitCommentRequiresAuthentication() async throws {
-        let viewModel = PostDetailViewModel()
-        let authState = AuthState() // No user logged in
+        let mockPostService = MockPostService()
+        let viewModel = PostDetailViewModel(postService: mockPostService)
+        let authState = AuthState(loadPersistedState: false) // No user logged in
         
         viewModel.commentText = "Test comment"
         
@@ -208,8 +220,9 @@ struct PostDetailViewModelTests {
     }
     
     @Test func testDeleteCommentRequiresAuthentication() async throws {
-        let viewModel = PostDetailViewModel()
-        let authState = AuthState() // No user logged in
+        let mockPostService = MockPostService()
+        let viewModel = PostDetailViewModel(postService: mockPostService)
+        let authState = AuthState(loadPersistedState: false) // No user logged in
         let comment = createMockComment(id: "1", text: "Test")
         
         viewModel.deleteComment(comment, postId: "post-1", authState: authState)
@@ -218,8 +231,9 @@ struct PostDetailViewModelTests {
     }
     
     @Test func testDeletePostRequiresAuthentication() async throws {
-        let viewModel = PostDetailViewModel()
-        let authState = AuthState() // No user logged in
+        let mockPostService = MockPostService()
+        let viewModel = PostDetailViewModel(postService: mockPostService)
+        let authState = AuthState(loadPersistedState: false) // No user logged in
         let post = createMockPost(id: "1", title: "Test Post")
         
         viewModel.deletePost(post: post, authState: authState) {}

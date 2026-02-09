@@ -14,7 +14,8 @@ struct CreatePostViewModelTests {
     // MARK: - Initialization Tests
     
     @Test func testViewModelInitialization() async throws {
-        let viewModel = CreatePostViewModel()
+        let mockPostService = MockPostService()
+        let viewModel = CreatePostViewModel(postService: mockPostService)
         
         #expect(viewModel.postTitle.isEmpty)
         #expect(viewModel.postContent.isEmpty)
@@ -26,7 +27,8 @@ struct CreatePostViewModelTests {
     // MARK: - Character Count Tests
     
     @Test func testTitleCharacterCount() async throws {
-        let viewModel = CreatePostViewModel()
+        let mockPostService = MockPostService()
+        let viewModel = CreatePostViewModel(postService: mockPostService)
         
         viewModel.postTitle = "Test Title"
         #expect(viewModel.titleCharacterCount == 10)
@@ -39,7 +41,8 @@ struct CreatePostViewModelTests {
     }
     
     @Test func testContentCharacterCount() async throws {
-        let viewModel = CreatePostViewModel()
+        let mockPostService = MockPostService()
+        let viewModel = CreatePostViewModel(postService: mockPostService)
         
         viewModel.postContent = "Test Content"
         #expect(viewModel.contentCharacterCount == 12)
@@ -54,7 +57,8 @@ struct CreatePostViewModelTests {
     // MARK: - Length Limit Tests
     
     @Test func testTitleOverLimit() async throws {
-        let viewModel = CreatePostViewModel()
+        let mockPostService = MockPostService()
+        let viewModel = CreatePostViewModel(postService: mockPostService)
         
         // Create a title that's exactly at the limit (255 characters)
         viewModel.postTitle = String(repeating: "a", count: 255)
@@ -66,7 +70,8 @@ struct CreatePostViewModelTests {
     }
     
     @Test func testContentOverLimit() async throws {
-        let viewModel = CreatePostViewModel()
+        let mockPostService = MockPostService()
+        let viewModel = CreatePostViewModel(postService: mockPostService)
         
         // Create content that's exactly at the limit (5000 characters)
         viewModel.postContent = String(repeating: "a", count: 5000)
@@ -80,7 +85,8 @@ struct CreatePostViewModelTests {
     // MARK: - Button State Tests
     
     @Test func testPostButtonDisabledWhenTitleEmpty() async throws {
-        let viewModel = CreatePostViewModel()
+        let mockPostService = MockPostService()
+        let viewModel = CreatePostViewModel(postService: mockPostService)
         
         viewModel.postTitle = ""
         viewModel.postContent = "Some content"
@@ -89,7 +95,8 @@ struct CreatePostViewModelTests {
     }
     
     @Test func testPostButtonDisabledWhenTitleWhitespaceOnly() async throws {
-        let viewModel = CreatePostViewModel()
+        let mockPostService = MockPostService()
+        let viewModel = CreatePostViewModel(postService: mockPostService)
         
         viewModel.postTitle = "   \n  "
         viewModel.postContent = "Some content"
@@ -98,7 +105,8 @@ struct CreatePostViewModelTests {
     }
     
     @Test func testPostButtonDisabledWhenContentEmpty() async throws {
-        let viewModel = CreatePostViewModel()
+        let mockPostService = MockPostService()
+        let viewModel = CreatePostViewModel(postService: mockPostService)
         
         viewModel.postTitle = "Title"
         viewModel.postContent = ""
@@ -107,7 +115,8 @@ struct CreatePostViewModelTests {
     }
     
     @Test func testPostButtonDisabledWhenContentWhitespaceOnly() async throws {
-        let viewModel = CreatePostViewModel()
+        let mockPostService = MockPostService()
+        let viewModel = CreatePostViewModel(postService: mockPostService)
         
         viewModel.postTitle = "Title"
         viewModel.postContent = "   \n  "
@@ -116,7 +125,8 @@ struct CreatePostViewModelTests {
     }
     
     @Test func testPostButtonDisabledWhenTitleTooLong() async throws {
-        let viewModel = CreatePostViewModel()
+        let mockPostService = MockPostService()
+        let viewModel = CreatePostViewModel(postService: mockPostService)
         
         viewModel.postTitle = String(repeating: "a", count: 256)
         viewModel.postContent = "Content"
@@ -125,7 +135,8 @@ struct CreatePostViewModelTests {
     }
     
     @Test func testPostButtonDisabledWhenContentTooLong() async throws {
-        let viewModel = CreatePostViewModel()
+        let mockPostService = MockPostService()
+        let viewModel = CreatePostViewModel(postService: mockPostService)
         
         viewModel.postTitle = "Title"
         viewModel.postContent = String(repeating: "a", count: 5001)
@@ -134,7 +145,8 @@ struct CreatePostViewModelTests {
     }
     
     @Test func testPostButtonEnabledWhenValid() async throws {
-        let viewModel = CreatePostViewModel()
+        let mockPostService = MockPostService()
+        let viewModel = CreatePostViewModel(postService: mockPostService)
         
         viewModel.postTitle = "Valid Title"
         viewModel.postContent = "Valid content"
@@ -145,7 +157,8 @@ struct CreatePostViewModelTests {
     // MARK: - Create Post Tests
     
     @Test func testCreatePostWithEmptyTitle() async throws {
-        let viewModel = CreatePostViewModel()
+        let mockPostService = MockPostService()
+        let viewModel = CreatePostViewModel(postService: mockPostService)
         let authState = createMockAuthState()
         
         viewModel.postTitle = ""
@@ -161,7 +174,8 @@ struct CreatePostViewModelTests {
     }
     
     @Test func testCreatePostWithEmptyContent() async throws {
-        let viewModel = CreatePostViewModel()
+        let mockPostService = MockPostService()
+        let viewModel = CreatePostViewModel(postService: mockPostService)
         let authState = createMockAuthState()
         
         viewModel.postTitle = "Title"
@@ -177,7 +191,8 @@ struct CreatePostViewModelTests {
     }
     
     @Test func testCreatePostWithTitleTooLong() async throws {
-        let viewModel = CreatePostViewModel()
+        let mockPostService = MockPostService()
+        let viewModel = CreatePostViewModel(postService: mockPostService)
         let authState = createMockAuthState()
         
         viewModel.postTitle = String(repeating: "a", count: 256)
@@ -193,7 +208,8 @@ struct CreatePostViewModelTests {
     }
     
     @Test func testCreatePostWithContentTooLong() async throws {
-        let viewModel = CreatePostViewModel()
+        let mockPostService = MockPostService()
+        let viewModel = CreatePostViewModel(postService: mockPostService)
         let authState = createMockAuthState()
         
         viewModel.postTitle = "Title"
@@ -209,7 +225,8 @@ struct CreatePostViewModelTests {
     }
     
     @Test func testCreatePostWithoutAuthentication() async throws {
-        let viewModel = CreatePostViewModel()
+        let mockPostService = MockPostService()
+        let viewModel = CreatePostViewModel(postService: mockPostService)
         let authState = AuthState(loadPersistedState: false) // Not authenticated
         
         viewModel.postTitle = "Title"
@@ -225,7 +242,8 @@ struct CreatePostViewModelTests {
     }
     
     @Test func testCreatePostSuccess() async throws {
-        let viewModel = CreatePostViewModel()
+        let mockPostService = MockPostService()
+        let viewModel = CreatePostViewModel(postService: mockPostService)
         let authState = createMockAuthState()
         
         viewModel.postTitle = "Great post title"
@@ -247,7 +265,8 @@ struct CreatePostViewModelTests {
     // MARK: - Validation Tests
     
     @Test func testTitleTrimming() async throws {
-        let viewModel = CreatePostViewModel()
+        let mockPostService = MockPostService()
+        let viewModel = CreatePostViewModel(postService: mockPostService)
         let authState = createMockAuthState()
         
         viewModel.postTitle = "  Title with spaces  "
@@ -262,7 +281,8 @@ struct CreatePostViewModelTests {
     }
     
     @Test func testContentTrimming() async throws {
-        let viewModel = CreatePostViewModel()
+        let mockPostService = MockPostService()
+        let viewModel = CreatePostViewModel(postService: mockPostService)
         let authState = createMockAuthState()
         
         viewModel.postTitle = "Title"
@@ -277,7 +297,8 @@ struct CreatePostViewModelTests {
     }
     
     @Test func testMaxTitleAndContentCount() async throws {
-        let viewModel = CreatePostViewModel()
+        let mockPostService = MockPostService()
+        let viewModel = CreatePostViewModel(postService: mockPostService)
         
         #expect(viewModel.maxTitleCount == 255)
         #expect(viewModel.maxContentCount == 5000)
@@ -286,13 +307,15 @@ struct CreatePostViewModelTests {
     // MARK: - Wall Selection Tests
     
     @Test func testDefaultWallSelection() async throws {
-        let viewModel = CreatePostViewModel()
+        let mockPostService = MockPostService()
+        let viewModel = CreatePostViewModel(postService: mockPostService)
         
         #expect(viewModel.selectedWall == .campus)
     }
     
     @Test func testWallSelectionChange() async throws {
-        let viewModel = CreatePostViewModel()
+        let mockPostService = MockPostService()
+        let viewModel = CreatePostViewModel(postService: mockPostService)
         
         viewModel.selectedWall = .national
         #expect(viewModel.selectedWall == .national)
@@ -304,7 +327,8 @@ struct CreatePostViewModelTests {
     // MARK: - Error Handling Tests
     
     @Test func testErrorMessageClearedOnNewPost() async throws {
-        let viewModel = CreatePostViewModel()
+        let mockPostService = MockPostService()
+        let viewModel = CreatePostViewModel(postService: mockPostService)
         let authState = createMockAuthState()
         
         // First attempt with empty title

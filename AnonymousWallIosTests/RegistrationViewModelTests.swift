@@ -297,7 +297,7 @@ struct RegistrationViewModelTests {
             mockAuthService.resetCallTracking()
             
             viewModel.sendVerificationCode()
-            try await Task.sleep(nanoseconds: 50_000_000)
+            try await Task.sleep(nanoseconds: 500_000_000)
             
             #expect(mockAuthService.sendEmailVerificationCodeCalled == true)
             #expect(viewModel.errorMessage == nil)
