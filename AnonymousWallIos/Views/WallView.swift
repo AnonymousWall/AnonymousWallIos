@@ -151,18 +151,14 @@ struct WallView: View {
             }
         }
         .sheet(isPresented: $showSetPassword) {
-            SetPasswordView(authService: AuthService.shared)
+            SetPasswordView()
         }
         .sheet(isPresented: $showChangePassword) {
-            ChangePasswordView(authService: AuthService.shared)
+            ChangePasswordView()
         }
         .sheet(isPresented: $showCreatePost) {
             CreatePostView(onPostCreated: {
-                Task {
-                    // Reset pagination and reload from first page
-                    resetPagination()
-                    await loadPosts()
-                }
+                viewModel.loadPosts(authState: authState)
             })
         }
         .onAppear {
@@ -176,13 +172,10 @@ struct WallView: View {
             }
             
             // Load posts
-            loadTask = Task {
-                await loadPosts()
-            }
+            viewModel.loadPosts(authState: authState)
         }
         .onDisappear {
-            // Cancel any ongoing load task when view disappears
-            loadTask?.cancel()
+            viewModel.cleanup()
         }
     }
     
