@@ -9,20 +9,12 @@ import SwiftUI
 
 struct ForgotPasswordView: View {
     @EnvironmentObject var authState: AuthState
-    @State private var email = ""
-    @State private var verificationCode = ""
-    @State private var newPassword = ""
-    @State private var confirmPassword = ""
-    @State private var isLoading = false
-    @State private var isSendingCode = false
-    @State private var errorMessage: String?
-    @State private var codeSent = false
-    @State private var showSuccess = false
-    @State private var resendCountdown = 0
-    @State private var countdownTimer: Timer?
+    @StateObject private var viewModel: ForgotPasswordViewModel
     @Environment(\.dismiss) var dismiss
     
-    let authService: AuthServiceProtocol
+    init(authService: AuthServiceProtocol = AuthService.shared) {
+        _viewModel = StateObject(wrappedValue: ForgotPasswordViewModel(authService: authService))
+    }
     
     var body: some View {
         NavigationStack {
@@ -38,7 +30,7 @@ struct ForgotPasswordView: View {
                         .font(.largeTitle)
                         .fontWeight(.bold)
                     
-                    Text(codeSent ? "Enter the code and new password" : "Enter your email to reset password")
+                    Text(viewModel.codeSent ? "Enter the code and new password" : "Enter your email to reset password")
                         .font(.subheadline)
                         .foregroundColor(.gray)
                         .multilineTextAlignment(.center)
@@ -55,22 +47,22 @@ struct ForgotPasswordView: View {
                         .foregroundColor(.primary)
                     
                     HStack {
-                        TextField("Enter your email", text: $email)
+                        TextField("Enter your email", text: $viewModel.email)
                             .textInputAutocapitalization(.never)
                             .keyboardType(.emailAddress)
                             .autocorrectionDisabled()
-                            .disabled(codeSent)
+                            .disabled(viewModel.codeSent)
                             .padding()
                             .background(Color(.systemGray6))
                             .cornerRadius(10)
                         
-                        if !codeSent {
-                            Button(action: requestReset) {
-                                if isSendingCode {
+                        if !viewModel.codeSent {
+                            Button(action: { viewModel.requestReset() }) {
+                                if viewModel.isSendingCode {
                                     ProgressView()
                                         .progressViewStyle(CircularProgressViewStyle())
-                                } else if resendCountdown > 0 {
-                                    Text("\(resendCountdown)s")
+                                } else if viewModel.resendCountdown > 0 {
+                                    Text("\(viewModel.resendCountdown)s")
                                         .fontWeight(.semibold)
                                 } else {
                                     Text("Send Code")
@@ -79,23 +71,23 @@ struct ForgotPasswordView: View {
                             }
                             .padding(.horizontal, 16)
                             .padding(.vertical, 12)
-                            .background((email.isEmpty || resendCountdown > 0) ? Color.gray : Color.blue)
+                            .background((viewModel.email.isEmpty || viewModel.resendCountdown > 0) ? Color.gray : Color.blue)
                             .foregroundColor(.white)
                             .cornerRadius(10)
-                            .disabled(email.isEmpty || isSendingCode || resendCountdown > 0)
+                            .disabled(viewModel.email.isEmpty || viewModel.isSendingCode || viewModel.resendCountdown > 0)
                         }
                     }
                 }
                 .padding(.horizontal)
                 
                 // Verification code and password inputs (shown after code is sent)
-                if codeSent {
+                if viewModel.codeSent {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Verification Code")
                             .font(.headline)
                             .foregroundColor(.primary)
                         
-                        TextField("Enter 6-digit code", text: $verificationCode)
+                        TextField("Enter 6-digit code", text: $viewModel.verificationCode)
                             .keyboardType(.numberPad)
                             .autocorrectionDisabled()
                             .padding()
@@ -109,7 +101,7 @@ struct ForgotPasswordView: View {
                             .font(.headline)
                             .foregroundColor(.primary)
                         
-                        SecureField("Enter new password", text: $newPassword)
+                        SecureField("Enter new password", text: $viewModel.newPassword)
                             .autocorrectionDisabled()
                             .padding()
                             .background(Color(.systemGray6))
@@ -122,7 +114,7 @@ struct ForgotPasswordView: View {
                             .font(.headline)
                             .foregroundColor(.primary)
                         
-                        SecureField("Confirm new password", text: $confirmPassword)
+                        SecureField("Confirm new password", text: $viewModel.confirmPassword)
                             .autocorrectionDisabled()
                             .padding()
                             .background(Color(.systemGray6))
@@ -130,9 +122,9 @@ struct ForgotPasswordView: View {
                     }
                     .padding(.horizontal)
                     
-                    Button(action: requestReset) {
-                        if resendCountdown > 0 {
-                            Text("Resend Code in \(resendCountdown)s")
+                    Button(action: { viewModel.requestReset() }) {
+                        if viewModel.resendCountdown > 0 {
+                            Text("Resend Code in \(viewModel.resendCountdown)s")
                                 .font(.caption)
                                 .foregroundColor(.gray)
                         } else {
@@ -141,11 +133,11 @@ struct ForgotPasswordView: View {
                                 .foregroundColor(.blue)
                         }
                     }
-                    .disabled(resendCountdown > 0)
+                    .disabled(viewModel.resendCountdown > 0)
                 }
                 
                 // Error message
-                if let errorMessage = errorMessage {
+                if let errorMessage = viewModel.errorMessage {
                     Text(errorMessage)
                         .foregroundColor(.red)
                         .font(.caption)
@@ -153,9 +145,9 @@ struct ForgotPasswordView: View {
                 }
                 
                 // Reset password button (shown after code is sent)
-                if codeSent {
-                    Button(action: resetPassword) {
-                        if isLoading {
+                if viewModel.codeSent {
+                    Button(action: { viewModel.resetPassword(onSuccess: { dismiss() }) }) {
+                        if viewModel.isLoading {
                             ProgressView()
                                 .progressViewStyle(CircularProgressViewStyle(tint: .white))
                                 .frame(maxWidth: .infinity)
@@ -166,11 +158,11 @@ struct ForgotPasswordView: View {
                         }
                     }
                     .frame(height: 50)
-                    .background(isResetButtonDisabled ? Color.gray : Color.blue)
+                    .background((viewModel.verificationCode.isEmpty || viewModel.newPassword.isEmpty || viewModel.confirmPassword.isEmpty || viewModel.isLoading) ? Color.gray : Color.blue)
                     .foregroundColor(.white)
                     .cornerRadius(10)
                     .padding(.horizontal)
-                    .disabled(isResetButtonDisabled)
+                    .disabled(viewModel.verificationCode.isEmpty || viewModel.newPassword.isEmpty || viewModel.confirmPassword.isEmpty || viewModel.isLoading)
                 }
                 
                 Spacer()
@@ -285,6 +277,6 @@ struct ForgotPasswordView: View {
 }
 
 #Preview {
-    ForgotPasswordView(authService: AuthService.shared)
+    ForgotPasswordView()
         .environmentObject(AuthState())
 }

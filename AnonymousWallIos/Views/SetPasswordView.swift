@@ -9,14 +9,12 @@ import SwiftUI
 
 struct SetPasswordView: View {
     @EnvironmentObject var authState: AuthState
-    @State private var password = ""
-    @State private var confirmPassword = ""
-    @State private var isLoading = false
-    @State private var errorMessage: String?
-    @State private var showSuccess = false
+    @StateObject private var viewModel: SetPasswordViewModel
     @Environment(\.dismiss) var dismiss
     
-    let authService: AuthServiceProtocol
+    init(authService: AuthServiceProtocol = AuthService.shared) {
+        _viewModel = StateObject(wrappedValue: SetPasswordViewModel(authService: authService))
+    }
     
     var body: some View {
         NavigationStack {
@@ -48,7 +46,7 @@ struct SetPasswordView: View {
                         .font(.headline)
                         .foregroundColor(.primary)
                     
-                    SecureField("Enter password", text: $password)
+                    SecureField("Enter password", text: $viewModel.password)
                         .autocorrectionDisabled()
                         .padding()
                         .background(Color(.systemGray6))
@@ -66,7 +64,7 @@ struct SetPasswordView: View {
                         .font(.headline)
                         .foregroundColor(.primary)
                     
-                    SecureField("Confirm password", text: $confirmPassword)
+                    SecureField("Confirm password", text: $viewModel.confirmPassword)
                         .autocorrectionDisabled()
                         .padding()
                         .background(Color(.systemGray6))
@@ -75,7 +73,7 @@ struct SetPasswordView: View {
                 .padding(.horizontal)
                 
                 // Error message
-                if let errorMessage = errorMessage {
+                if let errorMessage = viewModel.errorMessage {
                     Text(errorMessage)
                         .foregroundColor(.red)
                         .font(.caption)
@@ -83,8 +81,13 @@ struct SetPasswordView: View {
                 }
                 
                 // Set password button
-                Button(action: setPassword) {
-                    if isLoading {
+                Button(action: {
+                    viewModel.setPassword(authState: authState, onSuccess: {
+                        authState.updatePasswordSetupStatus(completed: true)
+                        dismiss()
+                    })
+                }) {
+                    if viewModel.isLoading {
                         ProgressView()
                             .progressViewStyle(CircularProgressViewStyle(tint: .white))
                             .frame(maxWidth: .infinity)
@@ -95,11 +98,11 @@ struct SetPasswordView: View {
                     }
                 }
                 .frame(height: 50)
-                .background(isButtonDisabled ? Color.gray : Color.blue)
+                .background(viewModel.isButtonDisabled ? Color.gray : Color.blue)
                 .foregroundColor(.white)
                 .cornerRadius(10)
                 .padding(.horizontal)
-                .disabled(isButtonDisabled)
+                .disabled(viewModel.isButtonDisabled)
                 
                 Spacer()
                 
@@ -111,7 +114,7 @@ struct SetPasswordView: View {
                 .padding(.bottom, 20)
             }
             .navigationBarHidden(true)
-            .alert("Password Set Successfully", isPresented: $showSuccess) {
+            .alert("Password Set Successfully", isPresented: $viewModel.showSuccess) {
                 Button("OK") {
                     authState.updatePasswordSetupStatus(completed: true)
                     dismiss()
@@ -121,51 +124,9 @@ struct SetPasswordView: View {
             }
         }
     }
-    
-    private var isButtonDisabled: Bool {
-        password.isEmpty || confirmPassword.isEmpty || isLoading
-    }
-    
-    private func setPassword() {
-        // Validate passwords match
-        guard password == confirmPassword else {
-            errorMessage = "Passwords do not match"
-            return
-        }
-        
-        // Validate password length
-        guard password.count >= 8 else {
-            errorMessage = "Password must be at least 8 characters"
-            return
-        }
-        
-        guard let token = authState.authToken,
-              let userId = authState.currentUser?.id else {
-            errorMessage = "Not authenticated"
-            return
-        }
-        
-        isLoading = true
-        errorMessage = nil
-        
-        Task {
-            do {
-                try await authService.setPassword(password: password, token: token, userId: userId)
-                await MainActor.run {
-                    isLoading = false
-                    showSuccess = true
-                }
-            } catch {
-                await MainActor.run {
-                    isLoading = false
-                    errorMessage = error.localizedDescription
-                }
-            }
-        }
-    }
 }
 
 #Preview {
-    SetPasswordView(authService: AuthService.shared)
+    SetPasswordView()
         .environmentObject(AuthState())
 }

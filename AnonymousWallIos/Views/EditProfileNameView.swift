@@ -10,27 +10,26 @@ import SwiftUI
 struct EditProfileNameView: View {
     @EnvironmentObject var authState: AuthState
     @Environment(\.dismiss) var dismiss
+    @StateObject private var viewModel: EditProfileNameViewModel
     
-    @State private var profileName: String = ""
-    @State private var isSubmitting = false
-    @State private var errorMessage: String?
-    
-    let userService: UserServiceProtocol
+    init(userService: UserServiceProtocol = UserService.shared) {
+        _viewModel = StateObject(wrappedValue: EditProfileNameViewModel(userService: userService))
+    }
     
     var body: some View {
         NavigationStack {
             Form {
                 Section {
-                    TextField("Profile Name", text: $profileName)
+                    TextField("Profile Name", text: $viewModel.profileName)
                         .autocapitalization(.words)
-                        .disabled(isSubmitting)
+                        .disabled(viewModel.isSubmitting)
                 } header: {
                     Text("Display Name")
                 } footer: {
                     Text("This name will be shown on your posts and comments. Leave empty to use 'Anonymous'.")
                 }
                 
-                if let errorMessage = errorMessage {
+                if let errorMessage = viewModel.errorMessage {
                     Section {
                         Text(errorMessage)
                             .foregroundColor(.red)
@@ -45,67 +44,24 @@ struct EditProfileNameView: View {
                     Button("Cancel") {
                         dismiss()
                     }
-                    .disabled(isSubmitting)
+                    .disabled(viewModel.isSubmitting)
                 }
                 
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Save") {
-                        updateProfileName()
+                        viewModel.updateProfileName(authState: authState, onSuccess: { dismiss() })
                     }
-                    .disabled(isSubmitting)
+                    .disabled(viewModel.isSubmitting)
                 }
             }
             .onAppear {
-                // Pre-populate with current profile name
-                if let currentUser = authState.currentUser {
-                    profileName = currentUser.profileName == "Anonymous" ? "" : currentUser.profileName
-                }
-            }
-        }
-    }
-    
-    private func updateProfileName() {
-        guard let token = authState.authToken,
-              let userId = authState.currentUser?.id else {
-            errorMessage = "Authentication required"
-            return
-        }
-        
-        isSubmitting = true
-        errorMessage = nil
-        
-        // Trim the profile name, empty string will be sent as-is (backend will set to Anonymous)
-        let trimmedName = profileName.trimmingCharacters(in: .whitespacesAndNewlines)
-        
-        Task {
-            do {
-                let updatedUser = try await userService.updateProfileName(
-                    profileName: trimmedName,
-                    token: token,
-                    userId: userId
-                )
-                
-                await MainActor.run {
-                    // Update the user in auth state
-                    authState.updateUser(updatedUser)
-                    isSubmitting = false
-                    dismiss()
-                }
-            } catch {
-                await MainActor.run {
-                    isSubmitting = false
-                    if let networkError = error as? NetworkError {
-                        errorMessage = networkError.localizedDescription
-                    } else {
-                        errorMessage = "Failed to update profile name: \(error.localizedDescription)"
-                    }
-                }
+                viewModel.loadCurrentProfileName(from: authState.currentUser)
             }
         }
     }
 }
 
 #Preview {
-    EditProfileNameView(userService: UserService.shared)
+    EditProfileNameView()
         .environmentObject(AuthState())
 }

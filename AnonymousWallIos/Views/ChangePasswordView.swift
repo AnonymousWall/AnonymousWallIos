@@ -9,15 +9,12 @@ import SwiftUI
 
 struct ChangePasswordView: View {
     @EnvironmentObject var authState: AuthState
-    @State private var oldPassword = ""
-    @State private var newPassword = ""
-    @State private var confirmPassword = ""
-    @State private var isLoading = false
-    @State private var errorMessage: String?
-    @State private var showSuccess = false
+    @StateObject private var viewModel: ChangePasswordViewModel
     @Environment(\.dismiss) var dismiss
     
-    let authService: AuthServiceProtocol
+    init(authService: AuthServiceProtocol = AuthService.shared) {
+        _viewModel = StateObject(wrappedValue: ChangePasswordViewModel(authService: authService))
+    }
     
     var body: some View {
         NavigationStack {
@@ -47,7 +44,7 @@ struct ChangePasswordView: View {
                         .font(.headline)
                         .foregroundColor(.primary)
                     
-                    SecureField("Enter current password", text: $oldPassword)
+                    SecureField("Enter current password", text: $viewModel.oldPassword)
                         .autocorrectionDisabled()
                         .padding()
                         .background(Color(.systemGray6))
@@ -61,7 +58,7 @@ struct ChangePasswordView: View {
                         .font(.headline)
                         .foregroundColor(.primary)
                     
-                    SecureField("Enter new password", text: $newPassword)
+                    SecureField("Enter new password", text: $viewModel.newPassword)
                         .autocorrectionDisabled()
                         .padding()
                         .background(Color(.systemGray6))
@@ -79,7 +76,7 @@ struct ChangePasswordView: View {
                         .font(.headline)
                         .foregroundColor(.primary)
                     
-                    SecureField("Confirm new password", text: $confirmPassword)
+                    SecureField("Confirm new password", text: $viewModel.confirmPassword)
                         .autocorrectionDisabled()
                         .padding()
                         .background(Color(.systemGray6))
@@ -88,7 +85,7 @@ struct ChangePasswordView: View {
                 .padding(.horizontal)
                 
                 // Error message
-                if let errorMessage = errorMessage {
+                if let errorMessage = viewModel.errorMessage {
                     Text(errorMessage)
                         .foregroundColor(.red)
                         .font(.caption)
@@ -96,8 +93,10 @@ struct ChangePasswordView: View {
                 }
                 
                 // Change password button
-                Button(action: changePassword) {
-                    if isLoading {
+                Button(action: {
+                    viewModel.changePassword(authState: authState, onSuccess: { dismiss() })
+                }) {
+                    if viewModel.isLoading {
                         ProgressView()
                             .progressViewStyle(CircularProgressViewStyle(tint: .white))
                             .frame(maxWidth: .infinity)
@@ -108,11 +107,11 @@ struct ChangePasswordView: View {
                     }
                 }
                 .frame(height: 50)
-                .background(isButtonDisabled ? Color.gray : Color.blue)
+                .background(viewModel.isButtonDisabled ? Color.gray : Color.blue)
                 .foregroundColor(.white)
                 .cornerRadius(10)
                 .padding(.horizontal)
-                .disabled(isButtonDisabled)
+                .disabled(viewModel.isButtonDisabled)
                 
                 Spacer()
                 
@@ -124,7 +123,7 @@ struct ChangePasswordView: View {
                 .padding(.bottom, 20)
             }
             .navigationBarHidden(true)
-            .alert("Password Changed", isPresented: $showSuccess) {
+            .alert("Password Changed", isPresented: $viewModel.showSuccess) {
                 Button("OK") {
                     dismiss()
                 }
@@ -133,57 +132,9 @@ struct ChangePasswordView: View {
             }
         }
     }
-    
-    private var isButtonDisabled: Bool {
-        oldPassword.isEmpty || newPassword.isEmpty || confirmPassword.isEmpty || isLoading
-    }
-    
-    private func changePassword() {
-        // Validate passwords match
-        guard newPassword == confirmPassword else {
-            errorMessage = "Passwords do not match"
-            return
-        }
-        
-        // Validate password length
-        guard newPassword.count >= 8 else {
-            errorMessage = "Password must be at least 8 characters"
-            return
-        }
-        
-        // Validate new password is different from old
-        guard newPassword != oldPassword else {
-            errorMessage = "New password must be different from current password"
-            return
-        }
-        
-        guard let token = authState.authToken,
-              let userId = authState.currentUser?.id else {
-            errorMessage = "Not authenticated"
-            return
-        }
-        
-        isLoading = true
-        errorMessage = nil
-        
-        Task {
-            do {
-                try await authService.changePassword(oldPassword: oldPassword, newPassword: newPassword, token: token, userId: userId)
-                await MainActor.run {
-                    isLoading = false
-                    showSuccess = true
-                }
-            } catch {
-                await MainActor.run {
-                    isLoading = false
-                    errorMessage = error.localizedDescription
-                }
-            }
-        }
-    }
 }
 
 #Preview {
-    ChangePasswordView(authService: AuthService.shared)
+    ChangePasswordView()
         .environmentObject(AuthState())
 }

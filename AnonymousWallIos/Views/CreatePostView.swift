@@ -10,22 +10,15 @@ import SwiftUI
 struct CreatePostView: View {
     @EnvironmentObject var authState: AuthState
     @Environment(\.dismiss) var dismiss
-    @State private var postTitle = ""
-    @State private var postContent = ""
-    @State private var selectedWall: WallType = .campus
-    @State private var isPosting = false
-    @State private var errorMessage: String?
+    @StateObject private var viewModel = CreatePostViewModel()
     
     var onPostCreated: () -> Void
-    
-    private let maxTitleCharacters = 255
-    private let maxContentCharacters = 5000
     
     var body: some View {
         NavigationStack {
             VStack(spacing: 20) {
                 // Wall selection
-                Picker("Wall", selection: $selectedWall) {
+                Picker("Wall", selection: $viewModel.selectedWall) {
                     ForEach(WallType.allCases, id: \.self) { wallType in
                         Text(wallType.displayName).tag(wallType)
                     }
@@ -33,7 +26,7 @@ struct CreatePostView: View {
                 .pickerStyle(SegmentedPickerStyle())
                 .padding(.horizontal)
                 .padding(.top, 10)
-                .onChange(of: selectedWall) { _, _ in
+                .onChange(of: viewModel.selectedWall) { _, _ in
                     HapticFeedback.selection()
                 }
                 
@@ -43,15 +36,15 @@ struct CreatePostView: View {
                         .font(.headline)
                         .padding(.horizontal)
                     
-                    TextField("Enter post title", text: $postTitle)
+                    TextField("Enter post title", text: $viewModel.postTitle)
                         .textFieldStyle(RoundedBorderTextFieldStyle())
                         .padding(.horizontal)
                     
                     HStack {
                         Spacer()
-                        Text("\(postTitle.count)/\(maxTitleCharacters)")
+                        Text("\(viewModel.titleCharacterCount)/\(viewModel.maxTitleCount)")
                             .font(.caption)
-                            .foregroundColor(postTitle.count > maxTitleCharacters ? .red : .gray)
+                            .foregroundColor(viewModel.isTitleOverLimit ? .red : .gray)
                     }
                     .padding(.horizontal)
                 }
@@ -65,14 +58,14 @@ struct CreatePostView: View {
                     // Character count for content
                     HStack {
                         Spacer()
-                        Text("\(postContent.count)/\(maxContentCharacters)")
+                        Text("\(viewModel.contentCharacterCount)/\(viewModel.maxContentCount)")
                             .font(.caption)
-                            .foregroundColor(postContent.count > maxContentCharacters ? .red : .gray)
+                            .foregroundColor(viewModel.isContentOverLimit ? .red : .gray)
                     }
                     .padding(.horizontal)
                     
                     // Text editor
-                    TextEditor(text: $postContent)
+                    TextEditor(text: $viewModel.postContent)
                         .frame(minHeight: 200)
                         .padding(8)
                         .background(Color(.systemGray6))
@@ -81,7 +74,7 @@ struct CreatePostView: View {
                 }
                 
                 // Error message
-                if let errorMessage = errorMessage {
+                if let errorMessage = viewModel.errorMessage {
                     Text(errorMessage)
                         .foregroundColor(.red)
                         .font(.caption)
@@ -93,9 +86,12 @@ struct CreatePostView: View {
                 // Post button
                 Button(action: {
                     HapticFeedback.light()
-                    createPost()
+                    viewModel.createPost(authState: authState, onSuccess: {
+                        onPostCreated()
+                        dismiss()
+                    })
                 }) {
-                    if isPosting {
+                    if viewModel.isPosting {
                         ProgressView()
                             .progressViewStyle(CircularProgressViewStyle(tint: .white))
                             .frame(maxWidth: .infinity)
@@ -112,16 +108,16 @@ struct CreatePostView: View {
                 }
                 .frame(height: 56)
                 .background(
-                    isPostButtonDisabled 
+                    viewModel.isPostButtonDisabled 
                     ? AnyShapeStyle(Color.gray)
                     : AnyShapeStyle(Color.purplePinkGradient)
                 )
                 .foregroundColor(.white)
                 .cornerRadius(16)
-                .shadow(color: isPostButtonDisabled ? Color.clear : Color.primaryPurple.opacity(0.3), radius: 8, x: 0, y: 4)
+                .shadow(color: viewModel.isPostButtonDisabled ? Color.clear : Color.primaryPurple.opacity(0.3), radius: 8, x: 0, y: 4)
                 .padding(.horizontal)
                 .padding(.bottom, 20)
-                .disabled(isPostButtonDisabled)
+                .disabled(viewModel.isPostButtonDisabled)
             }
             .navigationTitle("New Post")
             .navigationBarTitleDisplayMode(.inline)
@@ -130,65 +126,6 @@ struct CreatePostView: View {
                     Button("Cancel") {
                         dismiss()
                     }
-                }
-            }
-        }
-    }
-    
-    private var isPostButtonDisabled: Bool {
-        postTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ||
-        postContent.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ||
-        postTitle.count > maxTitleCharacters ||
-        postContent.count > maxContentCharacters ||
-        isPosting
-    }
-    
-    private func createPost() {
-        let trimmedTitle = postTitle.trimmingCharacters(in: .whitespacesAndNewlines)
-        let trimmedContent = postContent.trimmingCharacters(in: .whitespacesAndNewlines)
-        
-        guard !trimmedTitle.isEmpty else {
-            errorMessage = "Post title cannot be empty"
-            return
-        }
-        
-        guard trimmedTitle.count <= maxTitleCharacters else {
-            errorMessage = "Post title exceeds maximum length of \(maxTitleCharacters) characters"
-            return
-        }
-        
-        guard !trimmedContent.isEmpty else {
-            errorMessage = "Post content cannot be empty"
-            return
-        }
-        
-        guard trimmedContent.count <= maxContentCharacters else {
-            errorMessage = "Post content exceeds maximum length of \(maxContentCharacters) characters"
-            return
-        }
-        
-        guard let token = authState.authToken,
-              let userId = authState.currentUser?.id else {
-            errorMessage = "Not authenticated"
-            return
-        }
-        
-        isPosting = true
-        errorMessage = nil
-        
-        Task {
-            do {
-                _ = try await PostService.shared.createPost(title: trimmedTitle, content: trimmedContent, wall: selectedWall, token: token, userId: userId)
-                await MainActor.run {
-                    HapticFeedback.success()
-                    isPosting = false
-                    onPostCreated()
-                    dismiss()
-                }
-            } catch {
-                await MainActor.run {
-                    isPosting = false
-                    errorMessage = error.localizedDescription
                 }
             }
         }
