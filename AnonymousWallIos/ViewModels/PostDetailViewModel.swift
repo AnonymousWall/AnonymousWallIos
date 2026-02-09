@@ -27,7 +27,7 @@ class PostDetailViewModel: ObservableObject {
     private var hasMorePages = true
     
     // MARK: - Initialization
-    init(postService: PostServiceProtocol = postService) {
+    init(postService: PostServiceProtocol = PostService.shared) {
         self.postService = postService
     }
     
