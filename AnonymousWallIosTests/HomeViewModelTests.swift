@@ -224,4 +224,81 @@ struct HomeViewModelTests {
             updatedAt: "2026-02-01T00:00:00Z"
         )
     }
+    
+    // MARK: - Report Post Tests
+    
+    @Test func testReportPostSuccess() async throws {
+        // Setup
+        let mockPostService = MockPostService()
+        let viewModel = HomeViewModel(postService: mockPostService)
+        let mockAuthState = createMockAuthState()
+        let post = createMockPost(id: "post-1", title: "Test Post")
+        
+        mockPostService.mockReportResponse = ReportResponse(message: "Post reported successfully")
+        
+        // Execute
+        viewModel.reportPost(post, reason: "Spam content", authState: mockAuthState)
+        
+        // Allow async task to complete
+        try? await Task.sleep(nanoseconds: 100_000_000)
+        
+        // Verify
+        #expect(mockPostService.reportPostCalled == true)
+        #expect(viewModel.showReportSuccess == true)
+        #expect(viewModel.errorMessage == nil)
+    }
+    
+    @Test func testReportPostWithoutReason() async throws {
+        // Setup
+        let mockPostService = MockPostService()
+        let viewModel = HomeViewModel(postService: mockPostService)
+        let mockAuthState = createMockAuthState()
+        let post = createMockPost(id: "post-1", title: "Test Post")
+        
+        mockPostService.mockReportResponse = ReportResponse(message: "Post reported successfully")
+        
+        // Execute
+        viewModel.reportPost(post, reason: nil, authState: mockAuthState)
+        
+        // Allow async task to complete
+        try? await Task.sleep(nanoseconds: 100_000_000)
+        
+        // Verify
+        #expect(mockPostService.reportPostCalled == true)
+        #expect(viewModel.showReportSuccess == true)
+    }
+    
+    @Test func testReportPostWithoutAuthentication() async throws {
+        // Setup
+        let mockPostService = MockPostService()
+        let viewModel = HomeViewModel(postService: mockPostService)
+        let authState = AuthState(loadPersistedState: false) // Not authenticated
+        let post = createMockPost(id: "post-1", title: "Test Post")
+        
+        // Execute
+        viewModel.reportPost(post, reason: "Test", authState: authState)
+        
+        // Verify
+        #expect(mockPostService.reportPostCalled == false)
+        #expect(viewModel.errorMessage == "Authentication required to report post.")
+    }
+    
+    @Test func testReportPostFailure() async throws {
+        // Setup
+        let mockPostService = MockPostService()
+        mockPostService.reportPostBehavior = .failure(MockPostService.MockError.serverError)
+        let viewModel = HomeViewModel(postService: mockPostService)
+        let mockAuthState = createMockAuthState()
+        let post = createMockPost(id: "post-1", title: "Test Post")
+        
+        // Execute
+        viewModel.reportPost(post, reason: "Test", authState: mockAuthState)
+        
+        // Allow async task to complete
+        try? await Task.sleep(nanoseconds: 100_000_000)
+        
+        // Verify
+        #expect(mockPostService.reportPostCalled == true)
+        #expect(viewModel.errorMessage?.contains("Failed to report post") == true)
+    }
 }

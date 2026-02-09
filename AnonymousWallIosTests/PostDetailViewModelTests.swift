@@ -290,4 +290,135 @@ struct PostDetailViewModelTests {
             updatedAt: "2026-02-09T00:00:00Z"
         )
     }
+    
+    // MARK: - Report Comment Tests
+    
+    @Test func testReportCommentSuccess() async throws {
+        let mockPostService = MockPostService()
+        let viewModel = PostDetailViewModel(postService: mockPostService)
+        let authState = createMockAuthState()
+        let comment = createMockComment(id: "comment-1", text: "Test comment")
+        
+        mockPostService.mockReportResponse = ReportResponse(message: "Comment reported successfully")
+        
+        viewModel.reportComment(comment, postId: "post-1", reason: "Inappropriate content", authState: authState)
+        
+        // Allow async task to complete
+        try? await Task.sleep(nanoseconds: 100_000_000)
+        
+        #expect(mockPostService.reportCommentCalled == true)
+        #expect(viewModel.showReportSuccess == true)
+        #expect(viewModel.reportReason.isEmpty)
+        #expect(viewModel.commentToReport == nil)
+    }
+    
+    @Test func testReportCommentWithoutReason() async throws {
+        let mockPostService = MockPostService()
+        let viewModel = PostDetailViewModel(postService: mockPostService)
+        let authState = createMockAuthState()
+        let comment = createMockComment(id: "comment-1", text: "Test comment")
+        
+        mockPostService.mockReportResponse = ReportResponse(message: "Comment reported successfully")
+        
+        viewModel.reportComment(comment, postId: "post-1", reason: nil, authState: authState)
+        
+        // Allow async task to complete
+        try? await Task.sleep(nanoseconds: 100_000_000)
+        
+        #expect(mockPostService.reportCommentCalled == true)
+        #expect(viewModel.showReportSuccess == true)
+    }
+    
+    @Test func testReportCommentWithoutAuthentication() async throws {
+        let mockPostService = MockPostService()
+        let viewModel = PostDetailViewModel(postService: mockPostService)
+        let authState = AuthState(loadPersistedState: false) // Not authenticated
+        let comment = createMockComment(id: "comment-1", text: "Test comment")
+        
+        viewModel.reportComment(comment, postId: "post-1", reason: "Test", authState: authState)
+        
+        #expect(mockPostService.reportCommentCalled == false)
+        #expect(viewModel.errorMessage == "Authentication required")
+    }
+    
+    @Test func testReportCommentFailure() async throws {
+        let mockPostService = MockPostService()
+        mockPostService.reportCommentBehavior = .failure(MockPostService.MockError.serverError)
+        let viewModel = PostDetailViewModel(postService: mockPostService)
+        let authState = createMockAuthState()
+        let comment = createMockComment(id: "comment-1", text: "Test comment")
+        
+        viewModel.reportComment(comment, postId: "post-1", reason: "Test", authState: authState)
+        
+        // Allow async task to complete
+        try? await Task.sleep(nanoseconds: 100_000_000)
+        
+        #expect(mockPostService.reportCommentCalled == true)
+        #expect(viewModel.errorMessage?.contains("Failed to report comment") == true)
+    }
+    
+    // MARK: - Report Post Tests
+    
+    @Test func testReportPostSuccess() async throws {
+        let mockPostService = MockPostService()
+        let viewModel = PostDetailViewModel(postService: mockPostService)
+        let authState = createMockAuthState()
+        let post = createMockPost(id: "post-1", title: "Test Post")
+        
+        mockPostService.mockReportResponse = ReportResponse(message: "Post reported successfully")
+        
+        viewModel.reportPost(post: post, reason: "Spam content", authState: authState)
+        
+        // Allow async task to complete
+        try? await Task.sleep(nanoseconds: 100_000_000)
+        
+        #expect(mockPostService.reportPostCalled == true)
+        #expect(viewModel.showReportSuccess == true)
+        #expect(viewModel.reportReason.isEmpty)
+    }
+    
+    @Test func testReportPostWithoutReason() async throws {
+        let mockPostService = MockPostService()
+        let viewModel = PostDetailViewModel(postService: mockPostService)
+        let authState = createMockAuthState()
+        let post = createMockPost(id: "post-1", title: "Test Post")
+        
+        mockPostService.mockReportResponse = ReportResponse(message: "Post reported successfully")
+        
+        viewModel.reportPost(post: post, reason: nil, authState: authState)
+        
+        // Allow async task to complete
+        try? await Task.sleep(nanoseconds: 100_000_000)
+        
+        #expect(mockPostService.reportPostCalled == true)
+        #expect(viewModel.showReportSuccess == true)
+    }
+    
+    @Test func testReportPostWithoutAuthentication() async throws {
+        let mockPostService = MockPostService()
+        let viewModel = PostDetailViewModel(postService: mockPostService)
+        let authState = AuthState(loadPersistedState: false) // Not authenticated
+        let post = createMockPost(id: "post-1", title: "Test Post")
+        
+        viewModel.reportPost(post: post, reason: "Test", authState: authState)
+        
+        #expect(mockPostService.reportPostCalled == false)
+        #expect(viewModel.errorMessage == "Authentication required")
+    }
+    
+    @Test func testReportPostFailure() async throws {
+        let mockPostService = MockPostService()
+        mockPostService.reportPostBehavior = .failure(MockPostService.MockError.serverError)
+        let viewModel = PostDetailViewModel(postService: mockPostService)
+        let authState = createMockAuthState()
+        let post = createMockPost(id: "post-1", title: "Test Post")
+        
+        viewModel.reportPost(post: post, reason: "Test", authState: authState)
+        
+        // Allow async task to complete
+        try? await Task.sleep(nanoseconds: 100_000_000)
+        
+        #expect(mockPostService.reportPostCalled == true)
+        #expect(viewModel.errorMessage?.contains("Failed to report post") == true)
+    }
 }
