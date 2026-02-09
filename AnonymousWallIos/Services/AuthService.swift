@@ -180,26 +180,4 @@ class AuthService: AuthServiceProtocol {
         
         return try await networkClient.performRequest(request)
     }
-    
-    // MARK: - Profile Management
-    
-    /// Update user's profile name
-    func updateProfileName(profileName: String, token: String, userId: String) async throws -> User {
-        guard let url = URL(string: "\(config.fullAPIBaseURL)/auth/profile/name") else {
-            throw NetworkError.invalidURL
-        }
-        
-        var request = URLRequest(url: url)
-        request.httpMethod = "PATCH"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        request.setValue(userId, forHTTPHeaderField: "X-User-Id")
-        
-        let body: [String: String] = [
-            "profileName": profileName
-        ]
-        request.httpBody = try JSONEncoder().encode(body)
-        
-        return try await networkClient.performRequest(request)
-    }
 }

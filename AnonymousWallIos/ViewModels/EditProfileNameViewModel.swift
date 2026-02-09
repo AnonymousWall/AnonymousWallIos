@@ -15,11 +15,11 @@ class EditProfileNameViewModel: ObservableObject {
     @Published var errorMessage: String?
     
     // MARK: - Dependencies
-    private let authService: AuthServiceProtocol
+    private let userService: UserServiceProtocol
     
     // MARK: - Initialization
-    init(authService: AuthServiceProtocol = AuthService.shared) {
-        self.authService = authService
+    init(userService: UserServiceProtocol = UserService.shared) {
+        self.userService = userService
     }
     
     // MARK: - Public Methods
@@ -44,7 +44,7 @@ class EditProfileNameViewModel: ObservableObject {
         
         Task {
             do {
-                let updatedUser = try await authService.updateProfileName(
+                let updatedUser = try await userService.updateProfileName(
                     profileName: trimmedName,
                     token: token,
                     userId: userId

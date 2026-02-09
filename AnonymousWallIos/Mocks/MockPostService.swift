@@ -56,8 +56,6 @@ class MockPostService: PostServiceProtocol {
     var getCommentsCalled = false
     var hideCommentCalled = false
     var unhideCommentCalled = false
-    var getUserCommentsCalled = false
-    var getUserPostsCalled = false
     
     // MARK: - Configurable Behavior
     
@@ -71,8 +69,6 @@ class MockPostService: PostServiceProtocol {
     var getCommentsBehavior: MockBehavior = .success
     var hideCommentBehavior: MockBehavior = .success
     var unhideCommentBehavior: MockBehavior = .success
-    var getUserCommentsBehavior: MockBehavior = .success
-    var getUserPostsBehavior: MockBehavior = .success
     
     // MARK: - Configurable State
     
@@ -355,68 +351,6 @@ class MockPostService: PostServiceProtocol {
         }
     }
     
-    // MARK: - User Operations
-    
-    func getUserComments(
-        token: String,
-        userId: String,
-        page: Int,
-        limit: Int,
-        sort: SortOrder
-    ) async throws -> CommentListResponse {
-        getUserCommentsCalled = true
-        
-        switch getUserCommentsBehavior {
-        case .success:
-            return CommentListResponse(
-                data: mockComments,
-                pagination: PostListResponse.Pagination(
-                    page: page,
-                    limit: limit,
-                    total: mockComments.count,
-                    totalPages: mockComments.isEmpty ? 0 : (mockComments.count + limit - 1) / limit
-                )
-            )
-        case .failure(let error):
-            throw error
-        case .emptyState:
-            return CommentListResponse(
-                data: [],
-                pagination: PostListResponse.Pagination(page: page, limit: limit, total: 0, totalPages: 0)
-            )
-        }
-    }
-    
-    func getUserPosts(
-        token: String,
-        userId: String,
-        page: Int,
-        limit: Int,
-        sort: SortOrder
-    ) async throws -> PostListResponse {
-        getUserPostsCalled = true
-        
-        switch getUserPostsBehavior {
-        case .success:
-            return PostListResponse(
-                data: mockPosts,
-                pagination: PostListResponse.Pagination(
-                    page: page,
-                    limit: limit,
-                    total: mockPosts.count,
-                    totalPages: mockPosts.isEmpty ? 0 : (mockPosts.count + limit - 1) / limit
-                )
-            )
-        case .failure(let error):
-            throw error
-        case .emptyState:
-            return PostListResponse(
-                data: [],
-                pagination: PostListResponse.Pagination(page: page, limit: limit, total: 0, totalPages: 0)
-            )
-        }
-    }
-    
     // MARK: - Helper Methods
     
     /// Reset all call tracking flags
@@ -431,8 +365,6 @@ class MockPostService: PostServiceProtocol {
         getCommentsCalled = false
         hideCommentCalled = false
         unhideCommentCalled = false
-        getUserCommentsCalled = false
-        getUserPostsCalled = false
     }
     
     /// Reset all behaviors to success
@@ -447,8 +379,6 @@ class MockPostService: PostServiceProtocol {
         getCommentsBehavior = .success
         hideCommentBehavior = .success
         unhideCommentBehavior = .success
-        getUserCommentsBehavior = .success
-        getUserPostsBehavior = .success
     }
     
     /// Configure all methods to fail with specific error
@@ -463,8 +393,6 @@ class MockPostService: PostServiceProtocol {
         getCommentsBehavior = .failure(error)
         hideCommentBehavior = .failure(error)
         unhideCommentBehavior = .failure(error)
-        getUserCommentsBehavior = .failure(error)
-        getUserPostsBehavior = .failure(error)
     }
     
     /// Configure all methods to return empty state
@@ -479,8 +407,6 @@ class MockPostService: PostServiceProtocol {
         getCommentsBehavior = .emptyState
         hideCommentBehavior = .emptyState
         unhideCommentBehavior = .emptyState
-        getUserCommentsBehavior = .emptyState
-        getUserPostsBehavior = .emptyState
     }
     
     /// Clear all stored mock data
