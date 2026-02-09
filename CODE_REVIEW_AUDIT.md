@@ -234,12 +234,9 @@ private func loadPostsForComments(authState: AuthState) async {
 - ~2-5 seconds total load time (assuming 100-250ms per request)
 - Poor user experience
 
-**Solution: Batch API Endpoint**
+**Solution: Batch API Endpoint or Parallel Fetching**
 ```swift
-// Add to PostServiceProtocol
-func getPostsByIds(postIds: [String], token: String, userId: String) async throws -> [Post]
-
-// Use TaskGroup for parallel fetching
+// Use TaskGroup for parallel fetching (already marked @MainActor)
 private func loadPostsForComments(authState: AuthState) async {
     // ...
     await withTaskGroup(of: (String, Post?).self) { group in
@@ -258,11 +255,10 @@ private func loadPostsForComments(authState: AuthState) async {
             }
         }
         
+        // Collect results - already on main actor due to @MainActor class
         for await (postId, post) in group {
             if let post = post {
-                await MainActor.run {
-                    self.commentPostMap[postId] = post
-                }
+                self.commentPostMap[postId] = post
             }
         }
     }
