@@ -1,4 +1,234 @@
+## API Documentation
 
+### Authentication Endpoints
+
+#### 1. Send Email Verification Code
+```http
+POST /api/v1/auth/email/send-code
+Content-Type: application/json
+
+{
+    "email": "student@harvard.edu",
+    "purpose": "register"  // or "login", "reset_password"
+}
+
+Response: 200 OK
+{
+    "message": "Verification code sent to email"
+}
+```
+
+#### 2. Register with Email Code
+```http
+POST /api/v1/auth/register/email
+Content-Type: application/json
+
+{
+    "email": "student@harvard.edu",
+    "code": "123456"
+}
+
+Response: 201 Created
+{
+    "user": {
+        "id": "uuid",
+        "email": "student@harvard.edu",
+        "profileName": "Anonymous",
+        "isVerified": true,
+        "passwordSet": false,
+        "createdAt": "2026-01-28T..."
+    },
+    "accessToken": "jwt-token-here"
+}
+```
+
+#### 3. Login with Email Code
+```http
+POST /api/v1/auth/login/email
+Content-Type: application/json
+
+{
+    "email": "student@harvard.edu",
+    "code": "123456"
+}
+
+Response: 200 OK
+{
+    "user": {...},
+    "accessToken": "jwt-token-here"
+}
+```
+
+#### 4. Login with Password
+```http
+POST /api/v1/auth/login/password
+Content-Type: application/json
+
+{
+    "email": "student@harvard.edu",
+    "password": "secure_password"
+}
+
+Response: 200 OK
+{
+    "user": {...},
+    "accessToken": "jwt-token-here"
+}
+```
+
+#### 5. Set Password (Requires Authentication)
+```http
+POST /api/v1/auth/password/set
+Header: X-User-Id: {userId}
+Authorization: Bearer {jwt-token}
+Content-Type: application/json
+
+{
+    "password": "secure_password"
+}
+
+Response: 200 OK
+{
+    "id": "uuid",
+    "email": "student@harvard.edu",
+    "profileName": "Anonymous",
+    "isVerified": true,
+    "passwordSet": true,
+    "createdAt": "2026-01-28T..."
+}
+```
+
+#### 6. Change Password (Requires Authentication)
+```http
+POST /api/v1/auth/password/change
+Authorization: Bearer {jwt-token}
+Content-Type: application/json
+
+{
+    "oldPassword": "current_password",
+    "newPassword": "new_password"
+}
+
+Response: 200 OK
+{
+    "id": "uuid",
+    "email": "student@harvard.edu",
+    "profileName": "Anonymous",
+    "isVerified": true,
+    "passwordSet": true,
+    "createdAt": "2026-01-28T..."
+}
+```
+
+#### 7. Request Password Reset (Forgot Password)
+```http
+POST /api/v1/auth/password/reset-request
+Content-Type: application/json
+
+{
+    "email": "student@harvard.edu"
+}
+
+Response: 200 OK
+{
+    "message": "Password reset code sent to email"
+}
+```
+
+**Notes:**
+- Sends a 6-digit verification code to the user's email
+- User must provide this code to reset their password
+- Code expires after 15 minutes
+
+#### 8. Reset Password
+```http
+POST /api/v1/auth/password/reset
+Content-Type: application/json
+
+{
+    "email": "student@harvard.edu",
+    "code": "123456",
+    "newPassword": "new_password"
+}
+
+Response: 200 OK
+{
+    "user": {
+        "id": "uuid",
+        "email": "student@harvard.edu",
+        "profileName": "Anonymous",
+        "isVerified": true,
+        "passwordSet": true,
+        "createdAt": "2026-01-28T..."
+    },
+    "accessToken": "jwt-token-here"
+}
+```
+
+**Notes:**
+- Requires valid email verification code
+- Code must not be expired (15 minute expiration)
+- Returns JWT token upon successful password reset
+
+---
+
+### Post Endpoints
+
+#### 1. Create Post
+```http
+POST /api/v1/posts
+Authorization: Bearer {jwt-token}
+Content-Type: application/json
+
+{
+    "title": "My First Post Title",    // NEW - REQUIRED (1-255 chars)
+    "content": "This is my first post!",
+    "wall": "campus"  // or "national", optional, defaults to "campus"
+}
+
+Response: 201 Created
+{
+    "id": "uuid",
+    "title": "My First Post Title",     // NEW
+    "content": "This is my first post!",
+    "wall": "CAMPUS",
+    "likes": 0,
+    "comments": 0,
+    "liked": false,
+    "author": {
+        "id": "uuid",
+        "profileName": "Anonymous",
+        "isAnonymous": true
+    },
+    "createdAt": "2026-01-28T...",
+    "updatedAt": "2026-01-28T..."
+}
+```
+
+**Request Validation:**
+- `title` is **required** (cannot be null, empty, or whitespace-only)
+- `title` maximum length: **255 characters**
+- `content` is **required** (cannot be null, empty, or whitespace-only)
+- `content` maximum length: **5000 characters**
+- `wall` is optional (defaults to "campus"), must be "campus" or "national"
+
+**Error Responses:**
+```json
+// Missing or empty title
+400 Bad Request
+{
+    "error": "Post title cannot be empty"
+}
+
+// Title exceeds 255 characters
+400 Bad Request
+{
+    "error": "Post title exceeds maximum length of 255 characters"
+}
+```
+
+#### 2. List Posts
+```http
 GET /api/v1/posts?wall=campus&page=1&limit=20&sort=NEWEST
 Authorization: Bearer {jwt-token}
 
@@ -318,6 +548,35 @@ Response: 200 OK
 - Uses optimized queries with composite database indexes for efficient retrieval
 - Performance: O(log K) where K is the user's total post count
 - Supports sorting by creation time or like count
+
+#### 3. Update Profile Name (Requires Authentication)
+```http
+PATCH /api/v1/users/me/profile/name
+Authorization: Bearer {jwt-token}
+Content-Type: application/json
+
+{
+    "profileName": "John Doe"
+}
+
+Response: 200 OK
+{
+    "id": "uuid",
+    "email": "student@harvard.edu",
+    "profileName": "John Doe",
+    "isVerified": true,
+    "passwordSet": false,
+    "createdAt": "2026-01-28T..."
+}
+```
+
+**Notes:**
+- Default profile name is "Anonymous"
+- Sending an empty string will reset the profile name to "Anonymous"
+- Profile name can be 1-255 characters
+- Profile name changes are **asynchronously propagated** to all user's posts and comments
+- The API returns immediately after updating the user profile
+- Posts and comments are updated in the background for better performance
 
 ---
 
