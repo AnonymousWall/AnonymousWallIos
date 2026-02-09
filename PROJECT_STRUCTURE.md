@@ -23,6 +23,17 @@ AnonymousWallIos/
 │   ├── Services/                          # API services
 │   │   ├── AuthService.swift              # Authentication API calls
 │   │   └── PostService.swift              # Post API calls
+│   ├── ViewModels/                        # ViewModels (business logic)
+│   │   ├── LoginViewModel.swift           # Login logic
+│   │   ├── RegistrationViewModel.swift    # Registration logic
+│   │   ├── CreatePostViewModel.swift      # Post creation logic
+│   │   ├── PostFeedViewModel.swift        # Generic post feed logic
+│   │   ├── PostDetailViewModel.swift      # Post detail & comments logic
+│   │   ├── ProfileViewModel.swift         # Profile & user content logic
+│   │   ├── SetPasswordViewModel.swift     # Password setup logic
+│   │   ├── ChangePasswordViewModel.swift  # Password change logic
+│   │   ├── ForgotPasswordViewModel.swift  # Password reset logic
+│   │   └── EditProfileNameViewModel.swift # Profile name edit logic
 │   ├── Views/                             # SwiftUI views
 │   │   ├── AuthenticationView.swift       # Landing page
 │   │   ├── RegistrationView.swift         # User registration
@@ -134,20 +145,47 @@ AnonymousWallIos/
 - Observable state changes
 - Consistent data flow
 
-### 6. View Layer
+### 6. ViewModel Layer
+**Purpose**: Separate business logic from views using MVVM pattern
+
+**Components**:
+- `LoginViewModel`: Handles login, verification code, and countdown timer logic
+- `RegistrationViewModel`: Manages registration flow and verification
+- `CreatePostViewModel`: Validates and submits new posts
+- `PostFeedViewModel`: Generic ViewModel for post feeds (Home, Campus, National)
+- `PostDetailViewModel`: Manages post details, comments, and interactions
+- `ProfileViewModel`: Handles user profile data and content management
+- `SetPasswordViewModel`: Password setup validation and submission
+- `ChangePasswordViewModel`: Password change flow
+- `ForgotPasswordViewModel`: Password reset with verification
+- `EditProfileNameViewModel`: Profile name editing logic
+
+**Benefits**:
+- Separation of concerns - business logic is isolated from UI
+- Testability - ViewModels can be unit tested without UI
+- Reusability - ViewModels can be reused across different views
+- Maintainability - Changes to business logic don't affect UI code
+- Follows MVVM architectural pattern
+- Uses `@MainActor` for thread-safe UI updates
+
+### 7. View Layer
 **Purpose**: User interface using SwiftUI
 
 **Components**:
 - SwiftUI views for all screens
-- Uses `@EnvironmentObject` for shared state
+- Views delegate business logic to ViewModels
+- Uses `@EnvironmentObject` for shared state (AuthState)
+- Uses `@StateObject` or `@ObservedObject` for ViewModels
 - Reactive UI updates through Combine
 
 **Benefits**:
 - Declarative UI
 - Automatic updates on state changes
 - Clean separation from business logic
+- Views focus solely on presentation
+- Easier to maintain and modify UI
 
-### 7. Utils Layer
+### 8. Utils Layer
 **Purpose**: Shared utility functions
 
 **Components**:
@@ -334,10 +372,11 @@ User Input → View → PostService → NetworkClient → API
    - Better navigation management
    - Deep linking support
 
-4. **ViewModels**
-   - Extract business logic from Views
-   - Use protocol-injected services
-   - Enable more comprehensive view testing
+4. ✅ **ViewModels (COMPLETED)**
+   - ✅ Extracted business logic from Views
+   - ✅ ViewModels use protocol-injected services
+   - ✅ Enables comprehensive view testing
+   - ✅ All major views now have dedicated ViewModels
 
 5. **SwiftLint Integration**
    - Code style enforcement
@@ -346,6 +385,32 @@ User Input → View → PostService → NetworkClient → API
 6. **Fastlane**
    - Automated builds
    - CI/CD integration
+
+## Recent Improvements
+
+### ViewModels Implementation (Completed)
+✅ Created dedicated ViewModels directory  
+✅ Implemented MVVM architectural pattern  
+✅ Separated business logic from UI code  
+✅ 11 ViewModels created covering all major views:
+- LoginViewModel
+- RegistrationViewModel
+- CreatePostViewModel
+- PostFeedViewModel (generic for multiple feeds)
+- PostDetailViewModel
+- ProfileViewModel
+- SetPasswordViewModel
+- ChangePasswordViewModel
+- ForgotPasswordViewModel
+- EditProfileNameViewModel
+- WallViewModel
+
+**Benefits Achieved:**
+- Business logic is now testable independently
+- Views are cleaner and focus on presentation
+- State management is centralized in ViewModels
+- Follows industry-standard MVVM pattern
+- Uses @MainActor for thread-safe UI updates
 
 ## Comparison: Before vs After
 
@@ -391,3 +456,102 @@ When adding new features:
 ## Questions?
 
 See individual file headers for detailed documentation on each component.
+
+## MVVM Architecture Implementation
+
+### ViewModel Pattern
+The project now follows the Model-View-ViewModel (MVVM) architectural pattern:
+
+**Model**: Data models and business entities (Post, User, AuthState)  
+**View**: SwiftUI views that display UI (LoginView, CreatePostView, etc.)  
+**ViewModel**: Business logic layer between View and Model (LoginViewModel, CreatePostViewModel, etc.)
+
+### ViewModel Benefits in This Project
+
+1. **Separation of Concerns**
+   - Views only handle UI presentation
+   - ViewModels contain all business logic
+   - Services handle API communication
+
+2. **Testability**
+   - ViewModels can be unit tested without UI
+   - Easy to mock dependencies
+   - Test business logic independently
+
+3. **Reusability**
+   - PostFeedViewModel is reused for Home, Campus, and National feeds
+   - Common patterns shared across ViewModels
+
+4. **Maintainability**
+   - Changes to business logic are isolated
+   - UI changes don't affect business logic
+   - Clear responsibility boundaries
+
+### Example: Login Flow with MVVM
+
+**Before (Business Logic in View)**:
+```swift
+struct LoginView: View {
+    @State private var email = ""
+    @State private var password = ""
+    @State private var isLoading = false
+    
+    func login() {
+        isLoading = true
+        Task {
+            // Business logic mixed with view
+            let response = try await AuthService.shared.login(email, password)
+            authState.login(response)
+        }
+    }
+}
+```
+
+**After (Business Logic in ViewModel)**:
+```swift
+struct LoginView: View {
+    @StateObject private var viewModel = LoginViewModel()
+    
+    var body: some View {
+        // View focuses on UI only
+        TextField("Email", text: $viewModel.email)
+        Button("Login") { viewModel.login(authState: authState) }
+    }
+}
+
+class LoginViewModel: ObservableObject {
+    @Published var email = ""
+    @Published var isLoading = false
+    
+    func login(authState: AuthState) {
+        // All business logic in ViewModel
+        isLoading = true
+        Task {
+            let response = try await authService.login(email, password)
+            authState.login(response)
+        }
+    }
+}
+```
+
+### ViewModel Testing Example
+
+```swift
+class LoginViewModelTests: XCTestCase {
+    func testLoginSuccess() async {
+        // Arrange
+        let mockService = MockAuthService()
+        let viewModel = LoginViewModel(authService: mockService)
+        viewModel.email = "test@example.com"
+        viewModel.password = "password123"
+        
+        // Act
+        await viewModel.login(authState: authState)
+        
+        // Assert
+        XCTAssertTrue(mockService.loginCalled)
+        XCTAssertFalse(viewModel.isLoading)
+        XCTAssertNil(viewModel.errorMessage)
+    }
+}
+```
