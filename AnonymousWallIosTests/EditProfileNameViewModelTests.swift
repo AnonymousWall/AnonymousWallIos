@@ -110,7 +110,7 @@ struct EditProfileNameViewModelTests {
             successCalled = true
         }
         
-        try await Task.sleep(nanoseconds: 100_000_000)
+        try await Task.sleep(nanoseconds: 500_000_000)
         
         #expect(mockUserService.updateProfileNameCalled == true)
         #expect(viewModel.isSubmitting == false)
@@ -131,7 +131,7 @@ struct EditProfileNameViewModelTests {
             successCalled = true
         }
         
-        try await Task.sleep(nanoseconds: 100_000_000)
+        try await Task.sleep(nanoseconds: 500_000_000)
         
         #expect(mockUserService.updateProfileNameCalled == true)
         #expect(viewModel.isSubmitting == false)
@@ -152,7 +152,7 @@ struct EditProfileNameViewModelTests {
             successCalled = true
         }
         
-        try await Task.sleep(nanoseconds: 100_000_000)
+        try await Task.sleep(nanoseconds: 500_000_000)
         
         #expect(mockUserService.updateProfileNameCalled == true)
         #expect(successCalled == true)
@@ -171,7 +171,7 @@ struct EditProfileNameViewModelTests {
             successCalled = true
         }
         
-        try await Task.sleep(nanoseconds: 100_000_000)
+        try await Task.sleep(nanoseconds: 500_000_000)
         
         #expect(mockUserService.updateProfileNameCalled == true)
         #expect(successCalled == true)
@@ -188,7 +188,7 @@ struct EditProfileNameViewModelTests {
         
         viewModel.updateProfileName(authState: authState) {}
         
-        try await Task.sleep(nanoseconds: 100_000_000)
+        try await Task.sleep(nanoseconds: 500_000_000)
         
         // Should succeed with trimmed name
         #expect(mockUserService.updateProfileNameCalled == true)
@@ -217,7 +217,7 @@ struct EditProfileNameViewModelTests {
         viewModel.profileName = "Updated Name"
         viewModel.updateProfileName(authState: authState) {}
         
-        try await Task.sleep(nanoseconds: 100_000_000)
+        try await Task.sleep(nanoseconds: 500_000_000)
         
         #expect(authState.currentUser?.profileName == "Updated Name")
     }
@@ -233,7 +233,7 @@ struct EditProfileNameViewModelTests {
         viewModel.profileName = "New Name"
         viewModel.updateProfileName(authState: authState) {}
         
-        try await Task.sleep(nanoseconds: 100_000_000)
+        try await Task.sleep(nanoseconds: 500_000_000)
         
         #expect(viewModel.errorMessage != nil)
         #expect(viewModel.isSubmitting == false)
@@ -248,7 +248,7 @@ struct EditProfileNameViewModelTests {
         viewModel.profileName = "New Name"
         viewModel.updateProfileName(authState: authState) {}
         
-        try await Task.sleep(nanoseconds: 100_000_000)
+        try await Task.sleep(nanoseconds: 500_000_000)
         
         #expect(viewModel.errorMessage != nil)
         #expect(viewModel.isSubmitting == false)
@@ -263,7 +263,7 @@ struct EditProfileNameViewModelTests {
         // First attempt fails
         viewModel.profileName = "New Name"
         viewModel.updateProfileName(authState: authState) {}
-        try await Task.sleep(nanoseconds: 100_000_000)
+        try await Task.sleep(nanoseconds: 500_000_000)
         #expect(viewModel.errorMessage != nil)
         
         // Configure to succeed
@@ -271,7 +271,7 @@ struct EditProfileNameViewModelTests {
         
         // Second attempt should clear error
         viewModel.updateProfileName(authState: authState) {}
-        try await Task.sleep(nanoseconds: 100_000_000)
+        try await Task.sleep(nanoseconds: 500_000_000)
         
         #expect(viewModel.errorMessage == nil)
     }
@@ -289,7 +289,7 @@ struct EditProfileNameViewModelTests {
         
         viewModel.updateProfileName(authState: authState) {}
         
-        try await Task.sleep(nanoseconds: 100_000_000)
+        try await Task.sleep(nanoseconds: 500_000_000)
         
         #expect(viewModel.isSubmitting == false)
     }

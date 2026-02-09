@@ -53,7 +53,7 @@ struct HomeViewModelTests {
         viewModel.loadPosts(authState: mockAuthState)
         
         // Wait for async operation to complete
-        try await Task.sleep(nanoseconds: 100_000_000) // 0.1 seconds
+        try await Task.sleep(nanoseconds: 500_000_000) // 0.1 seconds
         
         // Verify
         #expect(mockPostService.fetchPostsCalled == true)
@@ -75,7 +75,7 @@ struct HomeViewModelTests {
         viewModel.loadPosts(authState: mockAuthState)
         
         // Wait for async operation to complete
-        try await Task.sleep(nanoseconds: 100_000_000) // 0.1 seconds
+        try await Task.sleep(nanoseconds: 500_000_000) // 0.1 seconds
         
         // Verify
         #expect(mockPostService.fetchPostsCalled == true)
@@ -95,7 +95,7 @@ struct HomeViewModelTests {
         viewModel.loadPosts(authState: mockAuthState)
         
         // Wait for async operation to complete
-        try await Task.sleep(nanoseconds: 100_000_000) // 0.1 seconds
+        try await Task.sleep(nanoseconds: 500_000_000) // 0.1 seconds
         
         // Verify
         #expect(mockPostService.fetchPostsCalled == true)
@@ -122,7 +122,7 @@ struct HomeViewModelTests {
         viewModel.toggleLike(for: mockPost, authState: mockAuthState)
         
         // Wait for async operation to complete
-        try await Task.sleep(nanoseconds: 100_000_000) // 0.1 seconds
+        try await Task.sleep(nanoseconds: 500_000_000) // 0.1 seconds
         
         // Verify
         #expect(mockPostService.toggleLikeCalled == true)

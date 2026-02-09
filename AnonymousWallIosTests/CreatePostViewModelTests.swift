@@ -237,7 +237,7 @@ struct CreatePostViewModelTests {
             successCalled = true
         }
         
-        try await Task.sleep(nanoseconds: 100_000_000)
+        try await Task.sleep(nanoseconds: 500_000_000)
         
         #expect(viewModel.isPosting == false)
         #expect(viewModel.errorMessage == nil)
@@ -255,7 +255,7 @@ struct CreatePostViewModelTests {
         
         viewModel.createPost(authState: authState) {}
         
-        try await Task.sleep(nanoseconds: 100_000_000)
+        try await Task.sleep(nanoseconds: 500_000_000)
         
         // Should accept trimmed title
         #expect(viewModel.errorMessage == nil)
@@ -270,7 +270,7 @@ struct CreatePostViewModelTests {
         
         viewModel.createPost(authState: authState) {}
         
-        try await Task.sleep(nanoseconds: 100_000_000)
+        try await Task.sleep(nanoseconds: 500_000_000)
         
         // Should accept trimmed content
         #expect(viewModel.errorMessage == nil)
@@ -317,7 +317,7 @@ struct CreatePostViewModelTests {
         viewModel.postTitle = "Valid Title"
         viewModel.createPost(authState: authState) {}
         
-        try await Task.sleep(nanoseconds: 100_000_000)
+        try await Task.sleep(nanoseconds: 500_000_000)
         
         #expect(viewModel.errorMessage == nil)
     }

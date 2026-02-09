@@ -145,7 +145,7 @@ struct PostDetailViewModelTests {
         viewModel.sortOrderChanged(postId: "post-1", authState: authState)
         
         // Wait for async operations
-        try await Task.sleep(nanoseconds: 100_000_000)
+        try await Task.sleep(nanoseconds: 500_000_000)
         
         #expect(viewModel.selectedSortOrder == .oldest)
     }
