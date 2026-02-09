@@ -42,9 +42,4 @@ protocol AuthServiceProtocol {
     
     /// Reset password with verification code
     func resetPassword(email: String, code: String, newPassword: String) async throws -> AuthResponse
-    
-    // MARK: - Profile Management
-    
-    /// Update user's profile name
-    func updateProfileName(profileName: String, token: String, userId: String) async throws -> User
 }

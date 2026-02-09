@@ -59,24 +59,4 @@ protocol PostServiceProtocol {
     
     /// Unhide a comment (restore from soft delete)
     func unhideComment(postId: String, commentId: String, token: String, userId: String) async throws -> HidePostResponse
-    
-    // MARK: - User Operations
-    
-    /// Get user's own comments
-    func getUserComments(
-        token: String,
-        userId: String,
-        page: Int,
-        limit: Int,
-        sort: SortOrder
-    ) async throws -> CommentListResponse
-    
-    /// Get user's own posts
-    func getUserPosts(
-        token: String,
-        userId: String,
-        page: Int,
-        limit: Int,
-        sort: SortOrder
-    ) async throws -> PostListResponse
 }

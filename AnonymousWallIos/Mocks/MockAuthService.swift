@@ -54,7 +54,6 @@ class MockAuthService: AuthServiceProtocol {
     var changePasswordCalled = false
     var requestPasswordResetCalled = false
     var resetPasswordCalled = false
-    var updateProfileNameCalled = false
     
     // MARK: - Configurable Behavior
     
@@ -66,7 +65,6 @@ class MockAuthService: AuthServiceProtocol {
     var changePasswordBehavior: MockBehavior = .success
     var requestPasswordResetBehavior: MockBehavior = .success
     var resetPasswordBehavior: MockBehavior = .success
-    var updateProfileNameBehavior: MockBehavior = .success
     
     // MARK: - Configurable Responses
     
@@ -267,33 +265,6 @@ class MockAuthService: AuthServiceProtocol {
         }
     }
     
-    func updateProfileName(profileName: String, token: String, userId: String) async throws -> User {
-        updateProfileNameCalled = true
-        
-        switch updateProfileNameBehavior {
-        case .success:
-            return mockUser ?? User(
-                id: userId,
-                email: "test@example.com",
-                profileName: profileName,
-                isVerified: true,
-                passwordSet: true,
-                createdAt: "2026-01-31T00:00:00Z"
-            )
-        case .failure(let error):
-            throw error
-        case .emptyState:
-            return User(
-                id: "",
-                email: "",
-                profileName: "",
-                isVerified: false,
-                passwordSet: false,
-                createdAt: ""
-            )
-        }
-    }
-    
     // MARK: - Helper Methods
     
     /// Reset all call tracking flags
@@ -306,7 +277,6 @@ class MockAuthService: AuthServiceProtocol {
         changePasswordCalled = false
         requestPasswordResetCalled = false
         resetPasswordCalled = false
-        updateProfileNameCalled = false
     }
     
     /// Reset all behaviors to success
@@ -319,7 +289,6 @@ class MockAuthService: AuthServiceProtocol {
         changePasswordBehavior = .success
         requestPasswordResetBehavior = .success
         resetPasswordBehavior = .success
-        updateProfileNameBehavior = .success
     }
     
     /// Configure all methods to fail with specific error
@@ -332,7 +301,6 @@ class MockAuthService: AuthServiceProtocol {
         changePasswordBehavior = .failure(error)
         requestPasswordResetBehavior = .failure(error)
         resetPasswordBehavior = .failure(error)
-        updateProfileNameBehavior = .failure(error)
     }
     
     /// Configure all methods to return empty state
@@ -345,6 +313,5 @@ class MockAuthService: AuthServiceProtocol {
         changePasswordBehavior = .emptyState
         requestPasswordResetBehavior = .emptyState
         resetPasswordBehavior = .emptyState
-        updateProfileNameBehavior = .emptyState
     }
 }

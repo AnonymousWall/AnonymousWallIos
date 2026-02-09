@@ -374,7 +374,7 @@ struct ProfileView: View {
             ChangePasswordView(authService: AuthService.shared)
         }
         .sheet(isPresented: $showEditProfileName) {
-            EditProfileNameView(authService: AuthService.shared)
+            EditProfileNameView(userService: UserService.shared)
         }
         .onAppear {
             // Show password setup if needed (only once)
@@ -452,7 +452,7 @@ struct ProfileView: View {
         do {
             // Use the new user endpoint to fetch posts with pagination
             // This endpoint returns posts from both campus and national walls
-            let postsResponse = try await PostService.shared.getUserPosts(
+            let postsResponse = try await UserService.shared.getUserPosts(
                 token: token,
                 userId: userId,
                 page: currentPostsPage,
@@ -478,7 +478,7 @@ struct ProfileView: View {
     private func loadMyComments(token: String, userId: String) async {
         do {
             // Use the new user endpoint to fetch comments with pagination
-            let commentResponse = try await PostService.shared.getUserComments(
+            let commentResponse = try await UserService.shared.getUserComments(
                 token: token,
                 userId: userId,
                 page: currentCommentsPage,
@@ -637,7 +637,7 @@ struct ProfileView: View {
         
         do {
             // Use the new user endpoint to fetch next page of posts
-            let postsResponse = try await PostService.shared.getUserPosts(
+            let postsResponse = try await UserService.shared.getUserPosts(
                 token: token,
                 userId: userId,
                 page: nextPage,
@@ -692,7 +692,7 @@ struct ProfileView: View {
         
         do {
             // Use the new user endpoint to fetch more comments
-            let commentResponse = try await PostService.shared.getUserComments(
+            let commentResponse = try await UserService.shared.getUserComments(
                 token: token,
                 userId: userId,
                 page: nextPage,

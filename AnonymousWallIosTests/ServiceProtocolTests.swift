@@ -311,4 +311,186 @@ struct ServiceProtocolTests {
         let commentResponse = try await mockPostService.getComments(postId: "post-1", token: "token", userId: "user", page: 1, limit: 20, sort: .newest)
         #expect(commentResponse.data.isEmpty)
     }
+    
+    // MARK: - UserServiceProtocol Tests
+    
+    @Test func testMockUserServiceCanBeUsedInsteadOfRealService() async throws {
+        // Demonstrate that mock can replace real service due to protocol conformance
+        let mockUserService: UserServiceProtocol = MockUserService()
+        
+        // Test updating profile name
+        let updatedUser = try await mockUserService.updateProfileName(
+            profileName: "John Doe",
+            token: "mock-token",
+            userId: "mock-user-id"
+        )
+        #expect(updatedUser.profileName == "John Doe")
+        
+        // Verify mock was called
+        if let mock = mockUserService as? MockUserService {
+            #expect(mock.updateProfileNameCalled == true)
+        }
+    }
+    
+    @Test func testMockUserServiceCanSimulateUserOperations() async throws {
+        let mockUserService = MockUserService()
+        
+        // Add some mock data
+        mockUserService.mockPosts = [
+            Post(id: "1", title: "Post 1", content: "Content 1", wall: "CAMPUS", likes: 5, comments: 2, liked: false,
+                 author: Post.Author(id: "user1", profileName: "User 1", isAnonymous: true),
+                 createdAt: "2026-02-09T00:00:00Z", updatedAt: "2026-02-09T00:00:00Z")
+        ]
+        mockUserService.mockComments = [
+            Comment(id: "1", postId: "post1", text: "Comment 1",
+                    author: Comment.Author(id: "user1", profileName: "User 1", isAnonymous: true),
+                    createdAt: "2026-02-09T00:00:00Z")
+        ]
+        
+        // Test getting user posts
+        let postsResponse = try await mockUserService.getUserPosts(
+            token: "token",
+            userId: "user",
+            page: 1,
+            limit: 20,
+            sort: .newest
+        )
+        #expect(postsResponse.data.count == 1)
+        #expect(postsResponse.data[0].title == "Post 1")
+        #expect(mockUserService.getUserPostsCalled == true)
+        
+        // Test getting user comments
+        let commentsResponse = try await mockUserService.getUserComments(
+            token: "token",
+            userId: "user",
+            page: 1,
+            limit: 20,
+            sort: .newest
+        )
+        #expect(commentsResponse.data.count == 1)
+        #expect(commentsResponse.data[0].text == "Comment 1")
+        #expect(mockUserService.getUserCommentsCalled == true)
+    }
+    
+    @Test func testMockUserServiceSuccessScenario() async throws {
+        let mockUserService = MockUserService()
+        
+        // Default behavior is success
+        let user = try await mockUserService.updateProfileName(
+            profileName: "Test User",
+            token: "token",
+            userId: "user-id"
+        )
+        #expect(user.profileName == "Test User")
+        #expect(mockUserService.updateProfileNameCalled == true)
+    }
+    
+    @Test func testMockUserServiceFailureScenario() async throws {
+        let mockUserService = MockUserService()
+        
+        // Configure to fail
+        mockUserService.updateProfileNameBehavior = .failure(MockUserService.MockError.unauthorized)
+        
+        do {
+            _ = try await mockUserService.updateProfileName(profileName: "Test", token: "token", userId: "user")
+            Issue.record("Expected error to be thrown")
+        } catch let error as MockUserService.MockError {
+            #expect(error == .unauthorized)
+        }
+        
+        #expect(mockUserService.updateProfileNameCalled == true)
+    }
+    
+    @Test func testMockUserServiceEmptyStateScenario() async throws {
+        let mockUserService = MockUserService()
+        
+        // Configure to return empty state
+        mockUserService.getUserPostsBehavior = .emptyState
+        
+        let response = try await mockUserService.getUserPosts(
+            token: "token",
+            userId: "user",
+            page: 1,
+            limit: 20,
+            sort: .newest
+        )
+        #expect(response.data.isEmpty)
+        #expect(response.pagination.total == 0)
+        #expect(mockUserService.getUserPostsCalled == true)
+    }
+    
+    @Test func testMockUserServiceCustomResponse() async throws {
+        let mockUserService = MockUserService()
+        
+        // Configure custom user
+        let customUser = User(
+            id: "custom-id",
+            email: "custom@example.com",
+            profileName: "Custom User",
+            isVerified: true,
+            passwordSet: true,
+            createdAt: "2026-02-09T00:00:00Z"
+        )
+        mockUserService.mockUser = customUser
+        
+        let response = try await mockUserService.updateProfileName(
+            profileName: "Any Name",
+            token: "any",
+            userId: "any"
+        )
+        #expect(response.id == "custom-id")
+        #expect(response.email == "custom@example.com")
+    }
+    
+    @Test func testMockUserServiceResetHelpers() async throws {
+        let mockUserService = MockUserService()
+        
+        // Call some methods
+        _ = try await mockUserService.updateProfileName(profileName: "Test", token: "token", userId: "user")
+        _ = try await mockUserService.getUserPosts(token: "token", userId: "user", page: 1, limit: 20, sort: .newest)
+        #expect(mockUserService.updateProfileNameCalled == true)
+        #expect(mockUserService.getUserPostsCalled == true)
+        
+        // Reset call tracking
+        mockUserService.resetCallTracking()
+        #expect(mockUserService.updateProfileNameCalled == false)
+        #expect(mockUserService.getUserPostsCalled == false)
+    }
+    
+    @Test func testMockUserServiceConfigureAllToFail() async throws {
+        let mockUserService = MockUserService()
+        
+        // Configure all methods to fail
+        mockUserService.configureAllToFail(with: MockUserService.MockError.networkError)
+        
+        do {
+            _ = try await mockUserService.updateProfileName(profileName: "Test", token: "token", userId: "user")
+            Issue.record("Expected error to be thrown")
+        } catch let error as MockUserService.MockError {
+            #expect(error == .networkError)
+        }
+        
+        do {
+            _ = try await mockUserService.getUserPosts(token: "token", userId: "user", page: 1, limit: 20, sort: .newest)
+            Issue.record("Expected error to be thrown")
+        } catch let error as MockUserService.MockError {
+            #expect(error == .networkError)
+        }
+    }
+    
+    @Test func testMockUserServiceConfigureAllToEmptyState() async throws {
+        let mockUserService = MockUserService()
+        
+        // Configure all methods to return empty state
+        mockUserService.configureAllToEmptyState()
+        
+        let postsResponse = try await mockUserService.getUserPosts(token: "token", userId: "user", page: 1, limit: 20, sort: .newest)
+        #expect(postsResponse.data.isEmpty)
+        
+        let commentsResponse = try await mockUserService.getUserComments(token: "token", userId: "user", page: 1, limit: 20, sort: .newest)
+        #expect(commentsResponse.data.isEmpty)
+        
+        let user = try await mockUserService.updateProfileName(profileName: "Test", token: "token", userId: "user")
+        #expect(user.profileName == "")
+    }
 }

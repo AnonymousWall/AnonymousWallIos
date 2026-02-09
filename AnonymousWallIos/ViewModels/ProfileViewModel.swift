@@ -31,6 +31,16 @@ class ProfileViewModel: ObservableObject {
     // MARK: - Private Properties
     private var loadTask: Task<Void, Never>?
     
+    // MARK: - Dependencies
+    private let userService: UserServiceProtocol
+    private let postService: PostServiceProtocol
+    
+    // MARK: - Initialization
+    init(userService: UserServiceProtocol = UserService.shared, postService: PostServiceProtocol = PostService.shared) {
+        self.userService = userService
+        self.postService = postService
+    }
+    
     // MARK: - Public Methods
     func loadContent(authState: AuthState) {
         loadTask?.cancel()
@@ -122,7 +132,7 @@ class ProfileViewModel: ObservableObject {
         
         Task {
             do {
-                let response = try await PostService.shared.toggleLike(postId: post.id, token: token, userId: userId)
+                let response = try await postService.toggleLike(postId: post.id, token: token, userId: userId)
                 
                 if let index = myPosts.firstIndex(where: { $0.id == post.id }) {
                     myPosts[index] = myPosts[index].withUpdatedLike(liked: response.liked, likes: response.likeCount)
@@ -141,7 +151,7 @@ class ProfileViewModel: ObservableObject {
         
         Task {
             do {
-                _ = try await PostService.shared.hidePost(postId: post.id, token: token, userId: userId)
+                _ = try await postService.hidePost(postId: post.id, token: token, userId: userId)
                 resetPostsPagination()
                 await loadPosts(authState: authState)
             } catch {
@@ -159,7 +169,7 @@ class ProfileViewModel: ObservableObject {
         
         Task {
             do {
-                _ = try await PostService.shared.hideComment(postId: post.id, commentId: comment.id, token: token, userId: userId)
+                _ = try await postService.hideComment(postId: post.id, commentId: comment.id, token: token, userId: userId)
                 resetCommentsPagination()
                 await loadComments(authState: authState)
             } catch {
@@ -197,7 +207,7 @@ class ProfileViewModel: ObservableObject {
         }
         
         do {
-            let response = try await PostService.shared.getUserPosts(
+            let response = try await userService.getUserPosts(
                 token: token,
                 userId: userId,
                 page: currentPostsPage,
@@ -229,7 +239,7 @@ class ProfileViewModel: ObservableObject {
         let nextPage = currentPostsPage + 1
         
         do {
-            let response = try await PostService.shared.getUserPosts(
+            let response = try await userService.getUserPosts(
                 token: token,
                 userId: userId,
                 page: nextPage,
@@ -263,7 +273,7 @@ class ProfileViewModel: ObservableObject {
         }
         
         do {
-            let response = try await PostService.shared.getUserComments(
+            let response = try await userService.getUserComments(
                 token: token,
                 userId: userId,
                 page: currentCommentsPage,
@@ -298,7 +308,7 @@ class ProfileViewModel: ObservableObject {
         let nextPage = currentCommentsPage + 1
         
         do {
-            let response = try await PostService.shared.getUserComments(
+            let response = try await userService.getUserComments(
                 token: token,
                 userId: userId,
                 page: nextPage,
@@ -334,7 +344,7 @@ class ProfileViewModel: ObservableObject {
         // Fetch missing posts
         for postId in missingPostIds {
             do {
-                let post = try await PostService.shared.getPost(postId: postId, token: token, userId: userId)
+                let post = try await postService.getPost(postId: postId, token: token, userId: userId)
                 commentPostMap[postId] = post
             } catch {
                 // Silently fail for individual post fetches
