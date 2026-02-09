@@ -53,6 +53,10 @@
 		4E8A761255D74ECF80639568 /* CreatePostTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreatePostTabView.swift; sourceTree = "<group>"; };
 		5CA4C2AA1C0C409E973B45FD /* ProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileView.swift; sourceTree = "<group>"; };
 		ECE140B1CD5849C4991B2C15 /* PostEnums.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PostEnums.swift; sourceTree = "<group>"; };
+		A7330F54BC6A4717B2F7BF5F /* UserServiceProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserServiceProtocol.swift; sourceTree = "<group>"; };
+		0356EC3A0E454FCCAEED4B15 /* UserService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserService.swift; sourceTree = "<group>"; };
+		936FBA85EFB7463A96960DD8 /* MockUserService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockUserService.swift; sourceTree = "<group>"; };
+
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -343,7 +347,9 @@
 				757F41CD2F734F0199914235 /* MarketView.swift in Sources */,
 				CAD4DEB24D214B44B6C141D5 /* CreatePostTabView.swift in Sources */,
 				E1811D2EE3D042ACB8611BD7 /* ProfileView.swift in Sources */,
-			
+				04A58DE2AC644241BACD93E1 /* UserServiceProtocol.swift in Sources */,
+				DCB84C2290074EEDB8164997 /* UserService.swift in Sources */,
+				BE4F4D7E19C643B1A1FB0605 /* MockUserService.swift in Sources */,
 				CF9021BEF0674235BBA9D292 /* EditProfileNameView.swift in Sources */,);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
