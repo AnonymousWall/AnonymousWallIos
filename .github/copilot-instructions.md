@@ -461,6 +461,50 @@ Response: 200 OK
 **Notes:**
 - Only the comment author can unhide their own comment
 
+#### 11. Report Post
+```http
+POST /api/v1/posts/{postId}/reports
+Authorization: Bearer {jwt-token}
+Content-Type: application/json
+
+{
+    "reason": "This post contains inappropriate content"
+}
+
+Response: 201 Created
+{
+    "message": "Post reported successfully"
+}
+```
+
+**Notes:**
+- A user can only report the same post once
+- `reason` is optional (max length: 500 characters)
+- Reporting a post increments the report count for the post author
+- Duplicate reports by the same user will return: `400 Bad Request`
+
+#### 12. Report Comment
+```http
+POST /api/v1/posts/{postId}/comments/{commentId}/reports
+Authorization: Bearer {jwt-token}
+Content-Type: application/json
+
+{
+    "reason": "This comment violates community guidelines"
+}
+
+Response: 201 Created
+{
+    "message": "Comment reported successfully"
+}
+```
+
+**Notes:**
+- A user can only report the same comment once
+- `reason` is optional (max length: 500 characters)
+- Reporting a comment increments the report count for the comment author
+- Duplicate reports by the same user will return: `400 Bad Request`
+
 ### User Endpoints
 
 #### 1. Get User's Own Comments
