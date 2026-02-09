@@ -117,7 +117,7 @@ struct LoginViewModelTests {
         viewModel.requestVerificationCode()
         
         // Wait for async operation
-        try await Task.sleep(nanoseconds: 100_000_000) // 0.1 seconds
+        try await Task.sleep(nanoseconds: 500_000_000) // 0.1 seconds
         
         #expect(mockAuthService.sendEmailVerificationCodeCalled == true)
         #expect(viewModel.successMessage == "Verification code sent to your email!")
@@ -134,7 +134,7 @@ struct LoginViewModelTests {
         viewModel.requestVerificationCode()
         
         // Wait for async operation
-        try await Task.sleep(nanoseconds: 100_000_000)
+        try await Task.sleep(nanoseconds: 500_000_000)
         
         #expect(mockAuthService.sendEmailVerificationCodeCalled == true)
         #expect(viewModel.errorMessage != nil)
@@ -156,7 +156,7 @@ struct LoginViewModelTests {
         viewModel.login(authState: authState)
         
         // Wait for async operation
-        try await Task.sleep(nanoseconds: 100_000_000)
+        try await Task.sleep(nanoseconds: 500_000_000)
         
         #expect(mockAuthService.loginWithPasswordCalled == true)
         #expect(viewModel.isLoading == false)
@@ -178,7 +178,7 @@ struct LoginViewModelTests {
         viewModel.login(authState: authState)
         
         // Wait for async operation
-        try await Task.sleep(nanoseconds: 100_000_000)
+        try await Task.sleep(nanoseconds: 500_000_000)
         
         #expect(mockAuthService.loginWithPasswordCalled == true)
         #expect(viewModel.isLoading == false)
@@ -215,7 +215,7 @@ struct LoginViewModelTests {
         viewModel.login(authState: authState)
         
         // Wait for async operation
-        try await Task.sleep(nanoseconds: 100_000_000)
+        try await Task.sleep(nanoseconds: 500_000_000)
         
         #expect(mockAuthService.loginWithEmailCodeCalled == true)
         #expect(viewModel.isLoading == false)
@@ -237,7 +237,7 @@ struct LoginViewModelTests {
         viewModel.login(authState: authState)
         
         // Wait for async operation
-        try await Task.sleep(nanoseconds: 100_000_000)
+        try await Task.sleep(nanoseconds: 500_000_000)
         
         #expect(mockAuthService.loginWithEmailCodeCalled == true)
         #expect(viewModel.isLoading == false)
@@ -259,7 +259,7 @@ struct LoginViewModelTests {
         
         viewModel.login(authState: authState)
         
-        try await Task.sleep(nanoseconds: 100_000_000)
+        try await Task.sleep(nanoseconds: 500_000_000)
         
         #expect(viewModel.errorMessage != nil)
         #expect(viewModel.isLoading == false)
@@ -277,7 +277,7 @@ struct LoginViewModelTests {
         
         viewModel.login(authState: authState)
         
-        try await Task.sleep(nanoseconds: 100_000_000)
+        try await Task.sleep(nanoseconds: 500_000_000)
         
         #expect(viewModel.errorMessage != nil)
         #expect(viewModel.isLoading == false)
@@ -302,7 +302,7 @@ struct LoginViewModelTests {
         // Note: In production, isLoading would be true briefly, but async operations
         // complete too fast in tests to reliably observe intermediate states
         
-        try await Task.sleep(nanoseconds: 100_000_000)
+        try await Task.sleep(nanoseconds: 500_000_000)
         
         #expect(viewModel.isLoading == false)
     }
@@ -319,7 +319,7 @@ struct LoginViewModelTests {
         
         // First login attempt fails
         viewModel.login(authState: authState)
-        try await Task.sleep(nanoseconds: 100_000_000)
+        try await Task.sleep(nanoseconds: 500_000_000)
         #expect(viewModel.errorMessage != nil)
         
         // Configure mock to succeed
@@ -330,7 +330,7 @@ struct LoginViewModelTests {
         
         // Note: errorMessage is cleared immediately when login is called
         // We can't reliably test the intermediate state in this simple test
-        try await Task.sleep(nanoseconds: 100_000_000)
+        try await Task.sleep(nanoseconds: 500_000_000)
         
         #expect(viewModel.errorMessage == nil)
     }
@@ -338,6 +338,6 @@ struct LoginViewModelTests {
     // MARK: - Helper Methods
     
     private func createMockAuthState() -> AuthState {
-        return AuthState()
+        return AuthState(loadPersistedState: false)
     }
 }

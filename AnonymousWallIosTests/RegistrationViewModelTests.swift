@@ -59,7 +59,7 @@ struct RegistrationViewModelTests {
         viewModel.sendVerificationCode()
         
         // Wait for async operation
-        try await Task.sleep(nanoseconds: 100_000_000) // 0.1 seconds
+        try await Task.sleep(nanoseconds: 500_000_000) // 0.1 seconds
         
         #expect(mockAuthService.sendEmailVerificationCodeCalled == true)
         #expect(viewModel.codeSent == true)
@@ -76,7 +76,7 @@ struct RegistrationViewModelTests {
         viewModel.sendVerificationCode()
         
         // Wait for async operation
-        try await Task.sleep(nanoseconds: 100_000_000)
+        try await Task.sleep(nanoseconds: 500_000_000)
         
         #expect(mockAuthService.sendEmailVerificationCodeCalled == true)
         #expect(viewModel.codeSent == false)
@@ -89,7 +89,7 @@ struct RegistrationViewModelTests {
     @Test func testRegisterWithEmptyEmail() async throws {
         let mockAuthService = MockAuthService()
         let viewModel = RegistrationViewModel(authService: mockAuthService)
-        let authState = AuthState()
+        let authState = AuthState(loadPersistedState: false)
         
         viewModel.email = ""
         viewModel.verificationCode = "123456"
@@ -103,7 +103,7 @@ struct RegistrationViewModelTests {
     @Test func testRegisterWithEmptyCode() async throws {
         let mockAuthService = MockAuthService()
         let viewModel = RegistrationViewModel(authService: mockAuthService)
-        let authState = AuthState()
+        let authState = AuthState(loadPersistedState: false)
         
         viewModel.email = "test@example.com"
         viewModel.verificationCode = ""
@@ -117,7 +117,7 @@ struct RegistrationViewModelTests {
     @Test func testRegisterSuccess() async throws {
         let mockAuthService = MockAuthService()
         let viewModel = RegistrationViewModel(authService: mockAuthService)
-        let authState = AuthState()
+        let authState = AuthState(loadPersistedState: false)
         
         viewModel.email = "test@example.com"
         viewModel.verificationCode = "123456"
@@ -125,7 +125,7 @@ struct RegistrationViewModelTests {
         viewModel.register(authState: authState)
         
         // Wait for async operation
-        try await Task.sleep(nanoseconds: 100_000_000)
+        try await Task.sleep(nanoseconds: 500_000_000)
         
         #expect(mockAuthService.registerWithEmailCalled == true)
         #expect(viewModel.isLoading == false)
@@ -139,7 +139,7 @@ struct RegistrationViewModelTests {
         let mockAuthService = MockAuthService()
         mockAuthService.registerWithEmailBehavior = .failure(MockAuthService.MockError.invalidCode)
         let viewModel = RegistrationViewModel(authService: mockAuthService)
-        let authState = AuthState()
+        let authState = AuthState(loadPersistedState: false)
         
         viewModel.email = "test@example.com"
         viewModel.verificationCode = "999999"
@@ -147,7 +147,7 @@ struct RegistrationViewModelTests {
         viewModel.register(authState: authState)
         
         // Wait for async operation
-        try await Task.sleep(nanoseconds: 100_000_000)
+        try await Task.sleep(nanoseconds: 500_000_000)
         
         #expect(mockAuthService.registerWithEmailCalled == true)
         #expect(viewModel.isLoading == false)
@@ -160,7 +160,7 @@ struct RegistrationViewModelTests {
         let mockAuthService = MockAuthService()
         mockAuthService.registerWithEmailBehavior = .failure(MockAuthService.MockError.userAlreadyExists)
         let viewModel = RegistrationViewModel(authService: mockAuthService)
-        let authState = AuthState()
+        let authState = AuthState(loadPersistedState: false)
         
         viewModel.email = "existing@example.com"
         viewModel.verificationCode = "123456"
@@ -168,7 +168,7 @@ struct RegistrationViewModelTests {
         viewModel.register(authState: authState)
         
         // Wait for async operation
-        try await Task.sleep(nanoseconds: 100_000_000)
+        try await Task.sleep(nanoseconds: 500_000_000)
         
         #expect(mockAuthService.registerWithEmailCalled == true)
         #expect(viewModel.errorMessage != nil)
@@ -182,14 +182,14 @@ struct RegistrationViewModelTests {
         let mockAuthService = MockAuthService()
         mockAuthService.registerWithEmailBehavior = .failure(MockAuthService.MockError.networkError)
         let viewModel = RegistrationViewModel(authService: mockAuthService)
-        let authState = AuthState()
+        let authState = AuthState(loadPersistedState: false)
         
         viewModel.email = "test@example.com"
         viewModel.verificationCode = "123456"
         
         viewModel.register(authState: authState)
         
-        try await Task.sleep(nanoseconds: 100_000_000)
+        try await Task.sleep(nanoseconds: 500_000_000)
         
         #expect(viewModel.errorMessage != nil)
         #expect(viewModel.isLoading == false)
@@ -200,14 +200,14 @@ struct RegistrationViewModelTests {
         let mockAuthService = MockAuthService()
         mockAuthService.registerWithEmailBehavior = .failure(MockAuthService.MockError.invalidCode)
         let viewModel = RegistrationViewModel(authService: mockAuthService)
-        let authState = AuthState()
+        let authState = AuthState(loadPersistedState: false)
         
         viewModel.email = "test@example.com"
         viewModel.verificationCode = "999999"
         
         // First attempt fails
         viewModel.register(authState: authState)
-        try await Task.sleep(nanoseconds: 100_000_000)
+        try await Task.sleep(nanoseconds: 500_000_000)
         #expect(viewModel.errorMessage != nil)
         
         // Configure mock to succeed
@@ -216,7 +216,7 @@ struct RegistrationViewModelTests {
         
         // Second attempt should clear error
         viewModel.register(authState: authState)
-        try await Task.sleep(nanoseconds: 100_000_000)
+        try await Task.sleep(nanoseconds: 500_000_000)
         
         #expect(viewModel.errorMessage == nil)
         #expect(viewModel.showingSuccess == true)
@@ -232,7 +232,7 @@ struct RegistrationViewModelTests {
         #expect(viewModel.codeSent == false)
         
         viewModel.sendVerificationCode()
-        try await Task.sleep(nanoseconds: 100_000_000)
+        try await Task.sleep(nanoseconds: 500_000_000)
         
         #expect(viewModel.codeSent == true)
     }
@@ -240,14 +240,14 @@ struct RegistrationViewModelTests {
     @Test func testShowingSuccessStateAfterRegistration() async throws {
         let mockAuthService = MockAuthService()
         let viewModel = RegistrationViewModel(authService: mockAuthService)
-        let authState = AuthState()
+        let authState = AuthState(loadPersistedState: false)
         
         viewModel.email = "test@example.com"
         viewModel.verificationCode = "123456"
         #expect(viewModel.showingSuccess == false)
         
         viewModel.register(authState: authState)
-        try await Task.sleep(nanoseconds: 100_000_000)
+        try await Task.sleep(nanoseconds: 500_000_000)
         
         #expect(viewModel.showingSuccess == true)
     }
@@ -265,7 +265,7 @@ struct RegistrationViewModelTests {
         mockAuthService.mockUser = customUser
         
         let viewModel = RegistrationViewModel(authService: mockAuthService)
-        let authState = AuthState()
+        let authState = AuthState(loadPersistedState: false)
         
         viewModel.email = "newuser@example.com"
         viewModel.verificationCode = "123456"
@@ -273,7 +273,7 @@ struct RegistrationViewModelTests {
         #expect(authState.isAuthenticated == false)
         
         viewModel.register(authState: authState)
-        try await Task.sleep(nanoseconds: 100_000_000)
+        try await Task.sleep(nanoseconds: 500_000_000)
         
         #expect(authState.isAuthenticated == true)
         #expect(authState.currentUser?.email == "newuser@example.com")

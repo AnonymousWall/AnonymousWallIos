@@ -84,7 +84,7 @@ struct EditProfileNameViewModelTests {
     @Test func testUpdateProfileNameWithoutAuthentication() async throws {
         let mockUserService = MockUserService()
         let viewModel = EditProfileNameViewModel(userService: mockUserService)
-        let authState = AuthState() // Not authenticated
+        let authState = AuthState(loadPersistedState: false) // Not authenticated
         
         viewModel.profileName = "New Name"
         
@@ -297,7 +297,7 @@ struct EditProfileNameViewModelTests {
     // MARK: - Helper Methods
     
     private func createMockAuthState() -> AuthState {
-        let authState = AuthState()
+        let authState = AuthState(loadPersistedState: false)
         let mockUser = User(
             id: "test-user-id",
             email: "test@example.com",

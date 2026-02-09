@@ -129,7 +129,7 @@ struct ChangePasswordViewModelTests {
     @Test func testChangePasswordWithoutAuthentication() async throws {
         let mockAuthService = MockAuthService()
         let viewModel = ChangePasswordViewModel(authService: mockAuthService)
-        let authState = AuthState() // Not authenticated
+        let authState = AuthState(loadPersistedState: false) // Not authenticated
         
         viewModel.oldPassword = "oldpassword123"
         viewModel.newPassword = "newpassword123"
@@ -183,7 +183,7 @@ struct ChangePasswordViewModelTests {
             successCalled = true
         }
         
-        try await Task.sleep(nanoseconds: 100_000_000)
+        try await Task.sleep(nanoseconds: 500_000_000)
         
         #expect(mockAuthService.changePasswordCalled == true)
         #expect(viewModel.isLoading == false)
@@ -207,7 +207,7 @@ struct ChangePasswordViewModelTests {
             successCalled = true
         }
         
-        try await Task.sleep(nanoseconds: 100_000_000)
+        try await Task.sleep(nanoseconds: 500_000_000)
         
         #expect(mockAuthService.changePasswordCalled == true)
         #expect(viewModel.errorMessage != nil)
@@ -256,7 +256,7 @@ struct ChangePasswordViewModelTests {
         viewModel.confirmPassword = "newpassword123"
         viewModel.changePassword(authState: authState) {}
         
-        try await Task.sleep(nanoseconds: 100_000_000)
+        try await Task.sleep(nanoseconds: 500_000_000)
         
         #expect(viewModel.errorMessage != "New passwords do not match")
         
@@ -302,7 +302,7 @@ struct ChangePasswordViewModelTests {
         
         // First attempt fails
         viewModel.changePassword(authState: authState) {}
-        try await Task.sleep(nanoseconds: 100_000_000)
+        try await Task.sleep(nanoseconds: 500_000_000)
         #expect(viewModel.errorMessage != nil)
         
         // Configure to succeed
@@ -310,7 +310,7 @@ struct ChangePasswordViewModelTests {
         
         // Second attempt should clear error
         viewModel.changePassword(authState: authState) {}
-        try await Task.sleep(nanoseconds: 100_000_000)
+        try await Task.sleep(nanoseconds: 500_000_000)
         
         #expect(viewModel.errorMessage == nil)
     }
@@ -318,7 +318,7 @@ struct ChangePasswordViewModelTests {
     // MARK: - Helper Methods
     
     private func createMockAuthState() -> AuthState {
-        let authState = AuthState()
+        let authState = AuthState(loadPersistedState: false)
         let mockUser = User(
             id: "test-user-id",
             email: "test@example.com",

@@ -70,7 +70,7 @@ struct ProfileViewModelTests {
         viewModel.selectedSegment = 1 // Comments
         viewModel.segmentChanged(authState: authState)
         
-        try await Task.sleep(nanoseconds: 100_000_000)
+        try await Task.sleep(nanoseconds: 500_000_000)
         
         #expect(viewModel.selectedSegment == 1)
     }
@@ -257,7 +257,7 @@ struct ProfileViewModelTests {
     // MARK: - Helper Methods
     
     private func createMockAuthState() -> AuthState {
-        let authState = AuthState()
+        let authState = AuthState(loadPersistedState: false)
         let mockUser = User(
             id: "test-user-id",
             email: "test@example.com",

@@ -210,7 +210,7 @@ struct CreatePostViewModelTests {
     
     @Test func testCreatePostWithoutAuthentication() async throws {
         let viewModel = CreatePostViewModel()
-        let authState = AuthState() // Not authenticated
+        let authState = AuthState(loadPersistedState: false) // Not authenticated
         
         viewModel.postTitle = "Title"
         viewModel.postContent = "Content"
@@ -325,7 +325,7 @@ struct CreatePostViewModelTests {
     // MARK: - Helper Methods
     
     private func createMockAuthState() -> AuthState {
-        let authState = AuthState()
+        let authState = AuthState(loadPersistedState: false)
         let mockUser = User(
             id: "test-user-id",
             email: "test@example.com",

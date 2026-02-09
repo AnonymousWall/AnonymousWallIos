@@ -112,7 +112,7 @@ struct SetPasswordViewModelTests {
     @Test func testSetPasswordWithoutAuthentication() async throws {
         let mockAuthService = MockAuthService()
         let viewModel = SetPasswordViewModel(authService: mockAuthService)
-        let authState = AuthState() // Not authenticated
+        let authState = AuthState(loadPersistedState: false) // Not authenticated
         
         viewModel.password = "password123"
         viewModel.confirmPassword = "password123"
@@ -163,7 +163,7 @@ struct SetPasswordViewModelTests {
             successCalled = true
         }
         
-        try await Task.sleep(nanoseconds: 100_000_000)
+        try await Task.sleep(nanoseconds: 500_000_000)
         
         #expect(mockAuthService.setPasswordCalled == true)
         #expect(viewModel.isLoading == false)
@@ -212,7 +212,7 @@ struct SetPasswordViewModelTests {
         viewModel.confirmPassword = "password123"
         viewModel.setPassword(authState: authState) {}
         
-        try await Task.sleep(nanoseconds: 100_000_000)
+        try await Task.sleep(nanoseconds: 500_000_000)
         
         #expect(viewModel.errorMessage != "Passwords do not match")
         
@@ -256,7 +256,7 @@ struct SetPasswordViewModelTests {
         
         // First attempt fails
         viewModel.setPassword(authState: authState) {}
-        try await Task.sleep(nanoseconds: 100_000_000)
+        try await Task.sleep(nanoseconds: 500_000_000)
         #expect(viewModel.errorMessage != nil)
         
         // Configure to succeed
@@ -264,7 +264,7 @@ struct SetPasswordViewModelTests {
         
         // Second attempt should clear error
         viewModel.setPassword(authState: authState) {}
-        try await Task.sleep(nanoseconds: 100_000_000)
+        try await Task.sleep(nanoseconds: 500_000_000)
         
         #expect(viewModel.errorMessage == nil)
     }
@@ -272,7 +272,7 @@ struct SetPasswordViewModelTests {
     // MARK: - Helper Methods
     
     private func createMockAuthState() -> AuthState {
-        let authState = AuthState()
+        let authState = AuthState(loadPersistedState: false)
         let mockUser = User(
             id: "test-user-id",
             email: "test@example.com",

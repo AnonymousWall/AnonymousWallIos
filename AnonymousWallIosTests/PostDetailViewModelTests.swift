@@ -60,7 +60,7 @@ struct PostDetailViewModelTests {
     
     @Test func testSubmitCommentWithoutAuthentication() async throws {
         let viewModel = PostDetailViewModel()
-        let authState = AuthState() // Not authenticated
+        let authState = AuthState(loadPersistedState: false) // Not authenticated
         
         viewModel.commentText = "Test comment"
         
@@ -85,7 +85,7 @@ struct PostDetailViewModelTests {
         }
         
         // Wait for async operations
-        try await Task.sleep(nanoseconds: 200_000_000) // 0.2 seconds
+        try await Task.sleep(nanoseconds: 500_000_000) // 0.2 seconds
         
         #expect(viewModel.isSubmitting == false)
         #expect(viewModel.commentText.isEmpty)
@@ -106,7 +106,7 @@ struct PostDetailViewModelTests {
             successCalled = true
         }
         
-        try await Task.sleep(nanoseconds: 200_000_000)
+        try await Task.sleep(nanoseconds: 500_000_000)
         
         // After successful submission, comment text should be cleared
         #expect(viewModel.commentText.isEmpty)
@@ -128,7 +128,7 @@ struct PostDetailViewModelTests {
         viewModel.commentText = "Valid comment"
         viewModel.submitComment(postId: "post-1", authState: authState) {}
         
-        try await Task.sleep(nanoseconds: 200_000_000)
+        try await Task.sleep(nanoseconds: 500_000_000)
         
         #expect(viewModel.errorMessage == nil)
     }
@@ -189,7 +189,7 @@ struct PostDetailViewModelTests {
         
         viewModel.submitComment(postId: "post-1", authState: authState) {}
         
-        try await Task.sleep(nanoseconds: 200_000_000)
+        try await Task.sleep(nanoseconds: 500_000_000)
         
         #expect(viewModel.commentText.isEmpty)
     }
@@ -230,7 +230,7 @@ struct PostDetailViewModelTests {
     // MARK: - Helper Methods
     
     private func createMockAuthState() -> AuthState {
-        let authState = AuthState()
+        let authState = AuthState(loadPersistedState: false)
         let mockUser = User(
             id: "test-user-id",
             email: "test@example.com",

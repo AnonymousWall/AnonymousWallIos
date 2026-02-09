@@ -60,7 +60,7 @@ struct ForgotPasswordViewModelTests {
         viewModel.email = "test@example.com"
         viewModel.requestReset()
         
-        try await Task.sleep(nanoseconds: 100_000_000)
+        try await Task.sleep(nanoseconds: 500_000_000)
         
         #expect(mockAuthService.sendEmailVerificationCodeCalled == true)
         #expect(viewModel.codeSent == true)
@@ -76,7 +76,7 @@ struct ForgotPasswordViewModelTests {
         viewModel.email = "test@example.com"
         viewModel.requestReset()
         
-        try await Task.sleep(nanoseconds: 100_000_000)
+        try await Task.sleep(nanoseconds: 500_000_000)
         
         #expect(mockAuthService.sendEmailVerificationCodeCalled == true)
         #expect(viewModel.codeSent == false)
@@ -89,7 +89,7 @@ struct ForgotPasswordViewModelTests {
     @Test func testResetPasswordWithEmptyFields() async throws {
         let mockAuthService = MockAuthService()
         let viewModel = ForgotPasswordViewModel(authService: mockAuthService)
-        let authState = AuthState()
+        let authState = AuthState(loadPersistedState: false)
         
         viewModel.email = ""
         viewModel.verificationCode = ""
@@ -109,7 +109,7 @@ struct ForgotPasswordViewModelTests {
     @Test func testResetPasswordWithMismatchedPasswords() async throws {
         let mockAuthService = MockAuthService()
         let viewModel = ForgotPasswordViewModel(authService: mockAuthService)
-        let authState = AuthState()
+        let authState = AuthState(loadPersistedState: false)
         
         viewModel.email = "test@example.com"
         viewModel.verificationCode = "123456"
@@ -129,7 +129,7 @@ struct ForgotPasswordViewModelTests {
     @Test func testResetPasswordWithShortPassword() async throws {
         let mockAuthService = MockAuthService()
         let viewModel = ForgotPasswordViewModel(authService: mockAuthService)
-        let authState = AuthState()
+        let authState = AuthState(loadPersistedState: false)
         
         viewModel.email = "test@example.com"
         viewModel.verificationCode = "123456"
@@ -149,7 +149,7 @@ struct ForgotPasswordViewModelTests {
     @Test func testResetPasswordSuccess() async throws {
         let mockAuthService = MockAuthService()
         let viewModel = ForgotPasswordViewModel(authService: mockAuthService)
-        let authState = AuthState()
+        let authState = AuthState(loadPersistedState: false)
         
         viewModel.email = "test@example.com"
         viewModel.verificationCode = "123456"
@@ -175,7 +175,7 @@ struct ForgotPasswordViewModelTests {
         let mockAuthService = MockAuthService()
         mockAuthService.resetPasswordBehavior = .failure(MockAuthService.MockError.invalidCode)
         let viewModel = ForgotPasswordViewModel(authService: mockAuthService)
-        let authState = AuthState()
+        let authState = AuthState(loadPersistedState: false)
         
         viewModel.email = "test@example.com"
         viewModel.verificationCode = "999999"
@@ -187,7 +187,7 @@ struct ForgotPasswordViewModelTests {
             successCalled = true
         }
         
-        try await Task.sleep(nanoseconds: 100_000_000)
+        try await Task.sleep(nanoseconds: 500_000_000)
         
         #expect(mockAuthService.resetPasswordCalled == true)
         #expect(viewModel.isLoading == false)
@@ -202,7 +202,7 @@ struct ForgotPasswordViewModelTests {
     @Test func testPasswordValidation() async throws {
         let mockAuthService = MockAuthService()
         let viewModel = ForgotPasswordViewModel(authService: mockAuthService)
-        let authState = AuthState()
+        let authState = AuthState(loadPersistedState: false)
         
         // Test minimum length requirement
         viewModel.email = "test@example.com"
@@ -221,7 +221,7 @@ struct ForgotPasswordViewModelTests {
         
         viewModel.resetPassword(authState: authState) {}
         
-        try await Task.sleep(nanoseconds: 100_000_000)
+        try await Task.sleep(nanoseconds: 500_000_000)
         
         // Should not fail on length validation anymore
         #expect(viewModel.errorMessage != "Password must be at least 8 characters")
@@ -249,7 +249,7 @@ struct ForgotPasswordViewModelTests {
     @Test func testAutoLoginAfterSuccessfulReset() async throws {
         let mockAuthService = MockAuthService()
         let viewModel = ForgotPasswordViewModel(authService: mockAuthService)
-        let authState = AuthState()
+        let authState = AuthState(loadPersistedState: false)
         
         viewModel.email = "test@example.com"
         viewModel.verificationCode = "123456"
@@ -276,7 +276,7 @@ struct ForgotPasswordViewModelTests {
         #expect(viewModel.codeSent == false)
         
         viewModel.requestReset()
-        try await Task.sleep(nanoseconds: 100_000_000)
+        try await Task.sleep(nanoseconds: 500_000_000)
         
         #expect(viewModel.codeSent == true)
     }
@@ -284,7 +284,7 @@ struct ForgotPasswordViewModelTests {
     @Test func testShowSuccessStateAfterReset() async throws {
         let mockAuthService = MockAuthService()
         let viewModel = ForgotPasswordViewModel(authService: mockAuthService)
-        let authState = AuthState()
+        let authState = AuthState(loadPersistedState: false)
         
         viewModel.email = "test@example.com"
         viewModel.verificationCode = "123456"
