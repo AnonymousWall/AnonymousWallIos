@@ -178,7 +178,7 @@ struct WallView: View {
             viewModel.cleanup()
         }
     }
-    
+}
 
 #Preview {
     WallView()
