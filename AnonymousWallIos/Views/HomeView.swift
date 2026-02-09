@@ -9,15 +9,8 @@ import SwiftUI
 
 struct HomeView: View {
     @EnvironmentObject var authState: AuthState
+    @StateObject private var viewModel = HomeViewModel()
     @State private var showSetPassword = false
-    @State private var posts: [Post] = []
-    @State private var isLoadingPosts = false
-    @State private var isLoadingMore = false
-    @State private var currentPage = 1
-    @State private var hasMorePages = true
-    @State private var errorMessage: String?
-    @State private var loadTask: Task<Void, Never>?
-    @State private var selectedSortOrder: SortOrder = .newest
     
     // Minimum height for scrollable content when list is empty
     private let minimumScrollableHeight: CGFloat = 300
@@ -48,7 +41,7 @@ struct HomeView: View {
                 }
                 
                 // Sorting segmented control
-                Picker("Sort Order", selection: $selectedSortOrder) {
+                Picker("Sort Order", selection: $viewModel.selectedSortOrder) {
                     ForEach(SortOrder.feedOptions, id: \.self) { option in
                         Text(option.displayName).tag(option)
                     }
@@ -56,26 +49,20 @@ struct HomeView: View {
                 .pickerStyle(.segmented)
                 .padding(.horizontal)
                 .padding(.vertical, 8)
-                .onChange(of: selectedSortOrder) { _, _ in
-                    HapticFeedback.selection()
-                    loadTask?.cancel()
-                    posts = [] // Clear posts to show loading indicator
-                    resetPagination()
-                    loadTask = Task {
-                        await loadPosts()
-                    }
+                .onChange(of: viewModel.selectedSortOrder) { _, _ in
+                    viewModel.sortOrderChanged(authState: authState)
                 }
                 
                 // Post list
                 ScrollView {
-                    if isLoadingPosts && posts.isEmpty {
+                    if viewModel.isLoadingPosts && viewModel.posts.isEmpty {
                         VStack {
                             Spacer()
                             ProgressView("Loading posts...")
                             Spacer()
                         }
                         .frame(maxWidth: .infinity, minHeight: minimumScrollableHeight)
-                    } else if posts.isEmpty && !isLoadingPosts {
+                    } else if viewModel.posts.isEmpty && !viewModel.isLoadingPosts {
                         VStack {
                             Spacer()
                             VStack(spacing: 20) {
@@ -104,31 +91,29 @@ struct HomeView: View {
                         .frame(maxWidth: .infinity, minHeight: minimumScrollableHeight)
                     } else {
                         LazyVStack(spacing: 12) {
-                            ForEach(posts) { post in
-                                if let index = posts.firstIndex(where: { $0.id == post.id }) {
+                            ForEach(viewModel.posts) { post in
+                                if let index = viewModel.posts.firstIndex(where: { $0.id == post.id }) {
                                     NavigationLink(destination: PostDetailView(post: Binding(
-                                        get: { posts[index] },
-                                        set: { posts[index] = $0 }
+                                        get: { viewModel.posts[index] },
+                                        set: { viewModel.posts[index] = $0 }
                                     ))) {
                                         PostRowView(
                                             post: post,
                                             isOwnPost: post.author.id == authState.currentUser?.id,
-                                            onLike: { toggleLike(for: post) },
-                                            onDelete: { deletePost(post) }
+                                            onLike: { viewModel.toggleLike(for: post, authState: authState) },
+                                            onDelete: { viewModel.deletePost(post, authState: authState) }
                                         )
                                     }
                                     .buttonStyle(PlainButtonStyle())
                                     .onAppear {
                                         // Load more when the last post appears
-                                        if post.id == posts.last?.id {
-                                            loadMoreIfNeeded()
-                                        }
+                                        viewModel.loadMoreIfNeeded(for: post, authState: authState)
                                     }
                                 }
                             }
                             
                             // Loading indicator at bottom
-                            if isLoadingMore {
+                            if viewModel.isLoadingMore {
                                 HStack {
                                     Spacer()
                                     ProgressView()
@@ -141,11 +126,11 @@ struct HomeView: View {
                     }
                 }
                 .refreshable {
-                    await refreshPosts()
+                    await viewModel.refreshPosts(authState: authState)
                 }
                 
                 // Error message
-                if let errorMessage = errorMessage {
+                if let errorMessage = viewModel.errorMessage {
                     Text(errorMessage)
                         .foregroundColor(.red)
                         .font(.caption)
@@ -168,176 +153,11 @@ struct HomeView: View {
             }
             
             // Load posts
-            loadTask = Task {
-                await loadPosts()
-            }
+            viewModel.loadPosts(authState: authState)
         }
         .onDisappear {
             // Cancel any ongoing load task when view disappears
-            loadTask?.cancel()
-        }
-    }
-    
-    // MARK: - Functions
-    
-    /// Reset pagination to initial state
-    private func resetPagination() {
-        currentPage = 1
-        hasMorePages = true
-    }
-    
-    @MainActor
-    private func refreshPosts() async {
-        loadTask?.cancel()
-        resetPagination()
-        loadTask = Task {
-            await loadPosts()
-        }
-        await loadTask?.value
-    }
-    
-    @MainActor
-    private func loadPosts() async {
-        guard let token = authState.authToken,
-              let userId = authState.currentUser?.id else {
-            return
-        }
-        
-        isLoadingPosts = true
-        errorMessage = nil
-        
-        defer {
-            isLoadingPosts = false
-        }
-        
-        do {
-            let response = try await PostService.shared.fetchPosts(
-                token: token,
-                userId: userId,
-                wall: .national,
-                page: currentPage,
-                limit: 20,
-                sort: selectedSortOrder
-            )
-            // Replace posts (used for initial load and refresh)
-            posts = response.data
-            hasMorePages = currentPage < response.pagination.totalPages
-        } catch is CancellationError {
-            return
-        } catch NetworkError.cancelled {
-            return
-        } catch {
-            errorMessage = error.localizedDescription
-        }
-    }
-    
-    private func loadMoreIfNeeded() {
-        guard !isLoadingMore && hasMorePages else { return }
-        
-        Task { @MainActor in
-            // Check again inside the task to prevent race condition
-            guard !isLoadingMore && hasMorePages else { return }
-            
-            isLoadingMore = true
-            await loadMorePosts()
-        }
-    }
-    
-    @MainActor
-    private func loadMorePosts() async {
-        guard let token = authState.authToken,
-              let userId = authState.currentUser?.id else {
-            isLoadingMore = false
-            return
-        }
-        
-        defer {
-            isLoadingMore = false
-        }
-        
-        // Calculate next page
-        let nextPage = currentPage + 1
-        
-        do {
-            let response = try await PostService.shared.fetchPosts(
-                token: token,
-                userId: userId,
-                wall: .national,
-                page: nextPage,
-                limit: 20,
-                sort: selectedSortOrder
-            )
-            
-            // Update page number only after successful response
-            currentPage = nextPage
-            
-            posts.append(contentsOf: response.data)
-            hasMorePages = currentPage < response.pagination.totalPages
-        } catch is CancellationError {
-            return
-        } catch NetworkError.cancelled {
-            return
-        } catch {
-            errorMessage = error.localizedDescription
-        }
-    }
-    
-    private func toggleLike(for post: Post) {
-        guard let token = authState.authToken,
-              let userId = authState.currentUser?.id else {
-            return
-        }
-        
-        Task {
-            do {
-                let response = try await PostService.shared.toggleLike(postId: post.id, token: token, userId: userId)
-                
-                // Update the post locally using the response data
-                await MainActor.run {
-                    if let index = posts.firstIndex(where: { $0.id == post.id }) {
-                        posts[index] = posts[index].withUpdatedLike(liked: response.liked, likes: response.likeCount)
-                    }
-                }
-            } catch {
-                await MainActor.run {
-                    errorMessage = error.localizedDescription
-                }
-            }
-        }
-    }
-    
-    private func deletePost(_ post: Post) {
-        guard let token = authState.authToken,
-              let userId = authState.currentUser?.id else {
-            errorMessage = "Authentication required to delete post."
-            return
-        }
-        
-        Task {
-            do {
-                _ = try await PostService.shared.hidePost(postId: post.id, token: token, userId: userId)
-                resetPagination()
-                await loadPosts()
-            } catch {
-                await MainActor.run {
-                    if let networkError = error as? NetworkError {
-                        switch networkError {
-                        case .unauthorized:
-                            errorMessage = "Session expired. Please log in again."
-                        case .forbidden:
-                            errorMessage = "You don't have permission to delete this post."
-                        case .notFound:
-                            errorMessage = "Post not found."
-                        case .noConnection:
-                            errorMessage = "No internet connection. Please check your network."
-                        default:
-                            errorMessage = "Failed to delete post. Please try again."
-                        }
-                    } else {
-                        errorMessage = "Failed to delete post. Please try again."
-                    }
-                }
-            }
+            viewModel.cleanup()
         }
     }
 }
