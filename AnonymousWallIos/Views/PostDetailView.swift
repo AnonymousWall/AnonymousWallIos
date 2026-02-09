@@ -168,9 +168,6 @@ struct PostDetailView: View {
                 }
                 .padding()
             }
-            .refreshable {
-                await refreshContent()
-            }
             
             // Error message
             if let errorMessage = viewModel.errorMessage {
