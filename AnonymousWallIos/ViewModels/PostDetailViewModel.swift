@@ -220,6 +220,9 @@ class PostDetailViewModel: ObservableObject {
             )
             comments = response.data
             hasMorePages = currentPage < response.pagination.totalPages
+        } catch NetworkError.cancelled {
+            // Ignore cancellation errors - they occur when requests are cancelled during refresh
+            // and should not be shown to users
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -251,6 +254,9 @@ class PostDetailViewModel: ObservableObject {
             currentPage = nextPage
             comments.append(contentsOf: response.data)
             hasMorePages = currentPage < response.pagination.totalPages
+        } catch NetworkError.cancelled {
+            // Ignore cancellation errors - they occur when requests are cancelled during refresh
+            // and should not be shown to users
         } catch {
             errorMessage = error.localizedDescription
         }
