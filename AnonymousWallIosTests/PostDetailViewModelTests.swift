@@ -384,53 +384,6 @@ struct PostDetailViewModelTests {
         #expect(successCalled == false)
     }
     
-    // MARK: - Cancellation Error Handling Tests
-    
-    @Test func testLoadCommentsIgnoresCancellationError() async throws {
-        let mockPostService = MockPostService()
-        mockPostService.getCommentsBehavior = .failure(NetworkError.cancelled)
-        let viewModel = PostDetailViewModel(postService: mockPostService)
-        let authState = createMockAuthState()
-        
-        viewModel.loadComments(postId: "post-1", authState: authState)
-        
-        // Wait for async operations
-        try await Task.sleep(nanoseconds: 200_000_000) // 0.2 seconds
-        
-        // Cancellation errors should not set error message
-        #expect(viewModel.errorMessage == nil)
-        #expect(mockPostService.getCommentsCalled == true)
-    }
-    
-    @Test func testRefreshCommentsIgnoresCancellationError() async throws {
-        let mockPostService = MockPostService()
-        mockPostService.getCommentsBehavior = .failure(NetworkError.cancelled)
-        let viewModel = PostDetailViewModel(postService: mockPostService)
-        let authState = createMockAuthState()
-        
-        await viewModel.refreshComments(postId: "post-1", authState: authState)
-        
-        // Cancellation errors should not set error message
-        #expect(viewModel.errorMessage == nil)
-        #expect(mockPostService.getCommentsCalled == true)
-    }
-    
-    @Test func testLoadCommentsShowsOtherErrors() async throws {
-        let mockPostService = MockPostService()
-        mockPostService.getCommentsBehavior = .failure(NetworkError.networkError(NSError(domain: "test", code: -1)))
-        let viewModel = PostDetailViewModel(postService: mockPostService)
-        let authState = createMockAuthState()
-        
-        viewModel.loadComments(postId: "post-1", authState: authState)
-        
-        // Wait for async operations
-        try await Task.sleep(nanoseconds: 200_000_000) // 0.2 seconds
-        
-        // Non-cancellation errors should set error message
-        #expect(viewModel.errorMessage != nil)
-        #expect(mockPostService.getCommentsCalled == true)
-    }
-    
     // MARK: - Helper Methods
     
     private func createMockAuthState() -> AuthState {

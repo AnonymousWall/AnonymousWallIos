@@ -34,21 +34,12 @@ class PostDetailViewModel: ObservableObject {
     
     // MARK: - Public Methods
     func loadComments(postId: String, authState: AuthState) {
-        // Don't start a new load if already loading
-        guard !isLoadingComments else { return }
-        
         Task {
             await performLoadComments(postId: postId, authState: authState)
         }
     }
     
     func refreshComments(postId: String, authState: AuthState) async {
-        // Always allow refresh even if currently loading
-        // Wait for any existing load to complete first
-        while isLoadingComments {
-            try? await Task.sleep(nanoseconds: 100_000_000) // 0.1 seconds
-        }
-        
         resetPagination()
         await performLoadComments(postId: postId, authState: authState)
     }
@@ -68,10 +59,6 @@ class PostDetailViewModel: ObservableObject {
         HapticFeedback.selection()
         comments = []
         resetPagination()
-        
-        // Don't start a new load if already loading
-        guard !isLoadingComments else { return }
-        
         Task {
             await performLoadComments(postId: postId, authState: authState)
         }
@@ -233,9 +220,6 @@ class PostDetailViewModel: ObservableObject {
             )
             comments = response.data
             hasMorePages = currentPage < response.pagination.totalPages
-        } catch NetworkError.cancelled {
-            // Ignore cancellation errors - they occur when requests are cancelled during refresh
-            // and should not be shown to users
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -267,9 +251,6 @@ class PostDetailViewModel: ObservableObject {
             currentPage = nextPage
             comments.append(contentsOf: response.data)
             hasMorePages = currentPage < response.pagination.totalPages
-        } catch NetworkError.cancelled {
-            // Ignore cancellation errors - they occur when requests are cancelled during refresh
-            // and should not be shown to users
         } catch {
             errorMessage = error.localizedDescription
         }
