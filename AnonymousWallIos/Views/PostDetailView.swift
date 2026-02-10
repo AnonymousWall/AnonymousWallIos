@@ -14,6 +14,11 @@ struct PostDetailView: View {
     @Binding var post: Post
     @StateObject private var viewModel = PostDetailViewModel()
     @State private var showDeleteConfirmation = false
+    @State private var showReportPostDialog = false
+    @State private var showReportCommentDialog = false
+    @State private var reportReason = ""
+    @State private var showReportSuccessAlert = false
+    @State private var reportSuccessMessage = ""
     
     var body: some View {
         VStack(spacing: 0) {
@@ -146,6 +151,10 @@ struct PostDetailView: View {
                                     onDelete: {
                                         viewModel.commentToDelete = comment
                                         showDeleteConfirmation = true
+                                    },
+                                    onReport: {
+                                        viewModel.commentToReport = comment
+                                        showReportCommentDialog = true
                                     }
                                 )
                                 .onAppear {
@@ -215,6 +224,21 @@ struct PostDetailView: View {
         }
         .navigationTitle("Post Details")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Menu {
+                    if post.author.id != authState.currentUser?.id {
+                        Button(action: {
+                            showReportPostDialog = true
+                        }) {
+                            Label("Report Post", systemImage: "exclamationmark.triangle")
+                        }
+                    }
+                } label: {
+                    Image(systemName: "ellipsis.circle")
+                }
+            }
+        }
         .onAppear {
             viewModel.loadComments(postId: post.id, authState: authState)
         }
@@ -235,6 +259,43 @@ struct PostDetailView: View {
         } message: {
             Text("Are you sure you want to delete this comment?")
         }
+        .alert("Report Post", isPresented: $showReportPostDialog) {
+            TextField("Reason (optional)", text: $reportReason)
+            Button("Report", role: .destructive) {
+                viewModel.reportPost(post: post, reason: reportReason.isEmpty ? nil : reportReason, authState: authState) {
+                    reportSuccessMessage = "Post reported successfully"
+                    showReportSuccessAlert = true
+                    reportReason = ""
+                }
+            }
+            Button("Cancel", role: .cancel) {
+                reportReason = ""
+            }
+        } message: {
+            Text("Report this post if it violates community guidelines. Provide an optional reason below.")
+        }
+        .alert("Report Comment", isPresented: $showReportCommentDialog) {
+            TextField("Reason (optional)", text: $reportReason)
+            Button("Report", role: .destructive) {
+                if let comment = viewModel.commentToReport {
+                    viewModel.reportComment(comment, postId: post.id, reason: reportReason.isEmpty ? nil : reportReason, authState: authState) {
+                        reportSuccessMessage = "Comment reported successfully"
+                        showReportSuccessAlert = true
+                        reportReason = ""
+                    }
+                }
+            }
+            Button("Cancel", role: .cancel) {
+                reportReason = ""
+            }
+        } message: {
+            Text("Report this comment if it violates community guidelines. Provide an optional reason below.")
+        }
+        .alert("Success", isPresented: $showReportSuccessAlert) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(reportSuccessMessage)
+        }
     }
 }
 
@@ -244,6 +305,7 @@ struct CommentRowView: View {
     let comment: Comment
     let isOwnComment: Bool
     var onDelete: () -> Void
+    var onReport: () -> Void
     
     var body: some View {
         HStack(spacing: 0) {
@@ -274,12 +336,20 @@ struct CommentRowView: View {
                 
                 Spacer()
                 
-                // Delete button (only for own comments)
+                // Action buttons
                 if isOwnComment {
+                    // Delete button (only for own comments)
                     Button(action: onDelete) {
                         Image(systemName: "trash")
                             .font(.caption)
                             .foregroundColor(.white)
+                    }
+                } else {
+                    // Report button (only for others' comments)
+                    Button(action: onReport) {
+                        Image(systemName: "exclamationmark.triangle")
+                            .font(.caption)
+                            .foregroundColor(.primary)
                     }
                 }
             }

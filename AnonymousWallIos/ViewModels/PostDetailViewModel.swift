@@ -17,6 +17,7 @@ class PostDetailViewModel: ObservableObject {
     @Published var isSubmitting = false
     @Published var errorMessage: String?
     @Published var commentToDelete: Comment?
+    @Published var commentToReport: Comment?
     @Published var selectedSortOrder: SortOrder = .newest
     
     // MARK: - Dependencies
@@ -147,6 +148,44 @@ class PostDetailViewModel: ObservableObject {
                 await performLoadComments(postId: postId, authState: authState)
             } catch {
                 errorMessage = "Failed to delete comment: \(error.localizedDescription)"
+            }
+        }
+    }
+    
+    func reportPost(post: Post, reason: String?, authState: AuthState, onSuccess: @escaping () -> Void) {
+        guard let token = authState.authToken,
+              let userId = authState.currentUser?.id else {
+            errorMessage = "Authentication required"
+            return
+        }
+        
+        Task {
+            do {
+                let response = try await postService.reportPost(postId: post.id, reason: reason, token: token, userId: userId)
+                Logger.data.info("Post reported: \(response.message)")
+                HapticFeedback.success()
+                onSuccess()
+            } catch {
+                errorMessage = "Failed to report post: \(error.localizedDescription)"
+            }
+        }
+    }
+    
+    func reportComment(_ comment: Comment, postId: String, reason: String?, authState: AuthState, onSuccess: @escaping () -> Void) {
+        guard let token = authState.authToken,
+              let userId = authState.currentUser?.id else {
+            errorMessage = "Authentication required"
+            return
+        }
+        
+        Task {
+            do {
+                let response = try await postService.reportComment(postId: postId, commentId: comment.id, reason: reason, token: token, userId: userId)
+                Logger.data.info("Comment reported: \(response.message)")
+                HapticFeedback.success()
+                onSuccess()
+            } catch {
+                errorMessage = "Failed to report comment: \(error.localizedDescription)"
             }
         }
     }

@@ -114,3 +114,11 @@ struct LikeResponse: Codable {
 struct HidePostResponse: Codable {
     let message: String
 }
+
+struct ReportRequest: Codable {
+    let reason: String?
+}
+
+struct ReportResponse: Codable {
+    let message: String
+}

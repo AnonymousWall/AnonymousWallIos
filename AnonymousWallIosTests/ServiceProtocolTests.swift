@@ -101,6 +101,31 @@ struct ServiceProtocolTests {
         #expect(responseWithPost.data[0].title == "New Post")
     }
     
+    @Test func testMockPostServiceCanSimulateReportOperations() async throws {
+        let mockPostService = MockPostService()
+        
+        // Report a post
+        let reportPostResponse = try await mockPostService.reportPost(
+            postId: "post-1",
+            reason: "Inappropriate content",
+            token: "mock-token",
+            userId: "mock-user-id"
+        )
+        #expect(reportPostResponse.message == "Post reported successfully")
+        #expect(mockPostService.reportPostCalled == true)
+        
+        // Report a comment
+        let reportCommentResponse = try await mockPostService.reportComment(
+            postId: "post-1",
+            commentId: "comment-1",
+            reason: "Spam",
+            token: "mock-token",
+            userId: "mock-user-id"
+        )
+        #expect(reportCommentResponse.message == "Comment reported successfully")
+        #expect(mockPostService.reportCommentCalled == true)
+    }
+    
     @Test func testMockServicesEnableDependencyInjection() async throws {
         // Demonstrate that protocols enable dependency injection pattern
         
@@ -220,6 +245,70 @@ struct ServiceProtocolTests {
         #expect(response.data.isEmpty)
         #expect(response.pagination.total == 0)
         #expect(mockPostService.fetchPostsCalled == true)
+    }
+    
+    @Test func testMockPostServiceReportSuccessScenario() async throws {
+        let mockPostService = MockPostService()
+        
+        // Default behavior is success
+        let postReportResponse = try await mockPostService.reportPost(
+            postId: "post-1",
+            reason: "Inappropriate",
+            token: "token",
+            userId: "user"
+        )
+        #expect(postReportResponse.message == "Post reported successfully")
+        #expect(mockPostService.reportPostCalled == true)
+        
+        let commentReportResponse = try await mockPostService.reportComment(
+            postId: "post-1",
+            commentId: "comment-1",
+            reason: "Spam",
+            token: "token",
+            userId: "user"
+        )
+        #expect(commentReportResponse.message == "Comment reported successfully")
+        #expect(mockPostService.reportCommentCalled == true)
+    }
+    
+    @Test func testMockPostServiceReportFailureScenario() async throws {
+        let mockPostService = MockPostService()
+        
+        // Configure to fail
+        mockPostService.reportPostBehavior = .failure(MockPostService.MockError.unauthorized)
+        mockPostService.reportCommentBehavior = .failure(MockPostService.MockError.unauthorized)
+        
+        do {
+            _ = try await mockPostService.reportPost(postId: "post-1", reason: "Test", token: "token", userId: "user")
+            Issue.record("Expected error to be thrown")
+        } catch let error as MockPostService.MockError {
+            #expect(error == .unauthorized)
+        }
+        #expect(mockPostService.reportPostCalled == true)
+        
+        do {
+            _ = try await mockPostService.reportComment(postId: "post-1", commentId: "comment-1", reason: "Test", token: "token", userId: "user")
+            Issue.record("Expected error to be thrown")
+        } catch let error as MockPostService.MockError {
+            #expect(error == .unauthorized)
+        }
+        #expect(mockPostService.reportCommentCalled == true)
+    }
+    
+    @Test func testMockPostServiceReportEmptyStateScenario() async throws {
+        let mockPostService = MockPostService()
+        
+        // Configure to return empty state
+        mockPostService.reportPostBehavior = .emptyState
+        mockPostService.reportCommentBehavior = .emptyState
+        
+        let postResponse = try await mockPostService.reportPost(postId: "post-1", reason: nil, token: "token", userId: "user")
+        #expect(postResponse.message.isEmpty)
+        #expect(mockPostService.reportPostCalled == true)
+        
+        let commentResponse = try await mockPostService.reportComment(postId: "post-1", commentId: "comment-1", reason: nil, token: "token", userId: "user")
+        #expect(commentResponse.message.isEmpty)
+        #expect(mockPostService.reportCommentCalled == true)
     }
     
     @Test func testMockAuthServiceCustomResponse() async throws {
