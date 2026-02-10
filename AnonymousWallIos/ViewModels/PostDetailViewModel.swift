@@ -26,6 +26,7 @@ class PostDetailViewModel: ObservableObject {
     // MARK: - Private Properties
     private var currentPage = 1
     private var hasMorePages = true
+    private var loadCommentsTask: Task<Void, Never>?
     
     // MARK: - Initialization
     init(postService: PostServiceProtocol = PostService.shared) {
@@ -34,12 +35,18 @@ class PostDetailViewModel: ObservableObject {
     
     // MARK: - Public Methods
     func loadComments(postId: String, authState: AuthState) {
-        Task {
+        // Cancel any existing load task
+        loadCommentsTask?.cancel()
+        
+        loadCommentsTask = Task {
             await performLoadComments(postId: postId, authState: authState)
         }
     }
     
     func refreshComments(postId: String, authState: AuthState) async {
+        // Cancel any existing load task
+        loadCommentsTask?.cancel()
+        
         resetPagination()
         await performLoadComments(postId: postId, authState: authState)
     }
@@ -59,7 +66,11 @@ class PostDetailViewModel: ObservableObject {
         HapticFeedback.selection()
         comments = []
         resetPagination()
-        Task {
+        
+        // Cancel any existing load task
+        loadCommentsTask?.cancel()
+        
+        loadCommentsTask = Task {
             await performLoadComments(postId: postId, authState: authState)
         }
     }
