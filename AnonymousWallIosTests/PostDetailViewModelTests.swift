@@ -91,7 +91,7 @@ struct PostDetailViewModelTests {
         }
         
         // Wait for async operations
-        try await Task.sleep(nanoseconds: 500_000_000) // 0.2 seconds
+        try await Task.sleep(nanoseconds: 200_000_000)
         
         #expect(viewModel.isSubmitting == false)
         #expect(viewModel.commentText.isEmpty)
@@ -113,7 +113,7 @@ struct PostDetailViewModelTests {
             successCalled = true
         }
         
-        try await Task.sleep(nanoseconds: 500_000_000)
+        try await Task.sleep(nanoseconds: 200_000_000)
         
         // After successful submission, comment text should be cleared
         #expect(viewModel.commentText.isEmpty)
@@ -136,7 +136,7 @@ struct PostDetailViewModelTests {
         viewModel.commentText = "Valid comment"
         viewModel.submitComment(postId: "post-1", authState: authState) {}
         
-        try await Task.sleep(nanoseconds: 500_000_000)
+        try await Task.sleep(nanoseconds: 200_000_000)
         
         #expect(viewModel.errorMessage == nil)
     }
@@ -153,8 +153,7 @@ struct PostDetailViewModelTests {
         viewModel.selectedSortOrder = .oldest
         viewModel.sortOrderChanged(postId: "post-1", authState: authState)
         
-        // Wait for async operations
-        try await Task.sleep(nanoseconds: 500_000_000)
+        try await Task.sleep(nanoseconds: 200_000_000)
         
         #expect(viewModel.selectedSortOrder == .oldest)
     }
@@ -201,7 +200,7 @@ struct PostDetailViewModelTests {
         
         viewModel.submitComment(postId: "post-1", authState: authState) {}
         
-        try await Task.sleep(nanoseconds: 500_000_000)
+        try await Task.sleep(nanoseconds: 200_000_000)
         
         #expect(viewModel.commentText.isEmpty)
     }
@@ -256,7 +255,7 @@ struct PostDetailViewModelTests {
         }
         
         // Wait for async operations
-        try await Task.sleep(nanoseconds: 200_000_000) // 0.2 seconds
+        try await Task.sleep(nanoseconds: 200_000_000)
         
         #expect(mockPostService.reportPostCalled == true)
         #expect(viewModel.errorMessage == nil)
@@ -275,7 +274,7 @@ struct PostDetailViewModelTests {
         }
         
         // Wait for async operations
-        try await Task.sleep(nanoseconds: 200_000_000) // 0.2 seconds
+        try await Task.sleep(nanoseconds: 200_000_000)
         
         #expect(mockPostService.reportPostCalled == true)
         #expect(viewModel.errorMessage == nil)
@@ -306,7 +305,7 @@ struct PostDetailViewModelTests {
         }
         
         // Wait for async operations
-        try await Task.sleep(nanoseconds: 200_000_000) // 0.2 seconds
+        try await Task.sleep(nanoseconds: 200_000_000)
         
         #expect(mockPostService.reportCommentCalled == true)
         #expect(viewModel.errorMessage == nil)
@@ -325,7 +324,7 @@ struct PostDetailViewModelTests {
         }
         
         // Wait for async operations
-        try await Task.sleep(nanoseconds: 200_000_000) // 0.2 seconds
+        try await Task.sleep(nanoseconds: 200_000_000)
         
         #expect(mockPostService.reportCommentCalled == true)
         #expect(viewModel.errorMessage == nil)
@@ -357,7 +356,7 @@ struct PostDetailViewModelTests {
         }
         
         // Wait for async operations
-        try await Task.sleep(nanoseconds: 200_000_000) // 0.2 seconds
+        try await Task.sleep(nanoseconds: 200_000_000)
         
         #expect(mockPostService.reportPostCalled == true)
         #expect(viewModel.errorMessage?.contains("Failed to report post") == true)
@@ -377,7 +376,7 @@ struct PostDetailViewModelTests {
         }
         
         // Wait for async operations
-        try await Task.sleep(nanoseconds: 200_000_000) // 0.2 seconds
+        try await Task.sleep(nanoseconds: 200_000_000)
         
         #expect(mockPostService.reportCommentCalled == true)
         #expect(viewModel.errorMessage?.contains("Failed to report comment") == true)

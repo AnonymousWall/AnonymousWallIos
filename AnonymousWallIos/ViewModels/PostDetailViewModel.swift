@@ -26,6 +26,7 @@ class PostDetailViewModel: ObservableObject {
     // MARK: - Private Properties
     private var currentPage = 1
     private var hasMorePages = true
+    private var loadCommentsTask: Task<Void, Never>?
     
     // MARK: - Initialization
     init(postService: PostServiceProtocol = PostService.shared) {
@@ -34,14 +35,19 @@ class PostDetailViewModel: ObservableObject {
     
     // MARK: - Public Methods
     func loadComments(postId: String, authState: AuthState) {
-        Task {
+        loadCommentsTask?.cancel()
+        loadCommentsTask = Task {
             await performLoadComments(postId: postId, authState: authState)
         }
     }
     
     func refreshComments(postId: String, authState: AuthState) async {
+        loadCommentsTask?.cancel()
         resetPagination()
-        await performLoadComments(postId: postId, authState: authState)
+        loadCommentsTask = Task {
+            await performLoadComments(postId: postId, authState: authState)
+        }
+        await loadCommentsTask?.value
     }
     
     func loadMoreCommentsIfNeeded(for comment: Comment, postId: String, authState: AuthState) {
@@ -57,9 +63,10 @@ class PostDetailViewModel: ObservableObject {
     
     func sortOrderChanged(postId: String, authState: AuthState) {
         HapticFeedback.selection()
+        loadCommentsTask?.cancel()
         comments = []
         resetPagination()
-        Task {
+        loadCommentsTask = Task {
             await performLoadComments(postId: postId, authState: authState)
         }
     }
@@ -89,8 +96,17 @@ class PostDetailViewModel: ObservableObject {
                 commentText = ""
                 onSuccess()
                 // Reload comments to show the new one
+                loadCommentsTask?.cancel()
                 resetPagination()
-                await performLoadComments(postId: postId, authState: authState)
+                loadCommentsTask = Task {
+                    await performLoadComments(postId: postId, authState: authState)
+                }
+            } catch is CancellationError {
+                isSubmitting = false
+                return
+            } catch NetworkError.cancelled {
+                isSubmitting = false
+                return
             } catch {
                 isSubmitting = false
                 errorMessage = error.localizedDescription
@@ -108,6 +124,10 @@ class PostDetailViewModel: ObservableObject {
             do {
                 let response = try await postService.toggleLike(postId: post.wrappedValue.id, token: token, userId: userId)
                 post.wrappedValue = post.wrappedValue.withUpdatedLike(liked: response.liked, likes: response.likeCount)
+            } catch is CancellationError {
+                return
+            } catch NetworkError.cancelled {
+                return
             } catch {
                 errorMessage = error.localizedDescription
             }
@@ -126,6 +146,10 @@ class PostDetailViewModel: ObservableObject {
                 _ = try await postService.hidePost(postId: post.id, token: token, userId: userId)
                 HapticFeedback.success()
                 onSuccess()
+            } catch is CancellationError {
+                return
+            } catch NetworkError.cancelled {
+                return
             } catch {
                 errorMessage = "Failed to delete post: \(error.localizedDescription)"
             }
@@ -144,8 +168,15 @@ class PostDetailViewModel: ObservableObject {
                 _ = try await postService.hideComment(postId: postId, commentId: comment.id, token: token, userId: userId)
                 HapticFeedback.success()
                 // Reload comments to remove the deleted one
+                loadCommentsTask?.cancel()
                 resetPagination()
-                await performLoadComments(postId: postId, authState: authState)
+                loadCommentsTask = Task {
+                    await performLoadComments(postId: postId, authState: authState)
+                }
+            } catch is CancellationError {
+                return
+            } catch NetworkError.cancelled {
+                return
             } catch {
                 errorMessage = "Failed to delete comment: \(error.localizedDescription)"
             }
@@ -165,6 +196,10 @@ class PostDetailViewModel: ObservableObject {
                 Logger.data.info("Post reported: \(response.message)")
                 HapticFeedback.success()
                 onSuccess()
+            } catch is CancellationError {
+                return
+            } catch NetworkError.cancelled {
+                return
             } catch {
                 errorMessage = "Failed to report post: \(error.localizedDescription)"
             }
@@ -184,6 +219,10 @@ class PostDetailViewModel: ObservableObject {
                 Logger.data.info("Comment reported: \(response.message)")
                 HapticFeedback.success()
                 onSuccess()
+            } catch is CancellationError {
+                return
+            } catch NetworkError.cancelled {
+                return
             } catch {
                 errorMessage = "Failed to report comment: \(error.localizedDescription)"
             }
@@ -220,6 +259,10 @@ class PostDetailViewModel: ObservableObject {
             )
             comments = response.data
             hasMorePages = currentPage < response.pagination.totalPages
+        } catch is CancellationError {
+            return
+        } catch NetworkError.cancelled {
+            return
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -251,6 +294,10 @@ class PostDetailViewModel: ObservableObject {
             currentPage = nextPage
             comments.append(contentsOf: response.data)
             hasMorePages = currentPage < response.pagination.totalPages
+        } catch is CancellationError {
+            return
+        } catch NetworkError.cancelled {
+            return
         } catch {
             errorMessage = error.localizedDescription
         }
