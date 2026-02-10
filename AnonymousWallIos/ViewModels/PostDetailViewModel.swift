@@ -27,6 +27,7 @@ class PostDetailViewModel: ObservableObject {
     private var currentPage = 1
     private var hasMorePages = true
     private var loadCommentsTask: Task<Void, Never>?
+    private var refreshPostTask: Task<Void, Never>?
     
     // MARK: - Initialization
     init(postService: PostServiceProtocol = PostService.shared) {
@@ -42,7 +43,10 @@ class PostDetailViewModel: ObservableObject {
             return
         }
         
-        Task {
+        // Cancel any existing refresh task
+        refreshPostTask?.cancel()
+        
+        refreshPostTask = Task {
             do {
                 let updatedPost = try await postService.getPost(postId: post.wrappedValue.id, token: token, userId: userId)
                 post.wrappedValue = updatedPost
