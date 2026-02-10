@@ -7,14 +7,21 @@ During manual testing of the iOS app, "Request cancelled" logs appeared when per
 - Loading more comments (`loadMoreCommentsIfNeeded`)
 - Changing sort order (`sortOrderChanged`)
 - Submitting a comment (`submitComment`)
+- **Refreshing comments from the post detail view**
 
-### Root Cause
+### Root Causes
 
-The `PostDetailViewModel` was wrapping async calls inside `Task { ... }` blocks in multiple places. When these tasks were cancelled (due to fast user interactions, view refresh, or navigation), the underlying network request was cancelled, producing the log messages.
+1. **Task Wrapping**: The `PostDetailViewModel` was wrapping async calls inside `Task { ... }` blocks in multiple places. When these tasks were cancelled (due to fast user interactions, view refresh, or navigation), the underlying network request was cancelled, producing the log messages.
+
+2. **Missing Cancellation Handling**: The catch blocks were catching all errors (including cancellation errors) and setting them as user-facing error messages, causing "Request cancelled" to appear to users.
 
 ## Solution
 
-Refactored the ViewModel to make public methods fully async, removing the `Task {}` wrappers. This allows SwiftUI to properly manage the async context at the UI layer, preventing unnecessary cancellations.
+Two-part solution to completely eliminate "Request cancelled" logs:
+
+1. **Refactored async architecture**: Made public methods fully async, removing the `Task {}` wrappers. This allows SwiftUI to properly manage the async context at the UI layer.
+
+2. **Added cancellation error handling**: Following the pattern used in other ViewModels (PostFeedViewModel, HomeViewModel, ProfileViewModel), added explicit handling for `CancellationError` and `NetworkError.cancelled` to silently ignore these expected errors.
 
 ## Changes Made
 
@@ -31,6 +38,9 @@ Refactored the ViewModel to make public methods fully async, removing the `Task 
 - `reportPost(post:reason:authState:onSuccess:)` → `async`
 - `reportComment(_:postId:reason:authState:onSuccess:)` → `async`
 
+**Catch Blocks Updated (8 total):**
+All error handling blocks now explicitly catch and ignore cancellation errors before handling other errors.
+
 **Before:**
 ```swift
 func loadComments(postId: String, authState: AuthState) {
@@ -38,12 +48,32 @@ func loadComments(postId: String, authState: AuthState) {
         await performLoadComments(postId: postId, authState: authState)
     }
 }
+
+// In performLoadComments:
+do {
+    let response = try await postService.getComments(...)
+    comments = response.data
+} catch {
+    errorMessage = error.localizedDescription  // Shows "Request cancelled" to user
+}
 ```
 
 **After:**
 ```swift
 func loadComments(postId: String, authState: AuthState) async {
     await performLoadComments(postId: postId, authState: authState)
+}
+
+// In performLoadComments:
+do {
+    let response = try await postService.getComments(...)
+    comments = response.data
+} catch is CancellationError {
+    return  // Silently ignore
+} catch NetworkError.cancelled {
+    return  // Silently ignore
+} catch {
+    errorMessage = error.localizedDescription  // Only show real errors
 }
 ```
 
@@ -148,6 +178,56 @@ All test methods were updated to directly `await` async methods instead of wrapp
 
 **After:**
 ```swift
+@Test func testSubmitCommentSuccess() async throws {
+    await viewModel.submitComment(postId: "post-1", authState: authState) {
+        successCalled = true
+    }
+    
+    #expect(viewModel.isSubmitting == false)
+}
+```
+
+### 4. Cancellation Error Handling (Update 2)
+
+**Added to All Async Methods:**
+
+Following the pattern established in other ViewModels (`PostFeedViewModel`, `HomeViewModel`, `ProfileViewModel`, `CampusViewModel`, `WallViewModel`), all catch blocks now explicitly handle cancellation errors.
+
+**Pattern:**
+```swift
+do {
+    // Perform async operation
+    let response = try await postService.someOperation(...)
+    // Update state with results
+} catch is CancellationError {
+    // Clean up any state if needed (e.g., isSubmitting = false)
+    return  // Silently ignore - this is expected behavior
+} catch NetworkError.cancelled {
+    // Clean up any state if needed
+    return  // Silently ignore - this is expected behavior
+} catch {
+    // Only show real errors to users
+    errorMessage = error.localizedDescription
+}
+```
+
+**Methods Updated with Cancellation Handling:**
+1. `submitComment` - Cleans up `isSubmitting` state
+2. `toggleLike` - Returns silently
+3. `deletePost` - Returns silently
+4. `deleteComment` - Returns silently
+5. `reportPost` - Returns silently
+6. `reportComment` - Returns silently
+7. `performLoadComments` - Returns silently
+8. `performLoadMoreComments` - Returns silently
+
+**Why This Matters:**
+- **User Experience**: Users no longer see "Request cancelled" error messages during normal interactions
+- **Consistency**: Matches the error handling pattern used throughout the codebase
+- **Expected Behavior**: Task cancellation is a normal part of SwiftUI's lifecycle (e.g., when dismissing a view, triggering a refresh while one is in progress)
+- **Clean State**: Ensures proper cleanup (like setting `isSubmitting = false`) even when cancelled
+
+## Architecture Benefits
 @Test func testSubmitCommentSuccess() async throws {
     await viewModel.submitComment(postId: "post-1", authState: authState) {
         successCalled = true
