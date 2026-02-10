@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct CreatePostTabView: View {
-    @State private var showCreatePost = false
+    @StateObject private var viewModel = CreatePostTabViewModel()
     
     var body: some View {
         NavigationStack {
@@ -28,7 +28,7 @@ struct CreatePostTabView: View {
                     .padding(.horizontal)
                 
                 Button(action: {
-                    showCreatePost = true
+                    viewModel.showCreatePostSheet()
                 }) {
                     Text("Create New Post")
                         .fontWeight(.semibold)
@@ -43,10 +43,10 @@ struct CreatePostTabView: View {
             .navigationTitle("Create")
             .navigationBarTitleDisplayMode(.inline)
         }
-        .sheet(isPresented: $showCreatePost) {
+        .sheet(isPresented: $viewModel.showCreatePost) {
             CreatePostView(onPostCreated: {
                 // Post created successfully
-                showCreatePost = false
+                viewModel.dismissCreatePostSheet()
             })
         }
     }
