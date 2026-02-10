@@ -161,7 +161,6 @@ struct PostDetailView: View {
                                     // Load more when the last comment appears
                                     viewModel.loadMoreCommentsIfNeeded(for: comment, postId: post.id, authState: authState)
                                 }
-                                }
                             }
                             
                             // Loading indicator at bottom
