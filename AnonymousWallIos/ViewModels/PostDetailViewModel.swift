@@ -26,7 +26,6 @@ class PostDetailViewModel: ObservableObject {
     // MARK: - Private Properties
     private var currentPage = 1
     private var hasMorePages = true
-    private var loadCommentsTask: Task<Void, Never>?
     
     // MARK: - Initialization
     init(postService: PostServiceProtocol = PostService.shared) {
@@ -35,17 +34,20 @@ class PostDetailViewModel: ObservableObject {
     
     // MARK: - Public Methods
     func loadComments(postId: String, authState: AuthState) {
-        // Cancel any existing load task
-        loadCommentsTask?.cancel()
+        // Don't start a new load if already loading
+        guard !isLoadingComments else { return }
         
-        loadCommentsTask = Task {
+        Task {
             await performLoadComments(postId: postId, authState: authState)
         }
     }
     
     func refreshComments(postId: String, authState: AuthState) async {
-        // Cancel any existing load task
-        loadCommentsTask?.cancel()
+        // Always allow refresh even if currently loading
+        // Wait for any existing load to complete first
+        while isLoadingComments {
+            try? await Task.sleep(nanoseconds: 100_000_000) // 0.1 seconds
+        }
         
         resetPagination()
         await performLoadComments(postId: postId, authState: authState)
@@ -67,10 +69,10 @@ class PostDetailViewModel: ObservableObject {
         comments = []
         resetPagination()
         
-        // Cancel any existing load task
-        loadCommentsTask?.cancel()
+        // Don't start a new load if already loading
+        guard !isLoadingComments else { return }
         
-        loadCommentsTask = Task {
+        Task {
             await performLoadComments(postId: postId, authState: authState)
         }
     }
