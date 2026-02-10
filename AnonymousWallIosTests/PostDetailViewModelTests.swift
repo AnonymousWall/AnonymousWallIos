@@ -38,7 +38,7 @@ struct PostDetailViewModelTests {
         viewModel.commentText = ""
         
         var successCalled = false
-        viewModel.submitComment(postId: "post-1", authState: authState) {
+        await viewModel.submitComment(postId: "post-1", authState: authState) {
             successCalled = true
         }
         
@@ -54,7 +54,7 @@ struct PostDetailViewModelTests {
         viewModel.commentText = "   \n  "
         
         var successCalled = false
-        viewModel.submitComment(postId: "post-1", authState: authState) {
+        await viewModel.submitComment(postId: "post-1", authState: authState) {
             successCalled = true
         }
         
@@ -70,7 +70,7 @@ struct PostDetailViewModelTests {
         viewModel.commentText = "Test comment"
         
         var successCalled = false
-        viewModel.submitComment(postId: "post-1", authState: authState) {
+        await viewModel.submitComment(postId: "post-1", authState: authState) {
             successCalled = true
         }
         
@@ -86,12 +86,9 @@ struct PostDetailViewModelTests {
         viewModel.commentText = "Great post!"
         
         var successCalled = false
-        viewModel.submitComment(postId: "post-1", authState: authState) {
+        await viewModel.submitComment(postId: "post-1", authState: authState) {
             successCalled = true
         }
-        
-        // Wait for async operations
-        try await Task.sleep(nanoseconds: 500_000_000) // 0.2 seconds
         
         #expect(viewModel.isSubmitting == false)
         #expect(viewModel.commentText.isEmpty)
@@ -109,11 +106,9 @@ struct PostDetailViewModelTests {
         viewModel.commentText = "  Test comment with spaces  "
         
         var successCalled = false
-        viewModel.submitComment(postId: "post-1", authState: authState) {
+        await viewModel.submitComment(postId: "post-1", authState: authState) {
             successCalled = true
         }
-        
-        try await Task.sleep(nanoseconds: 500_000_000)
         
         // After successful submission, comment text should be cleared
         #expect(viewModel.commentText.isEmpty)
@@ -129,14 +124,12 @@ struct PostDetailViewModelTests {
         
         // First attempt with empty comment
         viewModel.commentText = ""
-        viewModel.submitComment(postId: "post-1", authState: authState) {}
+        await viewModel.submitComment(postId: "post-1", authState: authState) {}
         #expect(viewModel.errorMessage == "Comment cannot be empty")
         
         // Second attempt with valid comment should clear error
         viewModel.commentText = "Valid comment"
-        viewModel.submitComment(postId: "post-1", authState: authState) {}
-        
-        try await Task.sleep(nanoseconds: 500_000_000)
+        await viewModel.submitComment(postId: "post-1", authState: authState) {}
         
         #expect(viewModel.errorMessage == nil)
     }
@@ -151,10 +144,7 @@ struct PostDetailViewModelTests {
         #expect(viewModel.selectedSortOrder == .newest)
         
         viewModel.selectedSortOrder = .oldest
-        viewModel.sortOrderChanged(postId: "post-1", authState: authState)
-        
-        // Wait for async operations
-        try await Task.sleep(nanoseconds: 500_000_000)
+        await viewModel.sortOrderChanged(postId: "post-1", authState: authState)
         
         #expect(viewModel.selectedSortOrder == .oldest)
     }
@@ -172,7 +162,7 @@ struct PostDetailViewModelTests {
         
         #expect(viewModel.comments.count == 2)
         
-        viewModel.sortOrderChanged(postId: "post-1", authState: authState)
+        await viewModel.sortOrderChanged(postId: "post-1", authState: authState)
         
         // Comments should be cleared immediately when sort changes
         #expect(viewModel.comments.isEmpty)
@@ -199,9 +189,7 @@ struct PostDetailViewModelTests {
         viewModel.commentText = "Test comment"
         #expect(!viewModel.commentText.isEmpty)
         
-        viewModel.submitComment(postId: "post-1", authState: authState) {}
-        
-        try await Task.sleep(nanoseconds: 500_000_000)
+        await viewModel.submitComment(postId: "post-1", authState: authState) {}
         
         #expect(viewModel.commentText.isEmpty)
     }
@@ -215,7 +203,7 @@ struct PostDetailViewModelTests {
         
         viewModel.commentText = "Test comment"
         
-        viewModel.submitComment(postId: "post-1", authState: authState) {}
+        await viewModel.submitComment(postId: "post-1", authState: authState) {}
         
         #expect(viewModel.errorMessage == "Not authenticated")
     }
@@ -226,7 +214,7 @@ struct PostDetailViewModelTests {
         let authState = AuthState(loadPersistedState: false) // No user logged in
         let comment = createMockComment(id: "1", text: "Test")
         
-        viewModel.deleteComment(comment, postId: "post-1", authState: authState)
+        await viewModel.deleteComment(comment, postId: "post-1", authState: authState)
         
         #expect(viewModel.errorMessage == "Authentication required")
     }
@@ -237,7 +225,7 @@ struct PostDetailViewModelTests {
         let authState = AuthState(loadPersistedState: false) // No user logged in
         let post = createMockPost(id: "1", title: "Test Post")
         
-        viewModel.deletePost(post: post, authState: authState) {}
+        await viewModel.deletePost(post: post, authState: authState) {}
         
         #expect(viewModel.errorMessage == "Authentication required")
     }
@@ -251,12 +239,9 @@ struct PostDetailViewModelTests {
         let post = createMockPost(id: "1", title: "Test Post")
         
         var successCalled = false
-        viewModel.reportPost(post: post, reason: "Inappropriate content", authState: authState) {
+        await viewModel.reportPost(post: post, reason: "Inappropriate content", authState: authState) {
             successCalled = true
         }
-        
-        // Wait for async operations
-        try await Task.sleep(nanoseconds: 200_000_000) // 0.2 seconds
         
         #expect(mockPostService.reportPostCalled == true)
         #expect(viewModel.errorMessage == nil)
@@ -270,12 +255,9 @@ struct PostDetailViewModelTests {
         let post = createMockPost(id: "1", title: "Test Post")
         
         var successCalled = false
-        viewModel.reportPost(post: post, reason: nil, authState: authState) {
+        await viewModel.reportPost(post: post, reason: nil, authState: authState) {
             successCalled = true
         }
-        
-        // Wait for async operations
-        try await Task.sleep(nanoseconds: 200_000_000) // 0.2 seconds
         
         #expect(mockPostService.reportPostCalled == true)
         #expect(viewModel.errorMessage == nil)
@@ -288,7 +270,7 @@ struct PostDetailViewModelTests {
         let authState = AuthState(loadPersistedState: false) // No user logged in
         let post = createMockPost(id: "1", title: "Test Post")
         
-        viewModel.reportPost(post: post, reason: "Test", authState: authState) {}
+        await viewModel.reportPost(post: post, reason: "Test", authState: authState) {}
         
         #expect(viewModel.errorMessage == "Authentication required")
         #expect(mockPostService.reportPostCalled == false)
@@ -301,12 +283,9 @@ struct PostDetailViewModelTests {
         let comment = createMockComment(id: "1", text: "Test comment")
         
         var successCalled = false
-        viewModel.reportComment(comment, postId: "post-1", reason: "Spam", authState: authState) {
+        await viewModel.reportComment(comment, postId: "post-1", reason: "Spam", authState: authState) {
             successCalled = true
         }
-        
-        // Wait for async operations
-        try await Task.sleep(nanoseconds: 200_000_000) // 0.2 seconds
         
         #expect(mockPostService.reportCommentCalled == true)
         #expect(viewModel.errorMessage == nil)
@@ -320,12 +299,9 @@ struct PostDetailViewModelTests {
         let comment = createMockComment(id: "1", text: "Test comment")
         
         var successCalled = false
-        viewModel.reportComment(comment, postId: "post-1", reason: nil, authState: authState) {
+        await viewModel.reportComment(comment, postId: "post-1", reason: nil, authState: authState) {
             successCalled = true
         }
-        
-        // Wait for async operations
-        try await Task.sleep(nanoseconds: 200_000_000) // 0.2 seconds
         
         #expect(mockPostService.reportCommentCalled == true)
         #expect(viewModel.errorMessage == nil)
@@ -338,7 +314,7 @@ struct PostDetailViewModelTests {
         let authState = AuthState(loadPersistedState: false) // No user logged in
         let comment = createMockComment(id: "1", text: "Test comment")
         
-        viewModel.reportComment(comment, postId: "post-1", reason: "Test", authState: authState) {}
+        await viewModel.reportComment(comment, postId: "post-1", reason: "Test", authState: authState) {}
         
         #expect(viewModel.errorMessage == "Authentication required")
         #expect(mockPostService.reportCommentCalled == false)
@@ -352,12 +328,9 @@ struct PostDetailViewModelTests {
         let post = createMockPost(id: "1", title: "Test Post")
         
         var successCalled = false
-        viewModel.reportPost(post: post, reason: "Test", authState: authState) {
+        await viewModel.reportPost(post: post, reason: "Test", authState: authState) {
             successCalled = true
         }
-        
-        // Wait for async operations
-        try await Task.sleep(nanoseconds: 200_000_000) // 0.2 seconds
         
         #expect(mockPostService.reportPostCalled == true)
         #expect(viewModel.errorMessage?.contains("Failed to report post") == true)
@@ -372,12 +345,9 @@ struct PostDetailViewModelTests {
         let comment = createMockComment(id: "1", text: "Test comment")
         
         var successCalled = false
-        viewModel.reportComment(comment, postId: "post-1", reason: "Test", authState: authState) {
+        await viewModel.reportComment(comment, postId: "post-1", reason: "Test", authState: authState) {
             successCalled = true
         }
-        
-        // Wait for async operations
-        try await Task.sleep(nanoseconds: 200_000_000) // 0.2 seconds
         
         #expect(mockPostService.reportCommentCalled == true)
         #expect(viewModel.errorMessage?.contains("Failed to report comment") == true)
