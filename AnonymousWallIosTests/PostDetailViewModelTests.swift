@@ -241,6 +241,148 @@ struct PostDetailViewModelTests {
         #expect(viewModel.errorMessage == "Authentication required")
     }
     
+    // MARK: - Report Tests
+    
+    @Test func testReportPostSuccess() async throws {
+        let mockPostService = MockPostService()
+        let viewModel = PostDetailViewModel(postService: mockPostService)
+        let authState = createMockAuthState()
+        let post = createMockPost(id: "1", title: "Test Post")
+        
+        var successCalled = false
+        viewModel.reportPost(post: post, reason: "Inappropriate content", authState: authState) {
+            successCalled = true
+        }
+        
+        // Wait for async operations
+        try await Task.sleep(nanoseconds: 200_000_000) // 0.2 seconds
+        
+        #expect(mockPostService.reportPostCalled == true)
+        #expect(viewModel.errorMessage == nil)
+        #expect(successCalled == true)
+    }
+    
+    @Test func testReportPostWithoutReason() async throws {
+        let mockPostService = MockPostService()
+        let viewModel = PostDetailViewModel(postService: mockPostService)
+        let authState = createMockAuthState()
+        let post = createMockPost(id: "1", title: "Test Post")
+        
+        var successCalled = false
+        viewModel.reportPost(post: post, reason: nil, authState: authState) {
+            successCalled = true
+        }
+        
+        // Wait for async operations
+        try await Task.sleep(nanoseconds: 200_000_000) // 0.2 seconds
+        
+        #expect(mockPostService.reportPostCalled == true)
+        #expect(viewModel.errorMessage == nil)
+        #expect(successCalled == true)
+    }
+    
+    @Test func testReportPostRequiresAuthentication() async throws {
+        let mockPostService = MockPostService()
+        let viewModel = PostDetailViewModel(postService: mockPostService)
+        let authState = AuthState(loadPersistedState: false) // No user logged in
+        let post = createMockPost(id: "1", title: "Test Post")
+        
+        viewModel.reportPost(post: post, reason: "Test", authState: authState) {}
+        
+        #expect(viewModel.errorMessage == "Authentication required")
+        #expect(mockPostService.reportPostCalled == false)
+    }
+    
+    @Test func testReportCommentSuccess() async throws {
+        let mockPostService = MockPostService()
+        let viewModel = PostDetailViewModel(postService: mockPostService)
+        let authState = createMockAuthState()
+        let comment = createMockComment(id: "1", text: "Test comment")
+        
+        var successCalled = false
+        viewModel.reportComment(comment, postId: "post-1", reason: "Spam", authState: authState) {
+            successCalled = true
+        }
+        
+        // Wait for async operations
+        try await Task.sleep(nanoseconds: 200_000_000) // 0.2 seconds
+        
+        #expect(mockPostService.reportCommentCalled == true)
+        #expect(viewModel.errorMessage == nil)
+        #expect(successCalled == true)
+    }
+    
+    @Test func testReportCommentWithoutReason() async throws {
+        let mockPostService = MockPostService()
+        let viewModel = PostDetailViewModel(postService: mockPostService)
+        let authState = createMockAuthState()
+        let comment = createMockComment(id: "1", text: "Test comment")
+        
+        var successCalled = false
+        viewModel.reportComment(comment, postId: "post-1", reason: nil, authState: authState) {
+            successCalled = true
+        }
+        
+        // Wait for async operations
+        try await Task.sleep(nanoseconds: 200_000_000) // 0.2 seconds
+        
+        #expect(mockPostService.reportCommentCalled == true)
+        #expect(viewModel.errorMessage == nil)
+        #expect(successCalled == true)
+    }
+    
+    @Test func testReportCommentRequiresAuthentication() async throws {
+        let mockPostService = MockPostService()
+        let viewModel = PostDetailViewModel(postService: mockPostService)
+        let authState = AuthState(loadPersistedState: false) // No user logged in
+        let comment = createMockComment(id: "1", text: "Test comment")
+        
+        viewModel.reportComment(comment, postId: "post-1", reason: "Test", authState: authState) {}
+        
+        #expect(viewModel.errorMessage == "Authentication required")
+        #expect(mockPostService.reportCommentCalled == false)
+    }
+    
+    @Test func testReportPostFailure() async throws {
+        let mockPostService = MockPostService()
+        mockPostService.reportPostBehavior = .failure(MockPostService.MockError.networkError)
+        let viewModel = PostDetailViewModel(postService: mockPostService)
+        let authState = createMockAuthState()
+        let post = createMockPost(id: "1", title: "Test Post")
+        
+        var successCalled = false
+        viewModel.reportPost(post: post, reason: "Test", authState: authState) {
+            successCalled = true
+        }
+        
+        // Wait for async operations
+        try await Task.sleep(nanoseconds: 200_000_000) // 0.2 seconds
+        
+        #expect(mockPostService.reportPostCalled == true)
+        #expect(viewModel.errorMessage?.contains("Failed to report post") == true)
+        #expect(successCalled == false)
+    }
+    
+    @Test func testReportCommentFailure() async throws {
+        let mockPostService = MockPostService()
+        mockPostService.reportCommentBehavior = .failure(MockPostService.MockError.networkError)
+        let viewModel = PostDetailViewModel(postService: mockPostService)
+        let authState = createMockAuthState()
+        let comment = createMockComment(id: "1", text: "Test comment")
+        
+        var successCalled = false
+        viewModel.reportComment(comment, postId: "post-1", reason: "Test", authState: authState) {
+            successCalled = true
+        }
+        
+        // Wait for async operations
+        try await Task.sleep(nanoseconds: 200_000_000) // 0.2 seconds
+        
+        #expect(mockPostService.reportCommentCalled == true)
+        #expect(viewModel.errorMessage?.contains("Failed to report comment") == true)
+        #expect(successCalled == false)
+    }
+    
     // MARK: - Helper Methods
     
     private func createMockAuthState() -> AuthState {

@@ -56,6 +56,8 @@ class MockPostService: PostServiceProtocol {
     var getCommentsCalled = false
     var hideCommentCalled = false
     var unhideCommentCalled = false
+    var reportPostCalled = false
+    var reportCommentCalled = false
     
     // MARK: - Configurable Behavior
     
@@ -69,6 +71,8 @@ class MockPostService: PostServiceProtocol {
     var getCommentsBehavior: MockBehavior = .success
     var hideCommentBehavior: MockBehavior = .success
     var unhideCommentBehavior: MockBehavior = .success
+    var reportPostBehavior: MockBehavior = .success
+    var reportCommentBehavior: MockBehavior = .success
     
     // MARK: - Configurable State
     
@@ -78,6 +82,7 @@ class MockPostService: PostServiceProtocol {
     var mockComment: Comment?
     var mockLikeResponse: LikeResponse?
     var mockHideResponse: HidePostResponse?
+    var mockReportResponse: ReportResponse?
     
     // MARK: - Initialization
     
@@ -351,6 +356,45 @@ class MockPostService: PostServiceProtocol {
         }
     }
     
+    // MARK: - Report Operations
+    
+    func reportPost(
+        postId: String,
+        reason: String?,
+        token: String,
+        userId: String
+    ) async throws -> ReportResponse {
+        reportPostCalled = true
+        
+        switch reportPostBehavior {
+        case .success:
+            return mockReportResponse ?? ReportResponse(message: "Post reported successfully")
+        case .failure(let error):
+            throw error
+        case .emptyState:
+            return ReportResponse(message: "")
+        }
+    }
+    
+    func reportComment(
+        postId: String,
+        commentId: String,
+        reason: String?,
+        token: String,
+        userId: String
+    ) async throws -> ReportResponse {
+        reportCommentCalled = true
+        
+        switch reportCommentBehavior {
+        case .success:
+            return mockReportResponse ?? ReportResponse(message: "Comment reported successfully")
+        case .failure(let error):
+            throw error
+        case .emptyState:
+            return ReportResponse(message: "")
+        }
+    }
+    
     // MARK: - Helper Methods
     
     /// Reset all call tracking flags
@@ -365,6 +409,8 @@ class MockPostService: PostServiceProtocol {
         getCommentsCalled = false
         hideCommentCalled = false
         unhideCommentCalled = false
+        reportPostCalled = false
+        reportCommentCalled = false
     }
     
     /// Reset all behaviors to success
@@ -379,6 +425,8 @@ class MockPostService: PostServiceProtocol {
         getCommentsBehavior = .success
         hideCommentBehavior = .success
         unhideCommentBehavior = .success
+        reportPostBehavior = .success
+        reportCommentBehavior = .success
     }
     
     /// Configure all methods to fail with specific error
@@ -393,6 +441,8 @@ class MockPostService: PostServiceProtocol {
         getCommentsBehavior = .failure(error)
         hideCommentBehavior = .failure(error)
         unhideCommentBehavior = .failure(error)
+        reportPostBehavior = .failure(error)
+        reportCommentBehavior = .failure(error)
     }
     
     /// Configure all methods to return empty state
@@ -407,6 +457,8 @@ class MockPostService: PostServiceProtocol {
         getCommentsBehavior = .emptyState
         hideCommentBehavior = .emptyState
         unhideCommentBehavior = .emptyState
+        reportPostBehavior = .emptyState
+        reportCommentBehavior = .emptyState
     }
     
     /// Clear all stored mock data
@@ -417,5 +469,6 @@ class MockPostService: PostServiceProtocol {
         mockComment = nil
         mockLikeResponse = nil
         mockHideResponse = nil
+        mockReportResponse = nil
     }
 }

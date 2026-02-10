@@ -151,6 +151,42 @@ class PostDetailViewModel: ObservableObject {
         }
     }
     
+    func reportPost(post: Post, reason: String?, authState: AuthState, onSuccess: @escaping () -> Void) {
+        guard let token = authState.authToken,
+              let userId = authState.currentUser?.id else {
+            errorMessage = "Authentication required"
+            return
+        }
+        
+        Task {
+            do {
+                _ = try await postService.reportPost(postId: post.id, reason: reason, token: token, userId: userId)
+                HapticFeedback.success()
+                onSuccess()
+            } catch {
+                errorMessage = "Failed to report post: \(error.localizedDescription)"
+            }
+        }
+    }
+    
+    func reportComment(_ comment: Comment, postId: String, reason: String?, authState: AuthState, onSuccess: @escaping () -> Void) {
+        guard let token = authState.authToken,
+              let userId = authState.currentUser?.id else {
+            errorMessage = "Authentication required"
+            return
+        }
+        
+        Task {
+            do {
+                _ = try await postService.reportComment(postId: postId, commentId: comment.id, reason: reason, token: token, userId: userId)
+                HapticFeedback.success()
+                onSuccess()
+            } catch {
+                errorMessage = "Failed to report comment: \(error.localizedDescription)"
+            }
+        }
+    }
+    
     // MARK: - Private Methods
     private func resetPagination() {
         currentPage = 1
