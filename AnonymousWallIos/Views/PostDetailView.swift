@@ -199,7 +199,7 @@ struct PostDetailView: View {
                 
                 Button(action: {
                     HapticFeedback.light()
-                    viewModel.submitComment(postId: post.id, authState: authState, onSuccess: {})
+                    viewModel.submitComment(postId: post.id, authState: authState, post: $post, onSuccess: {})
                 }) {
                     if viewModel.isSubmitting {
                         ProgressView()
@@ -241,6 +241,7 @@ struct PostDetailView: View {
         }
         .onAppear {
             viewModel.loadComments(postId: post.id, authState: authState)
+            viewModel.refreshPost(post: $post, authState: authState)
         }
         .refreshable {
             await viewModel.refreshComments(postId: post.id, authState: authState)
@@ -252,7 +253,7 @@ struct PostDetailView: View {
         ) {
             Button("Delete", role: .destructive) {
                 if let comment = viewModel.commentToDelete {
-                    viewModel.deleteComment(comment, postId: post.id, authState: authState)
+                    viewModel.deleteComment(comment, postId: post.id, authState: authState, post: $post)
                 }
             }
             Button("Cancel", role: .cancel) {}

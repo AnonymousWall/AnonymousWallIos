@@ -6,6 +6,7 @@
 //
 
 import Testing
+import SwiftUI
 @testable import AnonymousWallIos
 
 @MainActor
@@ -34,11 +35,12 @@ struct PostDetailViewModelTests {
         let mockPostService = MockPostService()
         let viewModel = PostDetailViewModel(postService: mockPostService)
         let authState = createMockAuthState()
+        let post = createMockPost(id: "post-1", title: "Test Post")
         
         viewModel.commentText = ""
         
         var successCalled = false
-        viewModel.submitComment(postId: "post-1", authState: authState) {
+        viewModel.submitComment(postId: "post-1", authState: authState, post: .constant(post)) {
             successCalled = true
         }
         
@@ -50,11 +52,12 @@ struct PostDetailViewModelTests {
         let mockPostService = MockPostService()
         let viewModel = PostDetailViewModel(postService: mockPostService)
         let authState = createMockAuthState()
+        let post = createMockPost(id: "post-1", title: "Test Post")
         
         viewModel.commentText = "   \n  "
         
         var successCalled = false
-        viewModel.submitComment(postId: "post-1", authState: authState) {
+        viewModel.submitComment(postId: "post-1", authState: authState, post: .constant(post)) {
             successCalled = true
         }
         
@@ -66,11 +69,12 @@ struct PostDetailViewModelTests {
         let mockPostService = MockPostService()
         let viewModel = PostDetailViewModel(postService: mockPostService)
         let authState = AuthState(loadPersistedState: false) // Not authenticated
+        let post = createMockPost(id: "post-1", title: "Test Post")
         
         viewModel.commentText = "Test comment"
         
         var successCalled = false
-        viewModel.submitComment(postId: "post-1", authState: authState) {
+        viewModel.submitComment(postId: "post-1", authState: authState, post: .constant(post)) {
             successCalled = true
         }
         
@@ -82,11 +86,15 @@ struct PostDetailViewModelTests {
         let mockPostService = MockPostService()
         let viewModel = PostDetailViewModel(postService: mockPostService)
         let authState = createMockAuthState()
+        var post = createMockPost(id: "post-1", title: "Test Post")
         
         viewModel.commentText = "Great post!"
         
         var successCalled = false
-        viewModel.submitComment(postId: "post-1", authState: authState) {
+        viewModel.submitComment(postId: "post-1", authState: authState, post: Binding(
+            get: { post },
+            set: { post = $0 }
+        )) {
             successCalled = true
         }
         
@@ -97,6 +105,7 @@ struct PostDetailViewModelTests {
         #expect(viewModel.commentText.isEmpty)
         #expect(viewModel.errorMessage == nil)
         #expect(successCalled == true)
+        #expect(post.comments == 1) // Comment count should be incremented
     }
     
     // MARK: - Validation Tests
@@ -105,11 +114,12 @@ struct PostDetailViewModelTests {
         let mockPostService = MockPostService()
         let viewModel = PostDetailViewModel(postService: mockPostService)
         let authState = createMockAuthState()
+        let post = createMockPost(id: "post-1", title: "Test Post")
         
         viewModel.commentText = "  Test comment with spaces  "
         
         var successCalled = false
-        viewModel.submitComment(postId: "post-1", authState: authState) {
+        viewModel.submitComment(postId: "post-1", authState: authState, post: .constant(post)) {
             successCalled = true
         }
         
@@ -126,15 +136,16 @@ struct PostDetailViewModelTests {
         let mockPostService = MockPostService()
         let viewModel = PostDetailViewModel(postService: mockPostService)
         let authState = createMockAuthState()
+        let post = createMockPost(id: "post-1", title: "Test Post")
         
         // First attempt with empty comment
         viewModel.commentText = ""
-        viewModel.submitComment(postId: "post-1", authState: authState) {}
+        viewModel.submitComment(postId: "post-1", authState: authState, post: .constant(post)) {}
         #expect(viewModel.errorMessage == "Comment cannot be empty")
         
         // Second attempt with valid comment should clear error
         viewModel.commentText = "Valid comment"
-        viewModel.submitComment(postId: "post-1", authState: authState) {}
+        viewModel.submitComment(postId: "post-1", authState: authState, post: .constant(post)) {}
         
         try await Task.sleep(nanoseconds: 200_000_000)
         
@@ -194,11 +205,12 @@ struct PostDetailViewModelTests {
         let mockPostService = MockPostService()
         let viewModel = PostDetailViewModel(postService: mockPostService)
         let authState = createMockAuthState()
+        let post = createMockPost(id: "post-1", title: "Test Post")
         
         viewModel.commentText = "Test comment"
         #expect(!viewModel.commentText.isEmpty)
         
-        viewModel.submitComment(postId: "post-1", authState: authState) {}
+        viewModel.submitComment(postId: "post-1", authState: authState, post: .constant(post)) {}
         
         try await Task.sleep(nanoseconds: 200_000_000)
         
@@ -211,10 +223,11 @@ struct PostDetailViewModelTests {
         let mockPostService = MockPostService()
         let viewModel = PostDetailViewModel(postService: mockPostService)
         let authState = AuthState(loadPersistedState: false) // No user logged in
+        let post = createMockPost(id: "post-1", title: "Test Post")
         
         viewModel.commentText = "Test comment"
         
-        viewModel.submitComment(postId: "post-1", authState: authState) {}
+        viewModel.submitComment(postId: "post-1", authState: authState, post: .constant(post)) {}
         
         #expect(viewModel.errorMessage == "Not authenticated")
     }
@@ -224,8 +237,9 @@ struct PostDetailViewModelTests {
         let viewModel = PostDetailViewModel(postService: mockPostService)
         let authState = AuthState(loadPersistedState: false) // No user logged in
         let comment = createMockComment(id: "1", text: "Test")
+        let post = createMockPost(id: "post-1", title: "Test Post")
         
-        viewModel.deleteComment(comment, postId: "post-1", authState: authState)
+        viewModel.deleteComment(comment, postId: "post-1", authState: authState, post: .constant(post))
         
         #expect(viewModel.errorMessage == "Authentication required")
     }
@@ -381,6 +395,78 @@ struct PostDetailViewModelTests {
         #expect(mockPostService.reportCommentCalled == true)
         #expect(viewModel.errorMessage?.contains("Failed to report comment") == true)
         #expect(successCalled == false)
+    }
+    
+    // MARK: - Comment Count Update Tests
+    
+    @Test func testCommentCountIncrementedAfterSubmit() async throws {
+        let mockPostService = MockPostService()
+        let viewModel = PostDetailViewModel(postService: mockPostService)
+        let authState = createMockAuthState()
+        var post = createMockPost(id: "post-1", title: "Test Post")
+        
+        // Initial comment count is 0
+        #expect(post.comments == 0)
+        
+        viewModel.commentText = "New comment"
+        
+        viewModel.submitComment(postId: "post-1", authState: authState, post: Binding(
+            get: { post },
+            set: { post = $0 }
+        )) {}
+        
+        // Wait for async operations
+        try await Task.sleep(nanoseconds: 200_000_000)
+        
+        // Comment count should be incremented to 1
+        #expect(post.comments == 1)
+    }
+    
+    @Test func testCommentCountDecrementedAfterDelete() async throws {
+        let mockPostService = MockPostService()
+        let viewModel = PostDetailViewModel(postService: mockPostService)
+        let authState = createMockAuthState()
+        var post = createMockPost(id: "post-1", title: "Test Post")
+        
+        // Set initial comment count to 3
+        post = post.withUpdatedComments(comments: 3)
+        #expect(post.comments == 3)
+        
+        let comment = createMockComment(id: "1", text: "Test comment")
+        
+        viewModel.deleteComment(comment, postId: "post-1", authState: authState, post: Binding(
+            get: { post },
+            set: { post = $0 }
+        ))
+        
+        // Wait for async operations
+        try await Task.sleep(nanoseconds: 200_000_000)
+        
+        // Comment count should be decremented to 2
+        #expect(post.comments == 2)
+    }
+    
+    @Test func testCommentCountNeverGoesNegative() async throws {
+        let mockPostService = MockPostService()
+        let viewModel = PostDetailViewModel(postService: mockPostService)
+        let authState = createMockAuthState()
+        var post = createMockPost(id: "post-1", title: "Test Post")
+        
+        // Set comment count to 0
+        #expect(post.comments == 0)
+        
+        let comment = createMockComment(id: "1", text: "Test comment")
+        
+        viewModel.deleteComment(comment, postId: "post-1", authState: authState, post: Binding(
+            get: { post },
+            set: { post = $0 }
+        ))
+        
+        // Wait for async operations
+        try await Task.sleep(nanoseconds: 200_000_000)
+        
+        // Comment count should remain at 0 (not go negative)
+        #expect(post.comments == 0)
     }
     
     // MARK: - Helper Methods
