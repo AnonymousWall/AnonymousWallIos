@@ -6,6 +6,7 @@
 //
 
 import Testing
+import SwiftUI
 @testable import AnonymousWallIos
 
 @MainActor
