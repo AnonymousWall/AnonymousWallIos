@@ -228,16 +228,6 @@ do {
 - **Clean State**: Ensures proper cleanup (like setting `isSubmitting = false`) even when cancelled
 
 ## Architecture Benefits
-@Test func testSubmitCommentSuccess() async throws {
-    await viewModel.submitComment(postId: "post-1", authState: authState) {
-        successCalled = true
-    }
-    
-    #expect(viewModel.isSubmitting == false)
-}
-```
-
-## Architecture Benefits
 
 ### Separation of Concerns
 - **ViewModel**: Defines async operations without managing Task lifecycle
