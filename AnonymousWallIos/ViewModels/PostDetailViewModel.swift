@@ -26,6 +26,7 @@ class PostDetailViewModel: ObservableObject {
     // MARK: - Private Properties
     private var currentPage = 1
     private var hasMorePages = true
+    private var loadCommentsTask: Task<Void, Never>?
     
     // MARK: - Initialization
     init(postService: PostServiceProtocol = PostService.shared) {
@@ -33,31 +34,44 @@ class PostDetailViewModel: ObservableObject {
     }
     
     // MARK: - Public Methods
-    func loadComments(postId: String, authState: AuthState) async {
-        await performLoadComments(postId: postId, authState: authState)
+    func loadComments(postId: String, authState: AuthState) {
+        loadCommentsTask?.cancel()
+        loadCommentsTask = Task {
+            await performLoadComments(postId: postId, authState: authState)
+        }
     }
     
     func refreshComments(postId: String, authState: AuthState) async {
+        loadCommentsTask?.cancel()
         resetPagination()
-        await performLoadComments(postId: postId, authState: authState)
+        loadCommentsTask = Task {
+            await performLoadComments(postId: postId, authState: authState)
+        }
+        await loadCommentsTask?.value
     }
     
-    func loadMoreCommentsIfNeeded(for comment: Comment, postId: String, authState: AuthState) async {
+    func loadMoreCommentsIfNeeded(for comment: Comment, postId: String, authState: AuthState) {
         guard !isLoadingMoreComments && hasMorePages else { return }
         guard comment.id == comments.last?.id else { return }
         
-        isLoadingMoreComments = true
-        await performLoadMoreComments(postId: postId, authState: authState)
+        Task {
+            guard !isLoadingMoreComments && hasMorePages else { return }
+            isLoadingMoreComments = true
+            await performLoadMoreComments(postId: postId, authState: authState)
+        }
     }
     
-    func sortOrderChanged(postId: String, authState: AuthState) async {
+    func sortOrderChanged(postId: String, authState: AuthState) {
         HapticFeedback.selection()
+        loadCommentsTask?.cancel()
         comments = []
         resetPagination()
-        await performLoadComments(postId: postId, authState: authState)
+        loadCommentsTask = Task {
+            await performLoadComments(postId: postId, authState: authState)
+        }
     }
     
-    func submitComment(postId: String, authState: AuthState, onSuccess: @escaping () -> Void) async {
+    func submitComment(postId: String, authState: AuthState, onSuccess: @escaping () -> Void) {
         let trimmedText = commentText.trimmingCharacters(in: .whitespacesAndNewlines)
         
         guard !trimmedText.isEmpty else {
@@ -74,126 +88,144 @@ class PostDetailViewModel: ObservableObject {
         isSubmitting = true
         errorMessage = nil
         
-        do {
-            _ = try await postService.addComment(postId: postId, text: trimmedText, token: token, userId: userId)
-            HapticFeedback.success()
-            isSubmitting = false
-            commentText = ""
-            onSuccess()
-            // Reload comments to show the new one
-            resetPagination()
-            await performLoadComments(postId: postId, authState: authState)
-        } catch is CancellationError {
-            isSubmitting = false
-            return
-        } catch NetworkError.cancelled {
-            isSubmitting = false
-            return
-        } catch {
-            isSubmitting = false
-            errorMessage = error.localizedDescription
+        Task {
+            do {
+                _ = try await postService.addComment(postId: postId, text: trimmedText, token: token, userId: userId)
+                HapticFeedback.success()
+                isSubmitting = false
+                commentText = ""
+                onSuccess()
+                // Reload comments to show the new one
+                loadCommentsTask?.cancel()
+                resetPagination()
+                loadCommentsTask = Task {
+                    await performLoadComments(postId: postId, authState: authState)
+                }
+            } catch is CancellationError {
+                isSubmitting = false
+                return
+            } catch NetworkError.cancelled {
+                isSubmitting = false
+                return
+            } catch {
+                isSubmitting = false
+                errorMessage = error.localizedDescription
+            }
         }
     }
     
-    func toggleLike(post: Binding<Post>, authState: AuthState) async {
+    func toggleLike(post: Binding<Post>, authState: AuthState) {
         guard let token = authState.authToken,
               let userId = authState.currentUser?.id else {
             return
         }
         
-        do {
-            let response = try await postService.toggleLike(postId: post.wrappedValue.id, token: token, userId: userId)
-            post.wrappedValue = post.wrappedValue.withUpdatedLike(liked: response.liked, likes: response.likeCount)
-        } catch is CancellationError {
-            return
-        } catch NetworkError.cancelled {
-            return
-        } catch {
-            errorMessage = error.localizedDescription
+        Task {
+            do {
+                let response = try await postService.toggleLike(postId: post.wrappedValue.id, token: token, userId: userId)
+                post.wrappedValue = post.wrappedValue.withUpdatedLike(liked: response.liked, likes: response.likeCount)
+            } catch is CancellationError {
+                return
+            } catch NetworkError.cancelled {
+                return
+            } catch {
+                errorMessage = error.localizedDescription
+            }
         }
     }
     
-    func deletePost(post: Post, authState: AuthState, onSuccess: @escaping () -> Void) async {
-        guard let token = authState.authToken,
-              let userId = authState.currentUser?.id else {
-            errorMessage = "Authentication required"
-            return
-        }
-        
-        do {
-            _ = try await postService.hidePost(postId: post.id, token: token, userId: userId)
-            HapticFeedback.success()
-            onSuccess()
-        } catch is CancellationError {
-            return
-        } catch NetworkError.cancelled {
-            return
-        } catch {
-            errorMessage = "Failed to delete post: \(error.localizedDescription)"
-        }
-    }
-    
-    func deleteComment(_ comment: Comment, postId: String, authState: AuthState) async {
+    func deletePost(post: Post, authState: AuthState, onSuccess: @escaping () -> Void) {
         guard let token = authState.authToken,
               let userId = authState.currentUser?.id else {
             errorMessage = "Authentication required"
             return
         }
         
-        do {
-            _ = try await postService.hideComment(postId: postId, commentId: comment.id, token: token, userId: userId)
-            HapticFeedback.success()
-            // Reload comments to remove the deleted one
-            resetPagination()
-            await performLoadComments(postId: postId, authState: authState)
-        } catch is CancellationError {
-            return
-        } catch NetworkError.cancelled {
-            return
-        } catch {
-            errorMessage = "Failed to delete comment: \(error.localizedDescription)"
+        Task {
+            do {
+                _ = try await postService.hidePost(postId: post.id, token: token, userId: userId)
+                HapticFeedback.success()
+                onSuccess()
+            } catch is CancellationError {
+                return
+            } catch NetworkError.cancelled {
+                return
+            } catch {
+                errorMessage = "Failed to delete post: \(error.localizedDescription)"
+            }
         }
     }
     
-    func reportPost(post: Post, reason: String?, authState: AuthState, onSuccess: @escaping () -> Void) async {
+    func deleteComment(_ comment: Comment, postId: String, authState: AuthState) {
         guard let token = authState.authToken,
               let userId = authState.currentUser?.id else {
             errorMessage = "Authentication required"
             return
         }
         
-        do {
-            let response = try await postService.reportPost(postId: post.id, reason: reason, token: token, userId: userId)
-            Logger.data.info("Post reported: \(response.message)")
-            HapticFeedback.success()
-            onSuccess()
-        } catch is CancellationError {
-            return
-        } catch NetworkError.cancelled {
-            return
-        } catch {
-            errorMessage = "Failed to report post: \(error.localizedDescription)"
+        Task {
+            do {
+                _ = try await postService.hideComment(postId: postId, commentId: comment.id, token: token, userId: userId)
+                HapticFeedback.success()
+                // Reload comments to remove the deleted one
+                loadCommentsTask?.cancel()
+                resetPagination()
+                loadCommentsTask = Task {
+                    await performLoadComments(postId: postId, authState: authState)
+                }
+            } catch is CancellationError {
+                return
+            } catch NetworkError.cancelled {
+                return
+            } catch {
+                errorMessage = "Failed to delete comment: \(error.localizedDescription)"
+            }
         }
     }
     
-    func reportComment(_ comment: Comment, postId: String, reason: String?, authState: AuthState, onSuccess: @escaping () -> Void) async {
+    func reportPost(post: Post, reason: String?, authState: AuthState, onSuccess: @escaping () -> Void) {
         guard let token = authState.authToken,
               let userId = authState.currentUser?.id else {
             errorMessage = "Authentication required"
             return
         }
         
-        do {
-            let response = try await postService.reportComment(postId: postId, commentId: comment.id, reason: reason, token: token, userId: userId)
-            Logger.data.info("Comment reported: \(response.message)")
-            HapticFeedback.success()
-            onSuccess()
-        } catch is CancellationError {
+        Task {
+            do {
+                let response = try await postService.reportPost(postId: post.id, reason: reason, token: token, userId: userId)
+                Logger.data.info("Post reported: \(response.message)")
+                HapticFeedback.success()
+                onSuccess()
+            } catch is CancellationError {
+                return
+            } catch NetworkError.cancelled {
+                return
+            } catch {
+                errorMessage = "Failed to report post: \(error.localizedDescription)"
+            }
+        }
+    }
+    
+    func reportComment(_ comment: Comment, postId: String, reason: String?, authState: AuthState, onSuccess: @escaping () -> Void) {
+        guard let token = authState.authToken,
+              let userId = authState.currentUser?.id else {
+            errorMessage = "Authentication required"
             return
-        } catch NetworkError.cancelled {
-            return
-        } catch {
-            errorMessage = "Failed to report comment: \(error.localizedDescription)"
+        }
+        
+        Task {
+            do {
+                let response = try await postService.reportComment(postId: postId, commentId: comment.id, reason: reason, token: token, userId: userId)
+                Logger.data.info("Comment reported: \(response.message)")
+                HapticFeedback.success()
+                onSuccess()
+            } catch is CancellationError {
+                return
+            } catch NetworkError.cancelled {
+                return
+            } catch {
+                errorMessage = "Failed to report comment: \(error.localizedDescription)"
+            }
         }
     }
     

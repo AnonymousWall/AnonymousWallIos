@@ -55,9 +55,7 @@ struct PostDetailView: View {
                                 // Like button
                                 Button(action: {
                                     HapticFeedback.medium()
-                                    Task {
-                                        await viewModel.toggleLike(post: $post, authState: authState)
-                                    }
+                                    viewModel.toggleLike(post: $post, authState: authState)
                                 }) {
                                     HStack(spacing: 5) {
                                         Image(systemName: post.liked ? "heart.fill" : "heart")
@@ -116,9 +114,7 @@ struct PostDetailView: View {
                             }
                             .pickerStyle(.menu)
                             .onChange(of: viewModel.selectedSortOrder) { _, _ in
-                                Task {
-                                    await viewModel.sortOrderChanged(postId: post.id, authState: authState)
-                                }
+                                viewModel.sortOrderChanged(postId: post.id, authState: authState)
                             }
                         }
                     }
@@ -163,9 +159,8 @@ struct PostDetailView: View {
                                 )
                                 .onAppear {
                                     // Load more when the last comment appears
-                                    Task {
-                                        await viewModel.loadMoreCommentsIfNeeded(for: comment, postId: post.id, authState: authState)
-                                    }
+                                    viewModel.loadMoreCommentsIfNeeded(for: comment, postId: post.id, authState: authState)
+                                }
                                 }
                             }
                             
@@ -205,9 +200,7 @@ struct PostDetailView: View {
                 
                 Button(action: {
                     HapticFeedback.light()
-                    Task {
-                        await viewModel.submitComment(postId: post.id, authState: authState, onSuccess: {})
-                    }
+                    viewModel.submitComment(postId: post.id, authState: authState, onSuccess: {})
                 }) {
                     if viewModel.isSubmitting {
                         ProgressView()
@@ -248,9 +241,7 @@ struct PostDetailView: View {
             }
         }
         .onAppear {
-            Task {
-                await viewModel.loadComments(postId: post.id, authState: authState)
-            }
+            viewModel.loadComments(postId: post.id, authState: authState)
         }
         .refreshable {
             await viewModel.refreshComments(postId: post.id, authState: authState)
@@ -262,9 +253,7 @@ struct PostDetailView: View {
         ) {
             Button("Delete", role: .destructive) {
                 if let comment = viewModel.commentToDelete {
-                    Task {
-                        await viewModel.deleteComment(comment, postId: post.id, authState: authState)
-                    }
+                    viewModel.deleteComment(comment, postId: post.id, authState: authState)
                 }
             }
             Button("Cancel", role: .cancel) {}
@@ -274,12 +263,10 @@ struct PostDetailView: View {
         .alert("Report Post", isPresented: $showReportPostDialog) {
             TextField("Reason (optional)", text: $reportReason)
             Button("Report", role: .destructive) {
-                Task {
-                    await viewModel.reportPost(post: post, reason: reportReason.isEmpty ? nil : reportReason, authState: authState) {
-                        reportSuccessMessage = "Post reported successfully"
-                        showReportSuccessAlert = true
-                        reportReason = ""
-                    }
+                viewModel.reportPost(post: post, reason: reportReason.isEmpty ? nil : reportReason, authState: authState) {
+                    reportSuccessMessage = "Post reported successfully"
+                    showReportSuccessAlert = true
+                    reportReason = ""
                 }
             }
             Button("Cancel", role: .cancel) {
@@ -292,12 +279,10 @@ struct PostDetailView: View {
             TextField("Reason (optional)", text: $reportReason)
             Button("Report", role: .destructive) {
                 if let comment = viewModel.commentToReport {
-                    Task {
-                        await viewModel.reportComment(comment, postId: post.id, reason: reportReason.isEmpty ? nil : reportReason, authState: authState) {
-                            reportSuccessMessage = "Comment reported successfully"
-                            showReportSuccessAlert = true
-                            reportReason = ""
-                        }
+                    viewModel.reportComment(comment, postId: post.id, reason: reportReason.isEmpty ? nil : reportReason, authState: authState) {
+                        reportSuccessMessage = "Comment reported successfully"
+                        showReportSuccessAlert = true
+                        reportReason = ""
                     }
                 }
             }
