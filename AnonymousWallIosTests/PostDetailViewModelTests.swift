@@ -24,6 +24,7 @@ struct PostDetailViewModelTests {
         #expect(viewModel.isSubmitting == false)
         #expect(viewModel.errorMessage == nil)
         #expect(viewModel.commentToDelete == nil)
+        #expect(viewModel.commentToReport == nil)
         #expect(viewModel.selectedSortOrder == .newest)
     }
     

@@ -17,6 +17,7 @@ class PostDetailViewModel: ObservableObject {
     @Published var isSubmitting = false
     @Published var errorMessage: String?
     @Published var commentToDelete: Comment?
+    @Published var commentToReport: Comment?
     @Published var selectedSortOrder: SortOrder = .newest
     
     // MARK: - Dependencies
@@ -160,7 +161,8 @@ class PostDetailViewModel: ObservableObject {
         
         Task {
             do {
-                _ = try await postService.reportPost(postId: post.id, reason: reason, token: token, userId: userId)
+                let response = try await postService.reportPost(postId: post.id, reason: reason, token: token, userId: userId)
+                Logger.data.info("Post reported: \(response.message)")
                 HapticFeedback.success()
                 onSuccess()
             } catch {
@@ -178,7 +180,8 @@ class PostDetailViewModel: ObservableObject {
         
         Task {
             do {
-                _ = try await postService.reportComment(postId: postId, commentId: comment.id, reason: reason, token: token, userId: userId)
+                let response = try await postService.reportComment(postId: postId, commentId: comment.id, reason: reason, token: token, userId: userId)
+                Logger.data.info("Comment reported: \(response.message)")
                 HapticFeedback.success()
                 onSuccess()
             } catch {

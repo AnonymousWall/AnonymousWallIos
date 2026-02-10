@@ -153,7 +153,7 @@ struct PostDetailView: View {
                                         showDeleteConfirmation = true
                                     },
                                     onReport: {
-                                        viewModel.commentToDelete = comment
+                                        viewModel.commentToReport = comment
                                         showReportCommentDialog = true
                                     }
                                 )
@@ -277,7 +277,7 @@ struct PostDetailView: View {
         .alert("Report Comment", isPresented: $showReportCommentDialog) {
             TextField("Reason (optional)", text: $reportReason)
             Button("Report", role: .destructive) {
-                if let comment = viewModel.commentToDelete {
+                if let comment = viewModel.commentToReport {
                     viewModel.reportComment(comment, postId: post.id, reason: reportReason.isEmpty ? nil : reportReason, authState: authState) {
                         reportSuccessMessage = "Comment reported successfully"
                         showReportSuccessAlert = true
