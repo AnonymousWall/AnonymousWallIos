@@ -34,6 +34,29 @@ class PostDetailViewModel: ObservableObject {
     }
     
     // MARK: - Public Methods
+    
+    /// Refresh the post to get the latest comment count
+    func refreshPost(post: Binding<Post>, authState: AuthState) {
+        guard let token = authState.authToken,
+              let userId = authState.currentUser?.id else {
+            return
+        }
+        
+        Task {
+            do {
+                let updatedPost = try await postService.getPost(postId: post.wrappedValue.id, token: token, userId: userId)
+                post.wrappedValue = updatedPost
+            } catch is CancellationError {
+                return
+            } catch NetworkError.cancelled {
+                return
+            } catch {
+                // Silently fail - the post will still be displayed with potentially stale data
+                Logger.data.warning("Failed to refresh post: \(error.localizedDescription)")
+            }
+        }
+    }
+    
     func loadComments(postId: String, authState: AuthState) {
         loadCommentsTask?.cancel()
         loadCommentsTask = Task {
@@ -71,7 +94,7 @@ class PostDetailViewModel: ObservableObject {
         }
     }
     
-    func submitComment(postId: String, authState: AuthState, onSuccess: @escaping () -> Void) {
+    func submitComment(postId: String, authState: AuthState, post: Binding<Post>, onSuccess: @escaping () -> Void) {
         let trimmedText = commentText.trimmingCharacters(in: .whitespacesAndNewlines)
         
         guard !trimmedText.isEmpty else {
@@ -94,6 +117,10 @@ class PostDetailViewModel: ObservableObject {
                 HapticFeedback.success()
                 isSubmitting = false
                 commentText = ""
+                
+                // Update the comment count locally
+                post.wrappedValue = post.wrappedValue.withUpdatedComments(comments: post.wrappedValue.comments + 1)
+                
                 onSuccess()
                 // Reload comments to show the new one
                 loadCommentsTask?.cancel()
@@ -156,7 +183,7 @@ class PostDetailViewModel: ObservableObject {
         }
     }
     
-    func deleteComment(_ comment: Comment, postId: String, authState: AuthState) {
+    func deleteComment(_ comment: Comment, postId: String, authState: AuthState, post: Binding<Post>) {
         guard let token = authState.authToken,
               let userId = authState.currentUser?.id else {
             errorMessage = "Authentication required"
@@ -167,6 +194,10 @@ class PostDetailViewModel: ObservableObject {
             do {
                 _ = try await postService.hideComment(postId: postId, commentId: comment.id, token: token, userId: userId)
                 HapticFeedback.success()
+                
+                // Update the comment count locally
+                post.wrappedValue = post.wrappedValue.withUpdatedComments(comments: max(0, post.wrappedValue.comments - 1))
+                
                 // Reload comments to remove the deleted one
                 loadCommentsTask?.cancel()
                 resetPagination()

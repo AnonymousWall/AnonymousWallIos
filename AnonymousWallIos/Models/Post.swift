@@ -63,6 +63,22 @@ struct Post: Codable, Identifiable, Hashable {
             updatedAt: self.updatedAt
         )
     }
+    
+    /// Create a copy of this post with updated comment count
+    func withUpdatedComments(comments: Int) -> Post {
+        return Post(
+            id: self.id,
+            title: self.title,
+            content: self.content,
+            wall: self.wall,
+            likes: self.likes,
+            comments: comments,
+            liked: self.liked,
+            author: self.author,
+            createdAt: self.createdAt,
+            updatedAt: self.updatedAt
+        )
+    }
 }
 
 struct PostListResponse: Codable {
