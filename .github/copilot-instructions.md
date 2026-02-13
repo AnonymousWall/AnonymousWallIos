@@ -1,5 +1,26 @@
 ## API Documentation
 
+### Common Response Codes
+
+- `200 OK` - Request successful
+- `201 Created` - Resource created successfully
+- `400 Bad Request` - Invalid request parameters or validation failed
+- `401 Unauthorized` - Missing or invalid authentication token
+- `403 Forbidden` - Access denied (insufficient permissions or blocked user)
+- `404 Not Found` - Resource not found
+- `500 Internal Server Error` - Server error
+
+**Blocked User Response:**
+When a blocked user attempts any authenticated operation, they receive:
+```json
+HTTP/1.1 403 Forbidden
+Content-Type: application/json
+
+{
+    "error": "Access denied. Your account has been blocked."
+}
+```
+
 ### Authentication Endpoints
 
 #### 1. Send Email Verification Code
@@ -265,7 +286,7 @@ Response: 200 OK
 - `wall` (default: "campus") - Filter by "campus" or "national"
 - `page` (default: 1) - Page number (1-based)
 - `limit` (default: 20) - Posts per page (max: 100)
-- `sort` (default: "NEWEST") - Sort order: NEWEST, OLDEST, MOST_LIKED, LEAST_LIKED
+- `sort` (default: "NEWEST") - Sort order: NEWEST, OLDEST, MOST_LIKED, LEAST_LIKED, MOST_COMMENTED, LEAST_COMMENTED
 
 #### 3. Get Post by ID
 ```http
@@ -584,14 +605,14 @@ Response: 200 OK
 **Query Parameters:**
 - `page` (default: 1) - Page number (1-based)
 - `limit` (default: 20) - Posts per page (max: 100)
-- `sort` (default: "NEWEST") - Sort order: NEWEST, OLDEST, MOST_LIKED, LEAST_LIKED
+- `sort` (default: "NEWEST") - Sort order: NEWEST, OLDEST, MOST_LIKED, LEAST_LIKED, MOST_COMMENTED, LEAST_COMMENTED
 
 **Notes:**
 - Returns all posts created by the authenticated user
 - Hidden (soft-deleted) posts are automatically excluded
 - Uses optimized queries with composite database indexes for efficient retrieval
 - Performance: O(log K) where K is the user's total post count
-- Supports sorting by creation time or like count
+- Supports sorting by creation time, like count, or comment count
 
 #### 3. Update Profile Name (Requires Authentication)
 ```http
@@ -621,34 +642,3 @@ Response: 200 OK
 - Profile name changes are **asynchronously propagated** to all user's posts and comments
 - The API returns immediately after updating the user profile
 - Posts and comments are updated in the background for better performance
-
----
-
-## Authentication & Authorization
-
-### JWT Token
-- Tokens are generated upon successful login/registration
-- Include token in `Authorization: Bearer {token}` header
-- Token contains user ID as principal name
-- Tokens expire after configured duration
-
-### Visibility Rules
-
-#### Campus Posts
-- Only visible to users from **the same school domain**
-- Users from other schools receive **403 Forbidden**
-- Campus wall requires user to have a school domain
-
-#### National Posts
-- Visible to **all authenticated users**
-- No school domain restriction
-
-#### Comments & Likes
-- Same visibility rules as posts apply
-- Users from different schools cannot like/comment on campus posts
-
-### User Authentication Flow
-1. **Registration**: Email verification → Account creation → JWT issued
-2. **Login (Email)**: Email code verification → JWT issued
-3. **Login (Password)**: Email + password → JWT issued
-4. **All Requests**: Include JWT in Authorization header
