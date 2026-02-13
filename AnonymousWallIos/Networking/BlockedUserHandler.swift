@@ -9,7 +9,7 @@ import Foundation
 
 /// Protocol for handling blocked user responses
 protocol BlockedUserHandlerProtocol {
-    func handleBlockedUser()
+    @MainActor func handleBlockedUser()
 }
 
 /// Thread-safe handler for blocked user (HTTP 403) responses

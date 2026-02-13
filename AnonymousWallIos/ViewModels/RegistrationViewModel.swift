@@ -92,11 +92,13 @@ class RegistrationViewModel: ObservableObject {
         stopCountdownTimer()
         
         countdownTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
-            guard let self = self else { return }
-            if self.resendCountdown > 0 {
-                self.resendCountdown -= 1
-            } else {
-                self.stopCountdownTimer()
+            Task { @MainActor [weak self] in
+                guard let self = self else { return }
+                if self.resendCountdown > 0 {
+                    self.resendCountdown -= 1
+                } else {
+                    self.stopCountdownTimer()
+                }
             }
         }
     }
