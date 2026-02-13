@@ -17,9 +17,16 @@ class NetworkClient: NetworkClientProtocol {
     
     private let session: URLSession
     private let config = AppConfiguration.shared
+    private let blockedUserHandler = BlockedUserHandler()
     
     private init(session: URLSession = .shared) {
         self.session = session
+    }
+    
+    /// Configure the handler for blocked user responses
+    @MainActor
+    func configureBlockedUserHandler(onBlockedUser: @escaping () -> Void) {
+        blockedUserHandler.onBlockedUser = onBlockedUser
     }
     
     // MARK: - Request Execution
@@ -46,7 +53,7 @@ class NetworkClient: NetworkClientProtocol {
             
             // Handle different status codes
             switch httpResponse.statusCode {
-            case 200...299:
+            case HTTPStatus.successRange:
                 do {
                     let decoder = JSONDecoder()
                     let result = try decoder.decode(T.self, from: data)
@@ -55,16 +62,18 @@ class NetworkClient: NetworkClientProtocol {
                     throw NetworkError.decodingError(error)
                 }
                 
-            case 401:
+            case HTTPStatus.unauthorized:
                 throw NetworkError.unauthorized
                 
-            case 403:
+            case HTTPStatus.forbidden:
+                // Handle blocked user globally before throwing error
+                await blockedUserHandler.handleBlockedUser()
                 throw NetworkError.forbidden
                 
-            case 404:
+            case HTTPStatus.notFound:
                 throw NetworkError.notFound
                 
-            case 408:
+            case HTTPStatus.timeout:
                 throw NetworkError.timeout
                 
             default:
