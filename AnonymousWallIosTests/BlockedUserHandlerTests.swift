@@ -5,6 +5,7 @@
 //  Tests for blocked user (403) handling
 //
 
+import Foundation
 import Testing
 @testable import AnonymousWallIos
 
@@ -17,7 +18,7 @@ struct BlockedUserHandlerTests {
         let handler = BlockedUserHandler()
         var callbackExecuted = false
         
-        await handler.configureHandler {
+        handler.configureHandler {
             callbackExecuted = true
         }
         
@@ -33,7 +34,7 @@ struct BlockedUserHandlerTests {
         let handler = BlockedUserHandler()
         var executionCount = 0
         
-        await handler.configureHandler {
+        handler.configureHandler {
             executionCount += 1
         }
         
@@ -51,7 +52,7 @@ struct BlockedUserHandlerTests {
         let handler = BlockedUserHandler()
         var executionCount = 0
         
-        await handler.configureHandler {
+        handler.configureHandler {
             executionCount += 1
         }
         
@@ -72,7 +73,7 @@ struct BlockedUserHandlerTests {
         let handler = BlockedUserHandler()
         var executionCount = 0
         
-        await handler.configureHandler {
+        handler.configureHandler {
             executionCount += 1
         }
         
