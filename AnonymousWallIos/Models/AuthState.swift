@@ -14,6 +14,7 @@ class AuthState: ObservableObject {
     @Published var authToken: String?
     @Published var needsPasswordSetup = false
     @Published var hasShownPasswordSetup = false
+    @Published var showBlockedUserAlert = false
     
     private let config = AppConfiguration.shared
     private let keychainAuthTokenKey: String
@@ -63,7 +64,15 @@ class AuthState: ObservableObject {
         self.isAuthenticated = false
         self.needsPasswordSetup = false
         self.hasShownPasswordSetup = false
+        self.showBlockedUserAlert = false
         clearAuthState()
+    }
+    
+    /// Handles blocked user response - logs out and shows alert
+    func handleBlockedUser() {
+        Logger.network.warning("Handling blocked user - logging out")
+        logout()
+        self.showBlockedUserAlert = true
     }
     
     /// Clears all persisted authentication state. Useful for testing.
