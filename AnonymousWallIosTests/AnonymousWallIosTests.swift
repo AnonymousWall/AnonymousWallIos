@@ -286,16 +286,20 @@ struct AnonymousWallIosTests {
         #expect(SortOrder.oldest.displayName == "Oldest")
         #expect(SortOrder.mostLiked.displayName == "Most Likes")
         #expect(SortOrder.leastLiked.displayName == "Least Likes")
+        #expect(SortOrder.mostComments.displayName == "Most Comments")
+        #expect(SortOrder.leastComments.displayName == "Least Comments")
     }
     
     @Test func testSortOrderFeedOptions() async throws {
         // Test that feed options contain the correct sort orders
         let feedOptions = SortOrder.feedOptions
-        #expect(feedOptions.count == 3)
+        #expect(feedOptions.count == 4)
         #expect(feedOptions.contains(.newest))
         #expect(feedOptions.contains(.mostLiked))
+        #expect(feedOptions.contains(.mostComments))
         #expect(feedOptions.contains(.oldest))
         #expect(!feedOptions.contains(.leastLiked)) // Should not be included
+        #expect(!feedOptions.contains(.leastComments)) // Should not be included
     }
     
     @Test func testSortOrderRawValues() async throws {
@@ -304,6 +308,8 @@ struct AnonymousWallIosTests {
         #expect(SortOrder.oldest.rawValue == "OLDEST")
         #expect(SortOrder.mostLiked.rawValue == "MOST_LIKED")
         #expect(SortOrder.leastLiked.rawValue == "LEAST_LIKED")
+        #expect(SortOrder.mostComments.rawValue == "MOST_COMMENTS")
+        #expect(SortOrder.leastComments.rawValue == "LEAST_COMMENTS")
     }
     
     // MARK: - Profile Name Tests
@@ -455,6 +461,46 @@ struct AnonymousWallIosTests {
         #expect(sorted[0].id == "3") // Most likes (10)
         #expect(sorted[1].id == "1") // 5 likes
         #expect(sorted[2].id == "2") // Least likes (3)
+    }
+    
+    @Test func testProfilePostSortingByMostComments() async throws {
+        // Test that posts can be sorted by most comments
+        let posts = [
+            Post(id: "1", title: "First", content: "First post", wall: "CAMPUS", likes: 5, comments: 3, liked: false,
+                 author: Post.Author(id: "user1", profileName: "User", isAnonymous: true),
+                 createdAt: "2026-01-01T10:00:00Z", updatedAt: "2026-01-01T10:00:00Z"),
+            Post(id: "2", title: "Second", content: "Second post", wall: "CAMPUS", likes: 3, comments: 15, liked: false,
+                 author: Post.Author(id: "user1", profileName: "User", isAnonymous: true),
+                 createdAt: "2026-01-02T10:00:00Z", updatedAt: "2026-01-02T10:00:00Z"),
+            Post(id: "3", title: "Third", content: "Third post", wall: "CAMPUS", likes: 10, comments: 7, liked: false,
+                 author: Post.Author(id: "user1", profileName: "User", isAnonymous: true),
+                 createdAt: "2026-01-01T15:00:00Z", updatedAt: "2026-01-01T15:00:00Z")
+        ]
+        
+        let sorted = posts.sorted { $0.comments > $1.comments }
+        #expect(sorted[0].id == "2") // Most comments (15)
+        #expect(sorted[1].id == "3") // 7 comments
+        #expect(sorted[2].id == "1") // Least comments (3)
+    }
+    
+    @Test func testProfilePostSortingByLeastComments() async throws {
+        // Test that posts can be sorted by least comments
+        let posts = [
+            Post(id: "1", title: "First", content: "First post", wall: "CAMPUS", likes: 5, comments: 3, liked: false,
+                 author: Post.Author(id: "user1", profileName: "User", isAnonymous: true),
+                 createdAt: "2026-01-01T10:00:00Z", updatedAt: "2026-01-01T10:00:00Z"),
+            Post(id: "2", title: "Second", content: "Second post", wall: "CAMPUS", likes: 3, comments: 15, liked: false,
+                 author: Post.Author(id: "user1", profileName: "User", isAnonymous: true),
+                 createdAt: "2026-01-02T10:00:00Z", updatedAt: "2026-01-02T10:00:00Z"),
+            Post(id: "3", title: "Third", content: "Third post", wall: "CAMPUS", likes: 10, comments: 7, liked: false,
+                 author: Post.Author(id: "user1", profileName: "User", isAnonymous: true),
+                 createdAt: "2026-01-01T15:00:00Z", updatedAt: "2026-01-01T15:00:00Z")
+        ]
+        
+        let sorted = posts.sorted { $0.comments < $1.comments }
+        #expect(sorted[0].id == "1") // Least comments (3)
+        #expect(sorted[1].id == "3") // 7 comments
+        #expect(sorted[2].id == "2") // Most comments (15)
     }
     
     @Test func testProfileCommentSortingByNewest() async throws {
