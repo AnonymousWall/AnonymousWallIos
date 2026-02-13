@@ -185,7 +185,7 @@ struct HomeViewModelTests {
     
     // MARK: - Sort Order Tests
     
-    @Test func testSortOrderCanBeChangedToMostComments() async throws {
+    @Test func testSortOrderCanBeChangedToMostCommented() async throws {
         // Setup
         let mockPostService = MockPostService()
         let viewModel = HomeViewModel(postService: mockPostService)
@@ -194,11 +194,11 @@ struct HomeViewModelTests {
         // Verify initial sort order
         #expect(viewModel.selectedSortOrder == .newest)
         
-        // Change sort order to mostComments
-        viewModel.selectedSortOrder = .mostComments
+        // Change sort order to mostCommented
+        viewModel.selectedSortOrder = .mostCommented
         
         // Verify sort order changed
-        #expect(viewModel.selectedSortOrder == .mostComments)
+        #expect(viewModel.selectedSortOrder == .mostCommented)
         
         // Verify display name
         #expect(viewModel.selectedSortOrder.displayName == "Most Comments")
@@ -222,7 +222,7 @@ struct HomeViewModelTests {
         #expect(viewModel.posts.count == 2)
         
         // Change sort order
-        viewModel.selectedSortOrder = .mostComments
+        viewModel.selectedSortOrder = .mostCommented
         viewModel.sortOrderChanged(authState: mockAuthState)
         try await Task.sleep(nanoseconds: 500_000_000)
         

@@ -10,16 +10,16 @@ The backend now supports sorting posts by comment count (most comments and least
 - Profile View (User's own posts)
 
 ## Solution
-Added `MOST_COMMENTS` and `LEAST_COMMENTS` sorting options to the existing sorting infrastructure. The implementation required **minimal changes** because the app was already architected to support dynamic sorting options.
+Added `MOST_COMMENTED` and `LEAST_COMMENTED` sorting options to the existing sorting infrastructure. The implementation required **minimal changes** because the app was already architected to support dynamic sorting options.
 
 ## Implementation Details
 
 ### 1. Model Changes (`PostEnums.swift`)
 **Changes Made:**
-- Added `mostComments = "MOST_COMMENTS"` enum case
-- Added `leastComments = "LEAST_COMMENTS"` enum case
+- Added `mostCommented = "MOST_COMMENTED"` enum case
+- Added `leastCommented = "LEAST_COMMENTED"` enum case
 - Added display names: "Most Comments" and "Least Comments"
-- Updated `feedOptions` to include `.mostComments` (4 options total)
+- Updated `feedOptions` to include `.mostCommented` (4 options total)
 
 **Why minimal:**
 - Enum is already set up with `CaseIterable` and `Codable`
@@ -49,13 +49,13 @@ Added `MOST_COMMENTS` and `LEAST_COMMENTS` sorting options to the existing sorti
 **Why no changes needed:**
 - `PostService.fetchPosts()` already accepts `sort: SortOrder` parameter
 - `UserService.getUserPosts()` already accepts `sort: SortOrder` parameter
-- Services pass `sort.rawValue` to API (e.g., "MOST_COMMENTS")
+- Services pass `sort.rawValue` to API (e.g., "MOST_COMMENTED")
 - Backend API already supports these sort values
 
 ### 5. Testing
 **New Tests Added:**
 1. `testSortOrderDisplayNames` - Updated to verify new display names
-2. `testSortOrderFeedOptions` - Updated to verify 4 options including mostComments
+2. `testSortOrderFeedOptions` - Updated to verify 4 options including mostCommented
 3. `testSortOrderRawValues` - Updated to verify API compatibility
 4. `testProfilePostSortingByMostComments` - Test comment-based sorting
 5. `testProfilePostSortingByLeastComments` - Test reverse comment-based sorting
@@ -85,12 +85,12 @@ All tests verify:
    - Total: 40 lines added
 
 3. **AnonymousWallIosTests/HomeViewModelTests.swift**
-   - Added tests for mostComments sort option
+   - Added tests for mostCommented sort option
    - Added tests for sort change triggering reload
    - Total: 50 lines added
 
 4. **AnonymousWallIosTests/ProfileViewModelTests.swift**
-   - Added test for mostComments in ProfileViewModel
+   - Added test for mostCommented in ProfileViewModel
    - Total: 10 lines added
 
 ## UI Changes
@@ -182,17 +182,17 @@ Sort by: Recent ▼
 ## Backend API Compatibility
 
 ### Supported Endpoints:
-1. **Home View**: `GET /api/v1/posts?wall=national&sort=MOST_COMMENTS`
-2. **Campus View**: `GET /api/v1/posts?wall=campus&sort=MOST_COMMENTS`
-3. **Profile View**: `GET /api/v1/users/me/posts?sort=MOST_COMMENTS`
+1. **Home View**: `GET /api/v1/posts?wall=national&sort=MOST_COMMENTED`
+2. **Campus View**: `GET /api/v1/posts?wall=campus&sort=MOST_COMMENTED`
+3. **Profile View**: `GET /api/v1/users/me/posts?sort=MOST_COMMENTED`
 
 ### Sort Parameters Supported:
 - `NEWEST` - Most recent posts first (default)
 - `OLDEST` - Oldest posts first
 - `MOST_LIKED` - Posts with most likes first
 - `LEAST_LIKED` - Posts with least likes first
-- `MOST_COMMENTS` - Posts with most comments first (NEW)
-- `LEAST_COMMENTS` - Posts with least comments first (NEW)
+- `MOST_COMMENTED` - Posts with most comments first (NEW)
+- `LEAST_COMMENTED` - Posts with least comments first (NEW)
 
 ## UX Considerations
 

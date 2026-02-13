@@ -286,8 +286,8 @@ struct AnonymousWallIosTests {
         #expect(SortOrder.oldest.displayName == "Oldest")
         #expect(SortOrder.mostLiked.displayName == "Most Likes")
         #expect(SortOrder.leastLiked.displayName == "Least Likes")
-        #expect(SortOrder.mostComments.displayName == "Most Comments")
-        #expect(SortOrder.leastComments.displayName == "Least Comments")
+        #expect(SortOrder.mostCommented.displayName == "Most Comments")
+        #expect(SortOrder.leastCommented.displayName == "Least Comments")
     }
     
     @Test func testSortOrderFeedOptions() async throws {
@@ -296,10 +296,10 @@ struct AnonymousWallIosTests {
         #expect(feedOptions.count == 4)
         #expect(feedOptions.contains(.newest))
         #expect(feedOptions.contains(.mostLiked))
-        #expect(feedOptions.contains(.mostComments))
+        #expect(feedOptions.contains(.mostCommented))
         #expect(feedOptions.contains(.oldest))
         #expect(!feedOptions.contains(.leastLiked)) // Should not be included
-        #expect(!feedOptions.contains(.leastComments)) // Should not be included
+        #expect(!feedOptions.contains(.leastCommented)) // Should not be included
     }
     
     @Test func testSortOrderRawValues() async throws {
@@ -308,8 +308,8 @@ struct AnonymousWallIosTests {
         #expect(SortOrder.oldest.rawValue == "OLDEST")
         #expect(SortOrder.mostLiked.rawValue == "MOST_LIKED")
         #expect(SortOrder.leastLiked.rawValue == "LEAST_LIKED")
-        #expect(SortOrder.mostComments.rawValue == "MOST_COMMENTS")
-        #expect(SortOrder.leastComments.rawValue == "LEAST_COMMENTS")
+        #expect(SortOrder.mostCommented.rawValue == "MOST_COMMENTED")
+        #expect(SortOrder.leastCommented.rawValue == "LEAST_COMMENTED")
     }
     
     // MARK: - Profile Name Tests
