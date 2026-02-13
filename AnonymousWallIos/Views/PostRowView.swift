@@ -66,7 +66,8 @@ struct PostRowView: View {
                 .lineSpacing(2)
                 .lineLimit(UIConstants.postRowContentMaxLines)
                 .truncationMode(.tail)
-                .accessibilityLabel(post.content)
+                .accessibilityValue(post.content)
+                .accessibilityHint("Tap to view full post")
             
             // Footer with time and actions
             HStack(spacing: 16) {
