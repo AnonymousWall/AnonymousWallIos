@@ -29,17 +29,17 @@ enum HTTPStatus {
 A thread-safe handler that manages blocked user responses with concurrency safety.
 
 **Key Features:**
-- **Thread-safe:** Uses `@MainActor` to ensure UI updates happen on the main thread
+- **Thread-safe:** Handler methods use `@MainActor` to ensure UI updates happen on the main thread
 - **Single execution:** Prevents duplicate logout calls when multiple 403 responses arrive simultaneously
 - **Protocol-based:** `BlockedUserHandlerProtocol` for testability and dependency injection
 - **Stateful guard:** Uses `isHandlingBlock` flag to prevent re-execution
 
 ```swift
-@MainActor
 class BlockedUserHandler: BlockedUserHandlerProtocol {
     private var isHandlingBlock = false
-    var onBlockedUser: (() -> Void)?
+    var onBlockedUser: (@MainActor () -> Void)?
     
+    @MainActor
     func handleBlockedUser() {
         guard !isHandlingBlock else { return }
         isHandlingBlock = true
@@ -122,7 +122,7 @@ init() {
 ## Concurrency Safety
 
 ### Thread Safety Mechanisms
-1. **@MainActor:** Ensures handler execution on main thread for UI updates
+1. **@MainActor on methods:** Handler methods are annotated with `@MainActor` ensuring execution on main thread for UI updates
 2. **State Guard:** `isHandlingBlock` flag prevents re-execution
 3. **Swift Concurrency:** Uses async/await for safe asynchronous operations
 

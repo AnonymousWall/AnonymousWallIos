@@ -24,15 +24,14 @@ class NetworkClient: NetworkClientProtocol {
     }
     
     /// Configure the handler for blocked user responses
-    @MainActor
-    func configureBlockedUserHandler(onBlockedUser: @escaping () -> Void) {
+    func configureBlockedUserHandler(onBlockedUser: @escaping @MainActor () -> Void) {
         blockedUserHandler.onBlockedUser = onBlockedUser
     }
     
     // MARK: - Request Execution
     
     func performRequest<T: Decodable>(_ request: URLRequest) async throws -> T {
-        var modifiedRequest = request
+        let modifiedRequest = request
         
         // Log request in development
         if config.enableNetworkLogging {

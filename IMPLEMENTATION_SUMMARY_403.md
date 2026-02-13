@@ -139,10 +139,10 @@ Request C ──┘                    (isHandlingBlock guard)
 
 ### Implementation
 ```swift
-@MainActor
 class BlockedUserHandler {
     private var isHandlingBlock = false  // Guard flag
     
+    @MainActor
     func handleBlockedUser() {
         guard !isHandlingBlock else { return }  // Skip duplicates
         isHandlingBlock = true                   // Lock

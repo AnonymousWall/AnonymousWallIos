@@ -14,7 +14,6 @@ protocol BlockedUserHandlerProtocol {
 
 /// Thread-safe handler for blocked user (HTTP 403) responses
 /// Ensures logout is only triggered once even with concurrent 403 responses
-@MainActor
 class BlockedUserHandler: BlockedUserHandlerProtocol {
     
     // MARK: - Properties
@@ -23,12 +22,13 @@ class BlockedUserHandler: BlockedUserHandlerProtocol {
     private let logger = Logger.network
     
     /// Closure to execute logout and navigation
-    var onBlockedUser: (() -> Void)?
+    var onBlockedUser: (@MainActor () -> Void)?
     
     // MARK: - Public Methods
     
     /// Handles a blocked user response
     /// - Note: Thread-safe and prevents duplicate executions
+    @MainActor
     func handleBlockedUser() {
         // Prevent duplicate handling
         guard !isHandlingBlock else {
@@ -44,6 +44,7 @@ class BlockedUserHandler: BlockedUserHandlerProtocol {
     }
     
     /// Resets the handler state (useful for testing)
+    @MainActor
     func reset() {
         isHandlingBlock = false
     }

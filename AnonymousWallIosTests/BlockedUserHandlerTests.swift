@@ -246,7 +246,7 @@ struct NetworkClientBlockedUserTests {
 // MARK: - Helper Extension for Testing
 
 private extension BlockedUserHandler {
-    func configureHandler(onBlockedUser: @escaping () -> Void) {
+    func configureHandler(onBlockedUser: @escaping @MainActor () -> Void) {
         self.onBlockedUser = onBlockedUser
     }
 }
