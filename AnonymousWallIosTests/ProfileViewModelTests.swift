@@ -105,6 +105,19 @@ struct ProfileViewModelTests {
         #expect(viewModel.myPosts.isEmpty)
     }
     
+    @Test func testPostSortChangedToMostCommented() async throws {
+        let mockUserService = MockUserService()
+        let mockPostService = MockPostService()
+        let viewModel = ProfileViewModel(userService: mockUserService, postService: mockPostService)
+        let authState = createMockAuthState()
+        
+        viewModel.postSortOrder = .mostCommented
+        viewModel.postSortChanged(authState: authState)
+        
+        #expect(viewModel.postSortOrder == .mostCommented)
+        #expect(viewModel.myPosts.isEmpty)
+    }
+    
     @Test func testPostSortChangeClearsPosts() async throws {
         let mockUserService = MockUserService()
         let mockPostService = MockPostService()

@@ -183,6 +183,53 @@ struct HomeViewModelTests {
         #expect(viewModel.posts[0].title == "New Post 1")
     }
     
+    // MARK: - Sort Order Tests
+    
+    @Test func testSortOrderCanBeChangedToMostCommented() async throws {
+        // Setup
+        let mockPostService = MockPostService()
+        let viewModel = HomeViewModel(postService: mockPostService)
+        let mockAuthState = createMockAuthState()
+        
+        // Verify initial sort order
+        #expect(viewModel.selectedSortOrder == .newest)
+        
+        // Change sort order to mostCommented
+        viewModel.selectedSortOrder = .mostCommented
+        
+        // Verify sort order changed
+        #expect(viewModel.selectedSortOrder == .mostCommented)
+        
+        // Verify display name
+        #expect(viewModel.selectedSortOrder.displayName == "Most Comments")
+    }
+    
+    @Test func testSortOrderChangeTriggersReload() async throws {
+        // Setup
+        let mockPostService = MockPostService()
+        let viewModel = HomeViewModel(postService: mockPostService)
+        let mockAuthState = createMockAuthState()
+        
+        // Load initial posts
+        mockPostService.mockPosts = [
+            createMockPost(id: "1", title: "Post 1"),
+            createMockPost(id: "2", title: "Post 2")
+        ]
+        viewModel.loadPosts(authState: mockAuthState)
+        try await Task.sleep(nanoseconds: 500_000_000)
+        
+        // Verify posts loaded
+        #expect(viewModel.posts.count == 2)
+        
+        // Change sort order
+        viewModel.selectedSortOrder = .mostCommented
+        viewModel.sortOrderChanged(authState: mockAuthState)
+        try await Task.sleep(nanoseconds: 500_000_000)
+        
+        // Verify posts were reloaded (fetchPosts called again)
+        #expect(mockPostService.fetchPostsCalled == true)
+    }
+    
     // MARK: - Helper Methods
     
     private func createMockAuthState() -> AuthState {
