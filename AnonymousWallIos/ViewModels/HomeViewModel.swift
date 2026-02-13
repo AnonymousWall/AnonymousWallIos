@@ -29,6 +29,13 @@ class HomeViewModel: ObservableObject {
         self.postService = postService
     }
     
+    deinit {
+        #if DEBUG
+        Logger.app.debug("✅ HomeViewModel deinitialized")
+        #endif
+        cleanup()
+    }
+    
     // MARK: - Public Methods
     
     /// Load initial posts

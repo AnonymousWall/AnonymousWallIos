@@ -31,6 +31,13 @@ class ForgotPasswordViewModel: ObservableObject {
         self.authService = authService
     }
     
+    deinit {
+        #if DEBUG
+        Logger.app.debug("✅ ForgotPasswordViewModel deinitialized")
+        #endif
+        cleanup()
+    }
+    
     // MARK: - Public Methods
     func requestReset() {
         guard !email.isEmpty else {

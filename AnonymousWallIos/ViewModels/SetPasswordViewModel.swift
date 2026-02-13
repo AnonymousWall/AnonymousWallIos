@@ -24,6 +24,12 @@ class SetPasswordViewModel: ObservableObject {
         self.authService = authService
     }
     
+    deinit {
+        #if DEBUG
+        Logger.app.debug("✅ SetPasswordViewModel deinitialized")
+        #endif
+    }
+    
     // MARK: - Computed Properties
     var isButtonDisabled: Bool {
         password.isEmpty || confirmPassword.isEmpty || isLoading

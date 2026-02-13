@@ -41,6 +41,13 @@ class ProfileViewModel: ObservableObject {
         self.postService = postService
     }
     
+    deinit {
+        #if DEBUG
+        Logger.app.debug("✅ ProfileViewModel deinitialized")
+        #endif
+        cleanup()
+    }
+    
     // MARK: - Public Methods
     func loadContent(authState: AuthState) {
         loadTask?.cancel()
@@ -341,14 +348,29 @@ class ProfileViewModel: ObservableObject {
         let postIds = Set(myComments.map { $0.postId })
         let missingPostIds = postIds.filter { commentPostMap[$0] == nil }
         
-        // Fetch missing posts
-        for postId in missingPostIds {
-            do {
-                let post = try await postService.getPost(postId: postId, token: token, userId: userId)
-                commentPostMap[postId] = post
-            } catch {
-                // Silently fail for individual post fetches
-                continue
+        // Fetch missing posts in parallel using TaskGroup
+        await withTaskGroup(of: (String, Post?).self) { group in
+            for postId in missingPostIds {
+                group.addTask {
+                    do {
+                        let post = try await self.postService.getPost(
+                            postId: postId,
+                            token: token,
+                            userId: userId
+                        )
+                        return (postId, post)
+                    } catch {
+                        // Silently fail for individual post fetches
+                        return (postId, nil)
+                    }
+                }
+            }
+            
+            // Collect results and update map on main actor
+            for await (postId, post) in group {
+                if let post = post {
+                    commentPostMap[postId] = post
+                }
             }
         }
     }

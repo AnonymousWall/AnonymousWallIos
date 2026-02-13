@@ -29,6 +29,13 @@ class RegistrationViewModel: ObservableObject {
         self.authService = authService
     }
     
+    deinit {
+        #if DEBUG
+        Logger.app.debug("✅ RegistrationViewModel deinitialized")
+        #endif
+        cleanup()
+    }
+    
     // MARK: - Public Methods
     func sendVerificationCode() {
         guard !email.isEmpty else {
