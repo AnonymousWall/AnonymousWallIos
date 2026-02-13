@@ -71,8 +71,8 @@ class AuthState: ObservableObject {
     /// Handles blocked user response - logs out and shows alert
     func handleBlockedUser() {
         Logger.network.warning("Handling blocked user - logging out")
-        self.showBlockedUserAlert = true
         logout()
+        self.showBlockedUserAlert = true
     }
     
     /// Clears all persisted authentication state. Useful for testing.
