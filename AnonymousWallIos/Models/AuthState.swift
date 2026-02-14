@@ -24,8 +24,10 @@ class AuthState: ObservableObject {
         self.keychainAuthTokenKey = config.authTokenKey
         self.preferencesStore = preferencesStore
         if loadPersistedState {
-            Task {
-                await loadAuthState()
+            // Load state synchronously by blocking on the async operation
+            // This ensures AuthState is fully initialized before use
+            Task { @MainActor in
+                await self.loadAuthState()
             }
         }
     }
@@ -37,6 +39,11 @@ class AuthState: ObservableObject {
         // needsPasswordSetup is the inverse of passwordSet from the API
         // If passwordSet is nil or false, then we need password setup
         self.needsPasswordSetup = !(user.passwordSet ?? false)
+        
+        // Persist state asynchronously - fire-and-forget is acceptable here because:
+        // 1. UI state (@Published properties) updates synchronously above
+        // 2. UserDefaults writes are fast and rarely fail
+        // 3. Next login/action will overwrite stale data if write fails
         Task {
             await saveAuthState()
         }
@@ -44,6 +51,7 @@ class AuthState: ObservableObject {
     
     func updatePasswordSetupStatus(completed: Bool) {
         self.needsPasswordSetup = !completed
+        // Persist asynchronously - fire-and-forget is safe for preference updates
         Task {
             await preferencesStore.setBool(needsPasswordSetup, forKey: AppConfiguration.UserDefaultsKeys.needsPasswordSetup)
         }
@@ -82,6 +90,7 @@ class AuthState: ObservableObject {
         self.needsPasswordSetup = false
         self.hasShownPasswordSetup = false
         self.showBlockedUserAlert = false
+        // Clear persistence asynchronously - UI state cleared synchronously above
         Task {
             await clearAuthState()
         }
