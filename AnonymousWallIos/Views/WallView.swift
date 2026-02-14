@@ -59,6 +59,7 @@ struct WallView: View {
                                 Image(systemName: "bubble.left.and.bubble.right")
                                     .font(.system(size: 60))
                                     .foregroundColor(.gray)
+                                    .accessibilityHidden(true)
                                 Text("No posts yet")
                                     .font(.headline)
                                     .foregroundColor(.gray)
@@ -66,6 +67,8 @@ struct WallView: View {
                                     .font(.subheadline)
                                     .foregroundColor(.gray)
                             }
+                            .accessibilityElement(children: .combine)
+                            .accessibilityLabel("No posts yet. Be the first to post!")
                             Spacer()
                         }
                         .frame(maxWidth: .infinity, minHeight: minimumScrollableHeight)
@@ -85,6 +88,8 @@ struct WallView: View {
                                         )
                                     }
                                     .buttonStyle(PlainButtonStyle())
+                                    .accessibilityLabel("View post: \(post.title)")
+                                    .accessibilityHint("Double tap to view full post and comments")
                                     .onAppear {
                                         viewModel.loadMoreIfNeeded(for: post, authState: authState)
                                     }

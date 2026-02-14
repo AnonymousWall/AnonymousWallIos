@@ -16,6 +16,7 @@ struct CreatePostTabView: View {
                 Image(systemName: "plus.circle.fill")
                     .font(.system(size: 80))
                     .foregroundColor(.blue)
+                    .accessibilityHidden(true)
                 
                 Text("Create Post")
                     .font(.largeTitle)
@@ -39,6 +40,8 @@ struct CreatePostTabView: View {
                         .cornerRadius(10)
                 }
                 .padding(.top, 20)
+                .accessibilityLabel("Create new post")
+                .accessibilityHint("Double tap to start creating a new post")
             }
             .navigationTitle("Create")
             .navigationBarTitleDisplayMode(.inline)

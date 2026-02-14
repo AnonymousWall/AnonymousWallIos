@@ -50,11 +50,13 @@ struct ProfileView: View {
                             .font(.system(size: 80))
                             .foregroundColor(.white)
                     }
+                    .accessibilityLabel("Profile avatar")
                     
                     if let email = authState.currentUser?.email {
                         Text(email)
-                            .font(.system(size: 17, weight: .semibold))
+                            .font(.body.weight(.semibold))
                             .foregroundColor(.primary)
+                            .accessibilityLabel("Email: \(email)")
                     }
                     
                     if let profileName = authState.currentUser?.profileName {
@@ -63,13 +65,15 @@ struct ProfileView: View {
                                 .font(.caption)
                                 .foregroundColor(.vibrantTeal)
                             Text(profileName)
-                                .font(.system(size: 15, weight: .medium))
+                                .font(.subheadline.weight(.medium))
                                 .foregroundColor(.secondary)
                         }
                         .padding(.horizontal, 14)
                         .padding(.vertical, 6)
                         .background(Color.vibrantTeal.opacity(0.15))
                         .cornerRadius(12)
+                        .accessibilityElement(children: .combine)
+                        .accessibilityLabel("Profile name: \(profileName)")
                     }
                 }
                 .padding(.vertical, 20)
@@ -82,6 +86,8 @@ struct ProfileView: View {
                 .pickerStyle(SegmentedPickerStyle())
                 .padding(.horizontal)
                 .padding(.bottom, 10)
+                .accessibilityLabel("Content type")
+                .accessibilityValue(viewModel.selectedSegment == 0 ? "Posts" : "Comments")
                 .onChange(of: viewModel.selectedSegment) { _, _ in
                     viewModel.segmentChanged(authState: authState)
                 }
@@ -147,6 +153,8 @@ struct ProfileView: View {
                         .background(Color(.systemGray6))
                         .cornerRadius(8)
                     }
+                    .accessibilityLabel("Sort by")
+                    .accessibilityValue(viewModel.selectedSegment == 0 ? viewModel.postSortOrder.displayName : viewModel.commentSortOrder.displayName)
                     
                     Spacer()
                 }
@@ -175,16 +183,19 @@ struct ProfileView: View {
                                     Image(systemName: "bubble.left.and.bubble.right.fill")
                                         .font(.system(size: 60))
                                         .foregroundStyle(Color.orangePinkGradient)
+                                        .accessibilityHidden(true)
                                 }
                                 
                                 VStack(spacing: 8) {
                                     Text("No posts yet")
-                                        .font(.system(size: 22, weight: .bold))
+                                        .font(.title3.bold())
                                         .foregroundColor(.primary)
                                     Text("Create your first post!")
-                                        .font(.system(size: 16))
+                                        .font(.body)
                                         .foregroundColor(.secondary)
                                 }
+                                .accessibilityElement(children: .combine)
+                                .accessibilityLabel("No posts yet. Create your first post!")
                             }
                             .frame(maxWidth: .infinity, minHeight: 300)
                         } else {
@@ -201,6 +212,8 @@ struct ProfileView: View {
                                         )
                                     }
                                     .buttonStyle(PlainButtonStyle())
+                                    .accessibilityLabel("View your post: \(post.title)")
+                                    .accessibilityHint("Double tap to view full post and comments")
                                     .onAppear {
                                         viewModel.loadMorePostsIfNeeded(for: post, authState: authState)
                                     }
@@ -231,16 +244,19 @@ struct ProfileView: View {
                                     Image(systemName: "bubble.left.fill")
                                         .font(.system(size: 60))
                                         .foregroundStyle(Color.tealPurpleGradient)
+                                        .accessibilityHidden(true)
                                 }
                                 
                                 VStack(spacing: 8) {
                                     Text("No comments yet")
-                                        .font(.system(size: 22, weight: .bold))
+                                        .font(.title3.bold())
                                         .foregroundColor(.primary)
                                     Text("Start commenting on posts!")
-                                        .font(.system(size: 16))
+                                        .font(.body)
                                         .foregroundColor(.secondary)
                                 }
+                                .accessibilityElement(children: .combine)
+                                .accessibilityLabel("No comments yet. Start commenting on posts!")
                             }
                             .frame(maxWidth: .infinity, minHeight: 300)
                         } else {
@@ -337,6 +353,8 @@ struct ProfileView: View {
                         Image(systemName: "line.3.horizontal")
                             .font(.title3)
                     }
+                    .accessibilityLabel("Profile menu")
+                    .accessibilityHint("Double tap to access profile settings")
                 }
             }
         }
