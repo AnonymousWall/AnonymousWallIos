@@ -358,8 +358,7 @@
 				BE4F4D7E19C643B1A1FB0605,
 				CF9021BEF0674235BBA9D292,
 				B38E4D52A8EA0635B03CC47E /* RetryPolicy.swift in Sources */,
-				308B487BB8F1D8CA5D92B841 /* RetryUtility.swift in Sources */,
-				3F54EDFE77FB042E0C1252D6 /* RetryIntegrationTests.swift in Sources */,);
+				308B487BB8F1D8CA5D92B841 /* RetryUtility.swift in Sources */,);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		4A8BB2292F2DDF2E00DD2A08 /* Sources */ = {
@@ -369,7 +368,7 @@
 				CF9021BEF0674235BBA9D292,
 				24F07C4387334D249A64BC17,
 				6328F8B12FE9463E84120149,
-			);
+				3F54EDFE77FB042E0C1252D6 /* RetryIntegrationTests.swift in Sources */,);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		4A8BB2332F2DDF2E00DD2A08 /* Sources */ = {
