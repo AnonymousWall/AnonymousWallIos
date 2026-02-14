@@ -1,3 +1,256 @@
+# iOS Engineering Standards & Architecture Guidelines
+
+This document defines the **mandatory engineering standards** for this codebase.  
+All generated or modified code must comply with these principles.
+
+The goal is **enterprise-grade, scalable, thread-safe, testable, production-ready architecture**.
+
+---
+
+# 1. Architecture Principles
+
+## 1.1 MVVM Strict Separation
+
+- Views must contain **no business logic**
+- ViewModels must contain **no UI layout logic**
+- Services must contain **no UI or SwiftUI dependencies**
+- Networking must be abstracted behind protocols
+- Dependency injection must be used for services
+
+### Never:
+- Put networking code in a View
+- Put state mutation inside SwiftUI view builders
+- Access UserDefaults directly inside Views
+
+---
+
+# 2. Concurrency & Thread Safety
+
+## 2.1 Main Thread Rules
+
+- All ViewModels must be annotated with `@MainActor`
+- UI state updates must occur on MainActor
+- No manual `DispatchQueue.main.async`
+
+## 2.2 Structured Concurrency Only
+
+- Use `async/await`
+- No completion-handler based APIs
+- No callback pyramids
+- No unstructured `Task {}` without lifecycle management
+
+## 2.3 Task Lifecycle Management
+
+- Long-running tasks must be cancellable
+- Store `Task` references when appropriate
+- Cancel tasks in `deinit` or lifecycle events
+
+## 2.4 No Shared Mutable State
+
+- Use `actor` for shared mutable resources
+- Avoid global mutable state
+- Avoid static mutable singletons unless actor-isolated
+
+---
+
+# 3. Networking Standards
+
+## 3.1 Centralized Request Building
+
+- All URLRequest creation must go through a Request Builder
+- No duplicated header setup
+- No hardcoded header strings in multiple files
+
+## 3.2 Error Handling
+
+- Map backend errors into domain-specific error types
+- Never expose raw networking errors to UI
+- Handle 401/403 globally
+- Retry only idempotent requests
+
+## 3.3 Retry Policy
+
+- Implement exponential backoff for transient failures
+- Do NOT retry client errors (4xx)
+- Must respect cancellation
+
+---
+
+# 4. State Management
+
+## 4.1 Observable State
+
+- Use `@Published` inside ViewModels
+- Avoid nested observable objects when possible
+- Avoid unnecessary bindings in SwiftUI
+
+## 4.2 Pagination
+
+- Pagination logic must be reusable
+- No duplicated page counters across ViewModels
+- Encapsulate pagination state
+
+---
+
+# 5. Persistence Rules
+
+## 5.1 Thread Safety
+
+- No direct `UserDefaults.standard` access outside a dedicated abstraction
+- Wrap persistence in an `actor`
+
+## 5.2 Security
+
+- Tokens must be stored in Keychain
+- Never log sensitive data
+- No tokens in debug print statements
+
+---
+
+# 6. SwiftUI Best Practices
+
+## 6.1 View Simplicity
+
+- Views must remain declarative
+- Extract complex subviews
+- Avoid 200+ line Views
+
+## 6.2 Bindings
+
+- Avoid `ForEach($array)` unless mutation is required
+- Prefer immutable models passed down
+
+## 6.3 Performance
+
+- Avoid unnecessary view recomputation
+- Use `@StateObject` correctly
+- Avoid expensive work in `body`
+
+---
+
+# 7. Accessibility
+
+- All interactive elements must include:
+  - `.accessibilityLabel`
+  - `.accessibilityHint` when appropriate
+- Support Dynamic Type
+- Avoid fixed font sizes unless justified
+
+---
+
+# 8. Testing Standards
+
+## 8.1 Required Coverage
+
+Must include tests for:
+- Async flows
+- Error mapping
+- Retry logic
+- Pagination edge cases
+- Cancellation
+
+## 8.2 Testable Design
+
+- Services must be protocol-based
+- ViewModels must allow dependency injection
+- No hardcoded singletons
+
+---
+
+# 9. Code Quality Rules
+
+## 9.1 Avoid
+
+- Force unwraps
+- Force casts
+- Magic strings
+- Duplicated logic
+- Massive ViewModels
+- Massive network managers
+
+## 9.2 Prefer
+
+- Small focused types
+- Composition over inheritance
+- Clear domain modeling
+- Immutable structs
+- Explicit access control
+
+---
+
+# 10. Production Readiness Checklist
+
+Every new feature must:
+
+- Be thread-safe
+- Be cancellation-safe
+- Avoid duplication
+- Follow MVVM separation
+- Handle failure cases
+- Not introduce UI blocking
+- Not introduce global mutable state
+- Be testable
+
+---
+
+# 11. Refactoring Expectations
+
+When modifying code:
+
+- Improve structure if possible
+- Reduce duplication
+- Do not introduce regressions
+- Preserve behavior
+- Maintain readability
+
+---
+
+# 12. Performance Requirements
+
+- No blocking calls on main thread
+- No synchronous network calls
+- No heavy computation inside SwiftUI body
+- Measure before optimizing
+
+---
+
+# 13. Documentation Standard
+
+Complex logic must include:
+- Short explanation of intent
+- Reason for architectural choice if non-obvious
+
+Avoid over-commenting obvious code.
+
+---
+
+# 14. Definition of Done
+
+Code is not complete unless:
+
+- It compiles without warnings
+- It passes all tests
+- It follows this document
+- It introduces no architectural regression
+
+---
+
+# Core Philosophy
+
+This project follows:
+
+- Modern Swift
+- Structured concurrency
+- MVVM
+- Protocol-oriented design
+- Thread safety by default
+- Scalability first
+- Clean architecture mindset
+
+All generated code must reflect senior-level iOS engineering standards.
+
+
+
 ## API Documentation
 
 ### Common Response Codes
