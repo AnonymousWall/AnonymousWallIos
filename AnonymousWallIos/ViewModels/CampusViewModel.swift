@@ -17,8 +17,7 @@ class CampusViewModel: ObservableObject {
     @Published var selectedSortOrder: SortOrder = .newest
     
     // MARK: - Private Properties
-    private var currentPage = 1
-    private var hasMorePages = true
+    private var pagination = Pagination()
     private var loadTask: Task<Void, Never>?
     
     // MARK: - Dependencies
@@ -42,7 +41,7 @@ class CampusViewModel: ObservableObject {
     /// Refresh posts (pull-to-refresh)
     func refreshPosts(authState: AuthState) async {
         loadTask?.cancel()
-        resetPagination()
+        pagination.reset()
         loadTask = Task {
             await performLoadPosts(authState: authState)
         }
@@ -51,11 +50,11 @@ class CampusViewModel: ObservableObject {
     
     /// Load more posts when scrolling to the end
     func loadMoreIfNeeded(for post: Post, authState: AuthState) {
-        guard !isLoadingMore && hasMorePages else { return }
+        guard !isLoadingMore && pagination.hasMorePages else { return }
         guard post.id == posts.last?.id else { return }
         
         Task {
-            guard !isLoadingMore && hasMorePages else { return }
+            guard !isLoadingMore && pagination.hasMorePages else { return }
             isLoadingMore = true
             await performLoadMorePosts(authState: authState)
         }
@@ -66,7 +65,7 @@ class CampusViewModel: ObservableObject {
         HapticFeedback.selection()
         loadTask?.cancel()
         posts = [] // Clear posts to show loading indicator
-        resetPagination()
+        pagination.reset()
         loadTask = Task {
             await performLoadPosts(authState: authState)
         }
@@ -116,7 +115,7 @@ class CampusViewModel: ObservableObject {
                     userId: userId
                 )
                 // Reload posts to remove the deleted post from the list
-                resetPagination()
+                pagination.reset()
                 await performLoadPosts(authState: authState)
             } catch {
                 // Provide user-friendly error message
@@ -147,12 +146,6 @@ class CampusViewModel: ObservableObject {
     
     // MARK: - Private Methods
     
-    /// Reset pagination to initial state
-    private func resetPagination() {
-        currentPage = 1
-        hasMorePages = true
-    }
-    
     /// Perform the actual post loading
     private func performLoadPosts(authState: AuthState) async {
         guard let token = authState.authToken,
@@ -172,12 +165,12 @@ class CampusViewModel: ObservableObject {
                 token: token,
                 userId: userId,
                 wall: .campus,
-                page: currentPage,
+                page: pagination.currentPage,
                 limit: 20,
                 sort: selectedSortOrder
             )
             posts = response.data
-            hasMorePages = currentPage < response.pagination.totalPages
+            pagination.updateAfterLoad(totalPages: response.pagination.totalPages)
         } catch is CancellationError {
             return
         } catch NetworkError.cancelled {
@@ -199,7 +192,7 @@ class CampusViewModel: ObservableObject {
             isLoadingMore = false
         }
         
-        let nextPage = currentPage + 1
+        let nextPage = pagination.advanceToNextPage()
         
         do {
             let response = try await postService.fetchPosts(
@@ -211,9 +204,8 @@ class CampusViewModel: ObservableObject {
                 sort: selectedSortOrder
             )
             
-            currentPage = nextPage
             posts.append(contentsOf: response.data)
-            hasMorePages = currentPage < response.pagination.totalPages
+            pagination.updateAfterLoadingMore(totalPages: response.pagination.totalPages)
         } catch is CancellationError {
             return
         } catch NetworkError.cancelled {
