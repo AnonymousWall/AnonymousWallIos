@@ -29,15 +29,17 @@ struct PostDetailView: View {
                     VStack(alignment: .leading, spacing: 14) {
                         // Post title
                         Text(post.title)
-                            .font(.system(size: 24, weight: .bold))
+                            .font(.title2.bold())
                             .foregroundColor(.primary)
                             .fixedSize(horizontal: false, vertical: true)
+                            .accessibilityLabel("Post title: \(post.title)")
                         
                         Text(post.content)
-                            .font(.system(size: 16))
+                            .font(.body)
                             .foregroundColor(.primary)
                             .lineSpacing(2)
                             .fixedSize(horizontal: false, vertical: true)
+                            .accessibilityLabel("Post content: \(post.content)")
                         
                         HStack(spacing: 16) {
                             HStack(spacing: 4) {
@@ -48,6 +50,8 @@ struct PostDetailView: View {
                                     .font(.caption)
                                     .foregroundColor(.secondary)
                             }
+                            .accessibilityElement(children: .combine)
+                            .accessibilityLabel("Posted \(DateFormatting.formatRelativeTime(post.createdAt))")
                             
                             Spacer()
                             
@@ -59,7 +63,7 @@ struct PostDetailView: View {
                                 }) {
                                     HStack(spacing: 5) {
                                         Image(systemName: post.liked ? "heart.fill" : "heart")
-                                            .font(.system(size: 16))
+                                            .font(.callout)
                                             .foregroundColor(post.liked ? .pink : .secondary)
                                         Text("\(post.likes)")
                                             .font(.subheadline)
@@ -72,16 +76,21 @@ struct PostDetailView: View {
                                     .cornerRadius(8)
                                 }
                                 .buttonStyle(.bounce)
+                                .accessibilityLabel(post.liked ? "Unlike" : "Like")
+                                .accessibilityValue("\(post.likes) likes")
+                                .accessibilityHint(post.liked ? "Double tap to remove your like" : "Double tap to like this post")
                                 
                                 HStack(spacing: 5) {
                                     Image(systemName: "bubble.left.fill")
-                                        .font(.system(size: 16))
+                                        .font(.callout)
                                         .foregroundColor(.vibrantTeal)
                                     Text("\(post.comments)")
                                         .font(.subheadline)
                                         .fontWeight(.semibold)
                                         .foregroundColor(.vibrantTeal)
                                 }
+                                .accessibilityElement(children: .combine)
+                                .accessibilityLabel("\(post.comments) comments")
                             }
                         }
                     }
@@ -103,6 +112,7 @@ struct PostDetailView: View {
                     HStack {
                         Text("Comments")
                             .font(.headline)
+                            .accessibilityAddTraits(.isHeader)
                         
                         Spacer()
                         
@@ -113,6 +123,7 @@ struct PostDetailView: View {
                                 Text("Oldest").tag(SortOrder.oldest)
                             }
                             .pickerStyle(.menu)
+                            .accessibilityLabel("Sort comments")
                             .onChange(of: viewModel.selectedSortOrder) { _, _ in
                                 viewModel.sortOrderChanged(postId: post.id, authState: authState)
                             }
@@ -131,8 +142,9 @@ struct PostDetailView: View {
                     } else if viewModel.comments.isEmpty {
                         VStack(spacing: 12) {
                             Image(systemName: "bubble.left.and.bubble.right")
-                                .font(.system(size: 40))
+                                .font(.largeTitle)
                                 .foregroundColor(.gray)
+                                .accessibilityHidden(true)
                             Text("No comments yet")
                                 .font(.subheadline)
                                 .foregroundColor(.gray)
@@ -142,6 +154,8 @@ struct PostDetailView: View {
                         }
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 32)
+                        .accessibilityElement(children: .combine)
+                        .accessibilityLabel("No comments yet. Be the first to comment!")
                     } else {
                         VStack(alignment: .leading, spacing: 12) {
                             ForEach(viewModel.comments) { comment in
@@ -196,6 +210,7 @@ struct PostDetailView: View {
                     .lineLimit(1...4)
                     .disabled(viewModel.isSubmitting)
                     .accessibilityLabel("Comment text field")
+                    .accessibilityHint("Enter your comment here")
                 
                 Button(action: {
                     HapticFeedback.light()
@@ -211,13 +226,15 @@ struct PostDetailView: View {
                                 .frame(width: 36, height: 36)
                             
                             Image(systemName: "arrow.up")
-                                .font(.system(size: 16, weight: .bold))
+                                .font(.callout.bold())
                                 .foregroundColor(.white)
                         }
                         .shadow(color: viewModel.commentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? Color.clear : Color.primaryPurple.opacity(0.3), radius: 4, x: 0, y: 2)
                     }
                 }
                 .disabled(viewModel.commentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || viewModel.isSubmitting)
+                .accessibilityLabel("Submit comment")
+                .accessibilityHint("Double tap to post your comment")
             }
             .padding()
             .background(Color(.systemBackground))
@@ -236,6 +253,7 @@ struct PostDetailView: View {
                     }
                 } label: {
                     Image(systemName: "ellipsis.circle")
+                        .accessibilityLabel("Post options")
                 }
             }
         }
@@ -324,15 +342,18 @@ struct CommentRowView: View {
                         .font(.caption)
                         .fontWeight(.semibold)
                         .foregroundColor(isOwnComment ? .white : .blue)
+                        .accessibilityLabel(isOwnComment ? "Your comment" : "Comment by \(comment.author.profileName)")
                     
                     Text(comment.text)
                         .font(.body)
                         .foregroundColor(isOwnComment ? .white : .primary)
                         .fixedSize(horizontal: false, vertical: true)
+                        .accessibilityLabel("Comment: \(comment.text)")
                     
                     Text(DateFormatting.formatRelativeTime(comment.createdAt))
                         .font(.caption2)
                         .foregroundColor(isOwnComment ? Color.white.opacity(0.8) : .gray)
+                        .accessibilityLabel("Posted \(DateFormatting.formatRelativeTime(comment.createdAt))")
                 }
                 
                 Spacer()
@@ -345,6 +366,8 @@ struct CommentRowView: View {
                             .font(.caption)
                             .foregroundColor(.white)
                     }
+                    .accessibilityLabel("Delete comment")
+                    .accessibilityHint("Double tap to delete this comment")
                 } else {
                     // Report button (only for others' comments)
                     Button(action: onReport) {
@@ -352,6 +375,8 @@ struct CommentRowView: View {
                             .font(.caption)
                             .foregroundColor(.primary)
                     }
+                    .accessibilityLabel("Report comment")
+                    .accessibilityHint("Double tap to report this comment")
                 }
             }
             .padding()

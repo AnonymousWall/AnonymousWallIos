@@ -26,6 +26,8 @@ struct CreatePostView: View {
                 .pickerStyle(SegmentedPickerStyle())
                 .padding(.horizontal)
                 .padding(.top, 10)
+                .accessibilityLabel("Select wall type")
+                .accessibilityValue(viewModel.selectedWall.displayName)
                 .onChange(of: viewModel.selectedWall) { _, _ in
                     HapticFeedback.selection()
                 }
@@ -35,16 +37,20 @@ struct CreatePostView: View {
                     Text("Title")
                         .font(.headline)
                         .padding(.horizontal)
+                        .accessibilityAddTraits(.isHeader)
                     
                     TextField("Enter post title", text: $viewModel.postTitle)
                         .textFieldStyle(RoundedBorderTextFieldStyle())
                         .padding(.horizontal)
+                        .accessibilityLabel("Post title")
+                        .accessibilityHint("Enter the title for your post")
                     
                     HStack {
                         Spacer()
                         Text("\(viewModel.titleCharacterCount)/\(viewModel.maxTitleCount)")
                             .font(.caption)
                             .foregroundColor(viewModel.isTitleOverLimit ? .red : .gray)
+                            .accessibilityLabel("Character count: \(viewModel.titleCharacterCount) of \(viewModel.maxTitleCount)")
                     }
                     .padding(.horizontal)
                 }
@@ -54,6 +60,7 @@ struct CreatePostView: View {
                     Text("Content")
                         .font(.headline)
                         .padding(.horizontal)
+                        .accessibilityAddTraits(.isHeader)
                     
                     // Character count for content
                     HStack {
@@ -61,6 +68,7 @@ struct CreatePostView: View {
                         Text("\(viewModel.contentCharacterCount)/\(viewModel.maxContentCount)")
                             .font(.caption)
                             .foregroundColor(viewModel.isContentOverLimit ? .red : .gray)
+                            .accessibilityLabel("Character count: \(viewModel.contentCharacterCount) of \(viewModel.maxContentCount)")
                     }
                     .padding(.horizontal)
                     
@@ -71,6 +79,8 @@ struct CreatePostView: View {
                         .background(Color(.systemGray6))
                         .cornerRadius(10)
                         .padding(.horizontal)
+                        .accessibilityLabel("Post content")
+                        .accessibilityHint("Enter the content for your post")
                 }
                 
                 // Error message
@@ -98,10 +108,10 @@ struct CreatePostView: View {
                     } else {
                         HStack(spacing: 10) {
                             Image(systemName: "paperplane.fill")
-                                .font(.system(size: 18))
+                                .font(.body)
                             Text("Post")
                                 .fontWeight(.bold)
-                                .font(.system(size: 18))
+                                .font(.body)
                         }
                         .frame(maxWidth: .infinity)
                     }
@@ -118,6 +128,8 @@ struct CreatePostView: View {
                 .padding(.horizontal)
                 .padding(.bottom, 20)
                 .disabled(viewModel.isPostButtonDisabled)
+                .accessibilityLabel("Submit post")
+                .accessibilityHint(viewModel.isPostButtonDisabled ? "Button disabled. Complete the title and content to post" : "Double tap to create your post")
             }
             .navigationTitle("New Post")
             .navigationBarTitleDisplayMode(.inline)
@@ -126,6 +138,8 @@ struct CreatePostView: View {
                     Button("Cancel") {
                         dismiss()
                     }
+                    .accessibilityLabel("Cancel")
+                    .accessibilityHint("Double tap to cancel creating a post")
                 }
             }
         }
