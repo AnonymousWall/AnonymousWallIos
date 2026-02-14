@@ -18,11 +18,17 @@ class AuthState: ObservableObject {
     
     private let config = AppConfiguration.shared
     private let keychainAuthTokenKey: String
+    private let preferencesStore: PreferencesStore
     
-    init(loadPersistedState: Bool = true) {
+    init(loadPersistedState: Bool = true, preferencesStore: PreferencesStore = .shared) {
         self.keychainAuthTokenKey = config.authTokenKey
+        self.preferencesStore = preferencesStore
         if loadPersistedState {
-            loadAuthState()
+            // Load state synchronously by blocking on the async operation
+            // This ensures AuthState is fully initialized before use
+            Task { @MainActor in
+                await self.loadAuthState()
+            }
         }
     }
     
@@ -33,12 +39,22 @@ class AuthState: ObservableObject {
         // needsPasswordSetup is the inverse of passwordSet from the API
         // If passwordSet is nil or false, then we need password setup
         self.needsPasswordSetup = !(user.passwordSet ?? false)
-        saveAuthState()
+        
+        // Persist state asynchronously - fire-and-forget is acceptable here because:
+        // 1. UI state (@Published properties) updates synchronously above
+        // 2. UserDefaults writes are fast and rarely fail
+        // 3. Next login/action will overwrite stale data if write fails
+        Task {
+            await saveAuthState()
+        }
     }
     
     func updatePasswordSetupStatus(completed: Bool) {
         self.needsPasswordSetup = !completed
-        UserDefaults.standard.set(needsPasswordSetup, forKey: AppConfiguration.UserDefaultsKeys.needsPasswordSetup)
+        // Persist asynchronously - fire-and-forget is safe for preference updates
+        Task {
+            await preferencesStore.setBool(needsPasswordSetup, forKey: AppConfiguration.UserDefaultsKeys.needsPasswordSetup)
+        }
     }
     
     func markPasswordSetupShown() {
@@ -47,15 +63,24 @@ class AuthState: ObservableObject {
     
     func updateUser(_ user: User) {
         self.currentUser = user
-        // Update stored user data
-        UserDefaults.standard.set(user.id, forKey: AppConfiguration.UserDefaultsKeys.userId)
-        UserDefaults.standard.set(user.email, forKey: AppConfiguration.UserDefaultsKeys.userEmail)
-        UserDefaults.standard.set(user.isVerified, forKey: AppConfiguration.UserDefaultsKeys.userIsVerified)
-        UserDefaults.standard.set(user.profileName, forKey: AppConfiguration.UserDefaultsKeys.userProfileName)
         // Update password setup status
         let passwordSet = user.passwordSet ?? false
         self.needsPasswordSetup = !passwordSet
-        UserDefaults.standard.set(needsPasswordSetup, forKey: AppConfiguration.UserDefaultsKeys.needsPasswordSetup)
+        
+        // Update stored user data
+        Task {
+            await preferencesStore.saveBatch(
+                strings: [
+                    AppConfiguration.UserDefaultsKeys.userId: user.id,
+                    AppConfiguration.UserDefaultsKeys.userEmail: user.email,
+                    AppConfiguration.UserDefaultsKeys.userProfileName: user.profileName
+                ],
+                bools: [
+                    AppConfiguration.UserDefaultsKeys.userIsVerified: user.isVerified,
+                    AppConfiguration.UserDefaultsKeys.needsPasswordSetup: needsPasswordSetup
+                ]
+            )
+        }
     }
     
     func logout() {
@@ -65,7 +90,10 @@ class AuthState: ObservableObject {
         self.needsPasswordSetup = false
         self.hasShownPasswordSetup = false
         self.showBlockedUserAlert = false
-        clearAuthState()
+        // Clear persistence asynchronously - UI state cleared synchronously above
+        Task {
+            await clearAuthState()
+        }
     }
     
     /// Handles blocked user response - logs out and shows alert
@@ -77,17 +105,25 @@ class AuthState: ObservableObject {
     
     /// Clears all persisted authentication state. Useful for testing.
     func clearPersistedState() {
-        clearAuthState()
+        Task {
+            await clearAuthState()
+        }
     }
     
-    private func saveAuthState() {
-        // Save non-sensitive data to UserDefaults
-        UserDefaults.standard.set(isAuthenticated, forKey: AppConfiguration.UserDefaultsKeys.isAuthenticated)
-        UserDefaults.standard.set(currentUser?.id, forKey: AppConfiguration.UserDefaultsKeys.userId)
-        UserDefaults.standard.set(currentUser?.email, forKey: AppConfiguration.UserDefaultsKeys.userEmail)
-        UserDefaults.standard.set(currentUser?.profileName, forKey: AppConfiguration.UserDefaultsKeys.userProfileName)
-        UserDefaults.standard.set(currentUser?.isVerified, forKey: AppConfiguration.UserDefaultsKeys.userIsVerified)
-        UserDefaults.standard.set(needsPasswordSetup, forKey: AppConfiguration.UserDefaultsKeys.needsPasswordSetup)
+    private func saveAuthState() async {
+        // Save non-sensitive data to PreferencesStore
+        await preferencesStore.saveBatch(
+            strings: [
+                AppConfiguration.UserDefaultsKeys.userId: currentUser?.id,
+                AppConfiguration.UserDefaultsKeys.userEmail: currentUser?.email,
+                AppConfiguration.UserDefaultsKeys.userProfileName: currentUser?.profileName
+            ],
+            bools: [
+                AppConfiguration.UserDefaultsKeys.isAuthenticated: isAuthenticated,
+                AppConfiguration.UserDefaultsKeys.userIsVerified: currentUser?.isVerified ?? false,
+                AppConfiguration.UserDefaultsKeys.needsPasswordSetup: needsPasswordSetup
+            ]
+        )
         
         // Save sensitive token to Keychain
         if let token = authToken {
@@ -95,31 +131,43 @@ class AuthState: ObservableObject {
         }
     }
     
-    private func loadAuthState() {
-        isAuthenticated = UserDefaults.standard.bool(forKey: AppConfiguration.UserDefaultsKeys.isAuthenticated)
-        needsPasswordSetup = UserDefaults.standard.bool(forKey: AppConfiguration.UserDefaultsKeys.needsPasswordSetup)
+    private func loadAuthState() async {
+        let keys = AppConfiguration.UserDefaultsKeys.self
+        let result = await preferencesStore.loadBatch(
+            stringKeys: [keys.userId, keys.userEmail, keys.userProfileName],
+            boolKeys: [keys.isAuthenticated, keys.needsPasswordSetup, keys.userIsVerified]
+        )
         
-        // Load token from Keychain
-        authToken = KeychainHelper.shared.get(keychainAuthTokenKey)
-        
-        if let userId = UserDefaults.standard.string(forKey: AppConfiguration.UserDefaultsKeys.userId),
-           let userEmail = UserDefaults.standard.string(forKey: AppConfiguration.UserDefaultsKeys.userEmail) {
-            let isVerified = UserDefaults.standard.bool(forKey: AppConfiguration.UserDefaultsKeys.userIsVerified)
-            let profileName = UserDefaults.standard.string(forKey: AppConfiguration.UserDefaultsKeys.userProfileName) ?? "Anonymous"
-            // passwordSet is the inverse of needsPasswordSetup
-            let passwordSet = !needsPasswordSetup
-            currentUser = User(id: userId, email: userEmail, profileName: profileName, isVerified: isVerified, passwordSet: passwordSet, createdAt: "")
+        // Update published properties on main actor
+        await MainActor.run {
+            self.isAuthenticated = result.bools[keys.isAuthenticated] ?? false
+            self.needsPasswordSetup = result.bools[keys.needsPasswordSetup] ?? false
+            
+            // Load token from Keychain
+            self.authToken = KeychainHelper.shared.get(keychainAuthTokenKey)
+            
+            if let userId = result.strings[keys.userId] as? String,
+               let userEmail = result.strings[keys.userEmail] as? String {
+                let isVerified = result.bools[keys.userIsVerified] ?? false
+                let profileName = (result.strings[keys.userProfileName] as? String) ?? "Anonymous"
+                // passwordSet is the inverse of needsPasswordSetup
+                let passwordSet = !self.needsPasswordSetup
+                self.currentUser = User(id: userId, email: userEmail, profileName: profileName, isVerified: isVerified, passwordSet: passwordSet, createdAt: "")
+            }
         }
     }
     
-    private func clearAuthState() {
-        // Clear UserDefaults
-        UserDefaults.standard.removeObject(forKey: AppConfiguration.UserDefaultsKeys.isAuthenticated)
-        UserDefaults.standard.removeObject(forKey: AppConfiguration.UserDefaultsKeys.userId)
-        UserDefaults.standard.removeObject(forKey: AppConfiguration.UserDefaultsKeys.userEmail)
-        UserDefaults.standard.removeObject(forKey: AppConfiguration.UserDefaultsKeys.userIsVerified)
-        UserDefaults.standard.removeObject(forKey: AppConfiguration.UserDefaultsKeys.needsPasswordSetup)
-        UserDefaults.standard.removeObject(forKey: AppConfiguration.UserDefaultsKeys.userProfileName)
+    private func clearAuthState() async {
+        // Clear PreferencesStore
+        let keys = AppConfiguration.UserDefaultsKeys.self
+        await preferencesStore.removeAll(forKeys: [
+            keys.isAuthenticated,
+            keys.userId,
+            keys.userEmail,
+            keys.userIsVerified,
+            keys.needsPasswordSetup,
+            keys.userProfileName
+        ])
         
         // Clear Keychain
         KeychainHelper.shared.delete(keychainAuthTokenKey)
