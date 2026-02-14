@@ -26,23 +26,20 @@ class PostService: PostServiceProtocol {
         limit: Int = 20,
         sort: SortOrder = .newest
     ) async throws -> PostListResponse {
-        var components = URLComponents(string: "\(config.fullAPIBaseURL)/posts")
-        components?.queryItems = [
+        let queryItems = [
             URLQueryItem(name: "wall", value: wall.rawValue),
             URLQueryItem(name: "page", value: "\(page)"),
             URLQueryItem(name: "limit", value: "\(limit)"),
             URLQueryItem(name: "sort", value: sort.rawValue)
         ]
         
-        guard let url = components?.url else {
-            throw NetworkError.invalidURL
-        }
-        
-        var request = URLRequest(url: url)
-        request.httpMethod = "GET"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        request.setValue(userId, forHTTPHeaderField: "X-User-Id")
+        let request = try APIRequestBuilder()
+            .setPath("/posts")
+            .setMethod(.GET)
+            .addQueryItems(queryItems)
+            .setToken(token)
+            .setUserId(userId)
+            .build()
         
         // Try to decode as PostListResponse with pagination structure
         do {
@@ -64,78 +61,63 @@ class PostService: PostServiceProtocol {
         token: String,
         userId: String
     ) async throws -> Post {
-        guard let url = URL(string: "\(config.fullAPIBaseURL)/posts/\(postId)") else {
-            throw NetworkError.invalidURL
-        }
-        
-        var request = URLRequest(url: url)
-        request.httpMethod = "GET"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        request.setValue(userId, forHTTPHeaderField: "X-User-Id")
+        let request = try APIRequestBuilder()
+            .setPath("/posts/\(postId)")
+            .setMethod(.GET)
+            .setToken(token)
+            .setUserId(userId)
+            .build()
         
         return try await networkClient.performRequest(request)
     }
     
     /// Create a new post
     func createPost(title: String, content: String, wall: WallType = .campus, token: String, userId: String) async throws -> Post {
-        guard let url = URL(string: "\(config.fullAPIBaseURL)/posts") else {
-            throw NetworkError.invalidURL
-        }
-        
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        request.setValue(userId, forHTTPHeaderField: "X-User-Id")
-        
         let body = CreatePostRequest(title: title, content: content, wall: wall.rawValue)
-        request.httpBody = try JSONEncoder().encode(body)
+        
+        let request = try APIRequestBuilder()
+            .setPath("/posts")
+            .setMethod(.POST)
+            .setBody(body)
+            .setToken(token)
+            .setUserId(userId)
+            .build()
         
         return try await networkClient.performRequest(request)
     }
     
     /// Toggle like on a post
     func toggleLike(postId: String, token: String, userId: String) async throws -> LikeResponse {
-        guard let url = URL(string: "\(config.fullAPIBaseURL)/posts/\(postId)/likes") else {
-            throw NetworkError.invalidURL
-        }
-        
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        request.setValue(userId, forHTTPHeaderField: "X-User-Id")
+        let request = try APIRequestBuilder()
+            .setPath("/posts/\(postId)/likes")
+            .setMethod(.POST)
+            .setToken(token)
+            .setUserId(userId)
+            .build()
         
         return try await networkClient.performRequest(request)
     }
     
     /// Hide/delete a post (soft delete)
     func hidePost(postId: String, token: String, userId: String) async throws -> HidePostResponse {
-        guard let url = URL(string: "\(config.fullAPIBaseURL)/posts/\(postId)/hide") else {
-            throw NetworkError.invalidURL
-        }
-        
-        var request = URLRequest(url: url)
-        request.httpMethod = "PATCH"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        request.setValue(userId, forHTTPHeaderField: "X-User-Id")
+        let request = try APIRequestBuilder()
+            .setPath("/posts/\(postId)/hide")
+            .setMethod(.PATCH)
+            .setToken(token)
+            .setUserId(userId)
+            .build()
         
         return try await networkClient.performRequest(request)
     }
     
     /// Unhide a post (restore from soft delete)
     func unhidePost(postId: String, token: String, userId: String) async throws -> HidePostResponse {
-        guard let url = URL(string: "\(config.fullAPIBaseURL)/posts/\(postId)/unhide") else {
-            throw NetworkError.invalidURL
-        }
-        
-        var request = URLRequest(url: url)
-        request.httpMethod = "PATCH"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        request.setValue(userId, forHTTPHeaderField: "X-User-Id")
+        let request = try APIRequestBuilder()
+            .setPath("/posts/\(postId)/unhide")
+            .setMethod(.PATCH)
+            .setToken(token)
+            .setUserId(userId)
+            .build()
         
         return try await networkClient.performRequest(request)
     }
@@ -144,18 +126,15 @@ class PostService: PostServiceProtocol {
     
     /// Add a comment to a post
     func addComment(postId: String, text: String, token: String, userId: String) async throws -> Comment {
-        guard let url = URL(string: "\(config.fullAPIBaseURL)/posts/\(postId)/comments") else {
-            throw NetworkError.invalidURL
-        }
-        
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        request.setValue(userId, forHTTPHeaderField: "X-User-Id")
-        
         let body = CreateCommentRequest(text: text)
-        request.httpBody = try JSONEncoder().encode(body)
+        
+        let request = try APIRequestBuilder()
+            .setPath("/posts/\(postId)/comments")
+            .setMethod(.POST)
+            .setBody(body)
+            .setToken(token)
+            .setUserId(userId)
+            .build()
         
         return try await networkClient.performRequest(request)
     }
@@ -169,52 +148,43 @@ class PostService: PostServiceProtocol {
         limit: Int = 20,
         sort: SortOrder = .newest
     ) async throws -> CommentListResponse {
-        var components = URLComponents(string: "\(config.fullAPIBaseURL)/posts/\(postId)/comments")
-        components?.queryItems = [
+        let queryItems = [
             URLQueryItem(name: "page", value: "\(page)"),
             URLQueryItem(name: "limit", value: "\(limit)"),
             URLQueryItem(name: "sort", value: sort.rawValue)
         ]
         
-        guard let url = components?.url else {
-            throw NetworkError.invalidURL
-        }
-        
-        var request = URLRequest(url: url)
-        request.httpMethod = "GET"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        request.setValue(userId, forHTTPHeaderField: "X-User-Id")
+        let request = try APIRequestBuilder()
+            .setPath("/posts/\(postId)/comments")
+            .setMethod(.GET)
+            .addQueryItems(queryItems)
+            .setToken(token)
+            .setUserId(userId)
+            .build()
         
         return try await networkClient.performRequest(request)
     }
     
     /// Hide/delete a comment (soft delete)
     func hideComment(postId: String, commentId: String, token: String, userId: String) async throws -> HidePostResponse {
-        guard let url = URL(string: "\(config.fullAPIBaseURL)/posts/\(postId)/comments/\(commentId)/hide") else {
-            throw NetworkError.invalidURL
-        }
-        
-        var request = URLRequest(url: url)
-        request.httpMethod = "PATCH"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        request.setValue(userId, forHTTPHeaderField: "X-User-Id")
+        let request = try APIRequestBuilder()
+            .setPath("/posts/\(postId)/comments/\(commentId)/hide")
+            .setMethod(.PATCH)
+            .setToken(token)
+            .setUserId(userId)
+            .build()
         
         return try await networkClient.performRequest(request)
     }
     
     /// Unhide a comment (restore from soft delete)
     func unhideComment(postId: String, commentId: String, token: String, userId: String) async throws -> HidePostResponse {
-        guard let url = URL(string: "\(config.fullAPIBaseURL)/posts/\(postId)/comments/\(commentId)/unhide") else {
-            throw NetworkError.invalidURL
-        }
-        
-        var request = URLRequest(url: url)
-        request.httpMethod = "PATCH"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        request.setValue(userId, forHTTPHeaderField: "X-User-Id")
+        let request = try APIRequestBuilder()
+            .setPath("/posts/\(postId)/comments/\(commentId)/unhide")
+            .setMethod(.PATCH)
+            .setToken(token)
+            .setUserId(userId)
+            .build()
         
         return try await networkClient.performRequest(request)
     }
@@ -223,36 +193,30 @@ class PostService: PostServiceProtocol {
     
     /// Report a post
     func reportPost(postId: String, reason: String?, token: String, userId: String) async throws -> ReportResponse {
-        guard let url = URL(string: "\(config.fullAPIBaseURL)/posts/\(postId)/reports") else {
-            throw NetworkError.invalidURL
-        }
-        
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        request.setValue(userId, forHTTPHeaderField: "X-User-Id")
-        
         let body = ReportRequest(reason: reason)
-        request.httpBody = try JSONEncoder().encode(body)
+        
+        let request = try APIRequestBuilder()
+            .setPath("/posts/\(postId)/reports")
+            .setMethod(.POST)
+            .setBody(body)
+            .setToken(token)
+            .setUserId(userId)
+            .build()
         
         return try await networkClient.performRequest(request)
     }
     
     /// Report a comment
     func reportComment(postId: String, commentId: String, reason: String?, token: String, userId: String) async throws -> ReportResponse {
-        guard let url = URL(string: "\(config.fullAPIBaseURL)/posts/\(postId)/comments/\(commentId)/reports") else {
-            throw NetworkError.invalidURL
-        }
-        
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        request.setValue(userId, forHTTPHeaderField: "X-User-Id")
-        
         let body = ReportRequest(reason: reason)
-        request.httpBody = try JSONEncoder().encode(body)
+        
+        let request = try APIRequestBuilder()
+            .setPath("/posts/\(postId)/comments/\(commentId)/reports")
+            .setMethod(.POST)
+            .setBody(body)
+            .setToken(token)
+            .setUserId(userId)
+            .build()
         
         return try await networkClient.performRequest(request)
     }
