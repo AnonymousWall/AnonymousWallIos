@@ -146,7 +146,7 @@ struct AuthStateBlockedUserTests {
         #expect(authState.showBlockedUserAlert == true)
     }
     
-    @Test func testHandleBlockedUserClearsPersistedState() {
+    @Test func testHandleBlockedUserClearsPersistedState() async {
         // Given
         let authState = AuthState(loadPersistedState: false)
         let mockUser = User(
@@ -159,13 +159,24 @@ struct AuthStateBlockedUserTests {
         )
         authState.login(user: mockUser, token: "test-token")
         
+        // Wait for login persistence to complete
+        try? await Task.sleep(nanoseconds: 100_000_000) // 0.1 seconds
+        
         // When
         authState.handleBlockedUser()
         
-        // Then - verify UserDefaults are cleared
-        #expect(UserDefaults.standard.string(forKey: AppConfiguration.UserDefaultsKeys.userId) == nil)
-        #expect(UserDefaults.standard.string(forKey: AppConfiguration.UserDefaultsKeys.userEmail) == nil)
-        #expect(UserDefaults.standard.bool(forKey: AppConfiguration.UserDefaultsKeys.isAuthenticated) == false)
+        // Wait for clear persistence to complete
+        try? await Task.sleep(nanoseconds: 100_000_000) // 0.1 seconds
+        
+        // Then - verify PreferencesStore data are cleared
+        let preferencesStore = PreferencesStore.shared
+        let userId = await preferencesStore.getString(forKey: AppConfiguration.UserDefaultsKeys.userId)
+        let userEmail = await preferencesStore.getString(forKey: AppConfiguration.UserDefaultsKeys.userEmail)
+        let isAuthenticated = await preferencesStore.getBool(forKey: AppConfiguration.UserDefaultsKeys.isAuthenticated)
+        
+        #expect(userId == nil)
+        #expect(userEmail == nil)
+        #expect(isAuthenticated == false)
         
         // Verify Keychain is cleared
         let tokenFromKeychain = KeychainHelper.shared.get(AppConfiguration.shared.authTokenKey)
