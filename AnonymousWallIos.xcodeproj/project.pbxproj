@@ -11,6 +11,16 @@
 		B38E4D52A8EA0635B03CC47E /* RetryPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8DC843BFBA3C48ABA3356DFE /* RetryPolicy.swift */; };
 		24F07C4387334D249A64BC17 /* RetryPolicyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A53C5115A660404488F53B7D /* RetryPolicyTests.swift */; };
 		6328F8B12FE9463E84120149 /* RetryUtilityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8CCEC533C774466B1780C11 /* RetryUtilityTests.swift */; };
+		E7B760815D8E475497471E4D /* PaginationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9353675B398E4B2A82762DAC /* PaginationTests.swift */; };
+		7CB460E2719546A1A0B699A6 /* ConcurrencyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD3BA3A3B17C45F8AA5618BC /* ConcurrencyTests.swift */; };
+		9B29FEE2132C4D438FECC744 /* NetworkingEdgeCasesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 69053CDEA69C47D79CFC4118 /* NetworkingEdgeCasesTests.swift */; };
+		4DC9463D35C9449C82494705 /* ViewModelEdgeCasesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4442FC3915084FEFBDA3B7E3 /* ViewModelEdgeCasesTests.swift */; };
+		DFCF7C540972409BB84D5DBC /* TokenExpirationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D79C8FC048E4F8D88F09330 /* TokenExpirationTests.swift */; };
+		9353675B398E4B2A82762DAC /* PaginationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaginationTests.swift; sourceTree = "<group>"; };
+		FD3BA3A3B17C45F8AA5618BC /* ConcurrencyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConcurrencyTests.swift; sourceTree = "<group>"; };
+		69053CDEA69C47D79CFC4118 /* NetworkingEdgeCasesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkingEdgeCasesTests.swift; sourceTree = "<group>"; };
+		4442FC3915084FEFBDA3B7E3 /* ViewModelEdgeCasesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewModelEdgeCasesTests.swift; sourceTree = "<group>"; };
+		9D79C8FC048E4F8D88F09330 /* TokenExpirationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TokenExpirationTests.swift; sourceTree = "<group>"; };
 		3F54EDFE77FB042E0C1252D6 /* RetryIntegrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B243820AFC2F0C24C121420D /* RetryIntegrationTests.swift */; };
 /* End PBXBuildFile section */
 
