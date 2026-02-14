@@ -134,7 +134,7 @@ struct PreferencesStoreTests {
         // Then
         #expect(result.strings["key1"] as? String == "value1")
         #expect(result.strings["key2"] as? String == "value2")
-        #expect(result.strings["nonexistent"] == nil)
+        #expect(result.strings["nonexistent"] as? String == nil) // Cast to String to check nil properly
         #expect(result.bools["bool1"] == true)
         #expect(result.bools["bool2"] == false)
         #expect(result.bools["nonexistentBool"] == false)
