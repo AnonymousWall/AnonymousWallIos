@@ -16,7 +16,11 @@ AnonymousWallIos/
 │   │   └── Post.swift                     # Post models
 │   ├── Networking/                        # Network layer
 │   │   ├── NetworkClient.swift            # HTTP client abstraction
-│   │   └── NetworkError.swift             # Network error types
+│   │   ├── NetworkError.swift             # Network error types
+│   │   ├── APIRequestBuilder.swift        # Request builder for consistent construction
+│   │   ├── HTTPMethod.swift               # HTTP method enum
+│   │   ├── HTTPStatus.swift               # HTTP status code constants
+│   │   └── BlockedUserHandler.swift       # Blocked user state handler
 │   ├── Protocols/                         # Service protocols
 │   │   ├── AuthServiceProtocol.swift      # Authentication service protocol
 │   │   └── PostServiceProtocol.swift      # Post service protocol
@@ -80,13 +84,25 @@ AnonymousWallIos/
   - Handles HTTP status codes
   - Implements request/response logging
   - Provides unified error handling
+  - Integrates with BlockedUserHandler for 403 responses
 - `NetworkError`: Standardized error types for network operations
+- `APIRequestBuilder`: Centralized request construction that:
+  - Eliminates header duplication across services
+  - Provides fluent API for building requests
+  - Handles authentication tokens and user IDs
+  - Supports query parameters and request bodies
+  - Ensures consistent Content-Type headers
+- `HTTPMethod`: Type-safe HTTP method enum
+- `HTTPStatus`: HTTP status code constants
+- `BlockedUserHandler`: Handles blocked user state globally
 
 **Benefits**:
 - Single place to handle network logic
+- No duplicated header setup in services
 - Consistent error handling across app
 - Easy to mock for testing
 - Separation of concerns
+- Extensible for logging and custom headers
 
 ### 3. Protocol Layer
 **Purpose**: Define service contracts for loose coupling and testability

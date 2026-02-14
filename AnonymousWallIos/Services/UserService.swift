@@ -19,20 +19,17 @@ class UserService: UserServiceProtocol {
     
     /// Update user's profile name
     func updateProfileName(profileName: String, token: String, userId: String) async throws -> User {
-        guard let url = URL(string: "\(config.fullAPIBaseURL)/users/me/profile/name") else {
-            throw NetworkError.invalidURL
-        }
-        
-        var request = URLRequest(url: url)
-        request.httpMethod = "PATCH"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        request.setValue(userId, forHTTPHeaderField: "X-User-Id")
-        
         let body: [String: String] = [
             "profileName": profileName
         ]
-        request.httpBody = try JSONEncoder().encode(body)
+        
+        let request = try APIRequestBuilder()
+            .setPath("/users/me/profile/name")
+            .setMethod(.PATCH)
+            .setBody(body)
+            .setToken(token)
+            .setUserId(userId)
+            .build()
         
         return try await networkClient.performRequest(request)
     }
@@ -47,22 +44,19 @@ class UserService: UserServiceProtocol {
         limit: Int = 20,
         sort: SortOrder = .newest
     ) async throws -> CommentListResponse {
-        var components = URLComponents(string: "\(config.fullAPIBaseURL)/users/me/comments")
-        components?.queryItems = [
+        let queryItems = [
             URLQueryItem(name: "page", value: "\(page)"),
             URLQueryItem(name: "limit", value: "\(limit)"),
             URLQueryItem(name: "sort", value: sort.rawValue)
         ]
         
-        guard let url = components?.url else {
-            throw NetworkError.invalidURL
-        }
-        
-        var request = URLRequest(url: url)
-        request.httpMethod = "GET"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        request.setValue(userId, forHTTPHeaderField: "X-User-Id")
+        let request = try APIRequestBuilder()
+            .setPath("/users/me/comments")
+            .setMethod(.GET)
+            .addQueryItems(queryItems)
+            .setToken(token)
+            .setUserId(userId)
+            .build()
         
         return try await networkClient.performRequest(request)
     }
@@ -75,22 +69,19 @@ class UserService: UserServiceProtocol {
         limit: Int = 20,
         sort: SortOrder = .newest
     ) async throws -> PostListResponse {
-        var components = URLComponents(string: "\(config.fullAPIBaseURL)/users/me/posts")
-        components?.queryItems = [
+        let queryItems = [
             URLQueryItem(name: "page", value: "\(page)"),
             URLQueryItem(name: "limit", value: "\(limit)"),
             URLQueryItem(name: "sort", value: sort.rawValue)
         ]
         
-        guard let url = components?.url else {
-            throw NetworkError.invalidURL
-        }
-        
-        var request = URLRequest(url: url)
-        request.httpMethod = "GET"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        request.setValue(userId, forHTTPHeaderField: "X-User-Id")
+        let request = try APIRequestBuilder()
+            .setPath("/users/me/posts")
+            .setMethod(.GET)
+            .addQueryItems(queryItems)
+            .setToken(token)
+            .setUserId(userId)
+            .build()
         
         return try await networkClient.performRequest(request)
     }
