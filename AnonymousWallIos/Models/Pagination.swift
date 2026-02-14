@@ -39,8 +39,7 @@ struct Pagination {
     /// Advances to the next page and returns the new page number
     /// - Returns: The next page number
     mutating func advanceToNextPage() -> Int {
-        let nextPage = currentPage + 1
-        currentPage = nextPage
-        return nextPage
+        currentPage += 1
+        return currentPage
     }
 }
