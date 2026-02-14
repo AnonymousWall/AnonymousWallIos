@@ -67,7 +67,7 @@ class AccessibilityTests: XCTestCase {
             id: "1",
             postId: "post1",
             text: "This is a test comment",
-            author: Comment.Author(id: "user1", profileName: "TestUser", isAnonymous: false),
+            author: Post.Author(id: "user1", profileName: "TestUser", isAnonymous: false),
             createdAt: ISO8601DateFormatter().string(from: Date())
         )
         
