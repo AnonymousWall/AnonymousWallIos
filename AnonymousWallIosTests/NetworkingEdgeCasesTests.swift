@@ -155,7 +155,11 @@ struct NetworkingEdgeCasesTests {
         } catch {
             // Should retry 3 times (1 initial + 3 retries)
             #expect(attemptCount == 4)
-            #expect(error as? NetworkError == NetworkError.timeout)
+            if case NetworkError.timeout = error {
+                // Test passes - correct error type
+            } else {
+                Issue.record("Expected NetworkError.timeout")
+            }
         }
     }
     
@@ -204,7 +208,11 @@ struct NetworkingEdgeCasesTests {
         } catch {
             // Should NOT retry client errors
             #expect(attemptCount == 1)
-            #expect(error as? NetworkError == NetworkError.unauthorized)
+            if case NetworkError.unauthorized = error {
+                // Test passes - correct error type
+            } else {
+                Issue.record("Expected NetworkError.unauthorized")
+            }
         }
     }
     
@@ -308,7 +316,11 @@ struct NetworkingEdgeCasesTests {
         } catch {
             // Should stop at non-retriable error
             #expect(attemptCount == 3)
-            #expect(error as? NetworkError == NetworkError.unauthorized)
+            if case NetworkError.unauthorized = error {
+                // Test passes - correct error type
+            } else {
+                Issue.record("Expected NetworkError.unauthorized")
+            }
         }
     }
     
