@@ -49,6 +49,8 @@ struct HomeView: View {
                 .pickerStyle(.segmented)
                 .padding(.horizontal)
                 .padding(.vertical, 8)
+                .accessibilityLabel("Sort posts")
+                .accessibilityValue(viewModel.selectedSortOrder.displayName)
                 .onChange(of: viewModel.selectedSortOrder) { _, _ in
                     viewModel.sortOrderChanged(authState: authState)
                 }
@@ -75,16 +77,19 @@ struct HomeView: View {
                                     Image(systemName: "globe.americas.fill")
                                         .font(.system(size: 60))
                                         .foregroundStyle(Color.tealPurpleGradient)
+                                        .accessibilityHidden(true)
                                 }
                                 
                                 VStack(spacing: 8) {
                                     Text("No national posts yet")
-                                        .font(.system(size: 22, weight: .bold))
+                                        .font(.title3.bold())
                                         .foregroundColor(.primary)
                                     Text("Be the first to post!")
-                                        .font(.system(size: 16))
+                                        .font(.body)
                                         .foregroundColor(.secondary)
                                 }
+                                .accessibilityElement(children: .combine)
+                                .accessibilityLabel("No national posts yet. Be the first to post!")
                             }
                             Spacer()
                         }
@@ -103,6 +108,8 @@ struct HomeView: View {
                                     )
                                 }
                                 .buttonStyle(PlainButtonStyle())
+                                .accessibilityLabel("View post: \(post.title)")
+                                .accessibilityHint("Double tap to view full post and comments")
                                 .onAppear {
                                     // Load more when the last post appears
                                     viewModel.loadMoreIfNeeded(for: post, authState: authState)

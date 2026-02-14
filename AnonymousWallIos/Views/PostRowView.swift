@@ -44,28 +44,32 @@ struct PostRowView: View {
                     .background(wallGradient)
                     .cornerRadius(12)
                     .shadow(color: wallColor.opacity(0.3), radius: 4, x: 0, y: 2)
+                    .accessibilityLabel("Posted on \(wallDisplayName) wall")
                 
                 Text("by \(isOwnPost ? "Me" : post.author.profileName)")
                     .font(.caption)
                     .fontWeight(.medium)
                     .foregroundColor(.secondary)
+                    .accessibilityLabel(isOwnPost ? "Posted by you" : "Posted by \(post.author.profileName)")
                 
                 Spacer()
             }
             
             // Post title
             Text(post.title)
-                .font(.system(size: 18, weight: .bold))
+                .font(.title3.bold())
                 .foregroundColor(.primary)
                 .fixedSize(horizontal: false, vertical: true)
+                .accessibilityLabel("Post title: \(post.title)")
             
             // Post content
             Text(post.content)
-                .font(.system(size: 15))
+                .font(.subheadline)
                 .foregroundColor(.primary)
                 .lineSpacing(2)
                 .lineLimit(UIConstants.postRowContentMaxLines)
                 .truncationMode(.tail)
+                .accessibilityLabel("Post content: \(post.content)")
                 .accessibilityHint("Tap to view full post")
             
             // Footer with time and actions
@@ -79,6 +83,8 @@ struct PostRowView: View {
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel("Posted \(DateFormatting.formatRelativeTime(post.createdAt))")
                 
                 Spacer()
                 
@@ -89,7 +95,7 @@ struct PostRowView: View {
                 }) {
                     HStack(spacing: 5) {
                         Image(systemName: post.liked ? "heart.fill" : "heart")
-                            .font(.system(size: 16))
+                            .font(.callout)
                             .foregroundColor(post.liked ? .pink : .secondary)
                         Text("\(post.likes)")
                             .font(.subheadline)
@@ -102,11 +108,14 @@ struct PostRowView: View {
                     .cornerRadius(8)
                 }
                 .buttonStyle(.bounce)
+                .accessibilityLabel(post.liked ? "Unlike" : "Like")
+                .accessibilityValue("\(post.likes) likes")
+                .accessibilityHint(post.liked ? "Double tap to remove your like" : "Double tap to like this post")
                 
                 // Comment count indicator
                 HStack(spacing: 5) {
                     Image(systemName: "bubble.left.fill")
-                        .font(.system(size: 16))
+                        .font(.callout)
                         .foregroundColor(.vibrantTeal)
                     Text("\(post.comments)")
                         .font(.subheadline)
@@ -117,6 +126,8 @@ struct PostRowView: View {
                 .padding(.vertical, 6)
                 .background(Color.vibrantTeal.opacity(0.15))
                 .cornerRadius(8)
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel("\(post.comments) comments")
                 
                 // Delete button (only for own posts)
                 if isOwnPost {
@@ -125,13 +136,15 @@ struct PostRowView: View {
                         showDeleteConfirmation = true 
                     }) {
                         Image(systemName: "trash.fill")
-                            .font(.system(size: 16))
+                            .font(.callout)
                             .foregroundColor(.white)
                             .padding(6)
                             .background(Color.red)
                             .cornerRadius(8)
                     }
                     .buttonStyle(.bounce)
+                    .accessibilityLabel("Delete post")
+                    .accessibilityHint("Double tap to delete this post")
                     .confirmationDialog(
                         "Delete Post",
                         isPresented: $showDeleteConfirmation,
