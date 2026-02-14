@@ -70,7 +70,11 @@ struct RetryUtilityTests {
         } catch {
             // Should attempt 3 times (1 initial + 2 retries)
             #expect(attemptCount == 3)
-            #expect(error as? NetworkError == NetworkError.timeout)
+            if case NetworkError.timeout = error {
+                // Test passes - correct error type
+            } else {
+                Issue.record("Expected NetworkError.timeout")
+            }
         }
     }
     
@@ -104,7 +108,11 @@ struct RetryUtilityTests {
         } catch {
             // Should only attempt once (unauthorized is not retriable)
             #expect(attemptCount == 1)
-            #expect(error as? NetworkError == NetworkError.unauthorized)
+            if case NetworkError.unauthorized = error {
+                // Test passes - correct error type
+            } else {
+                Issue.record("Expected NetworkError.unauthorized")
+            }
         }
     }
     
@@ -121,7 +129,11 @@ struct RetryUtilityTests {
         } catch {
             // Should only attempt once (404 is not retriable)
             #expect(attemptCount == 1)
-            #expect(error as? NetworkError == NetworkError.notFound)
+            if case NetworkError.notFound = error {
+                // Test passes - correct error type
+            } else {
+                Issue.record("Expected NetworkError.notFound")
+            }
         }
     }
     
@@ -138,7 +150,11 @@ struct RetryUtilityTests {
         } catch {
             // Should only attempt once (cancelled should not retry)
             #expect(attemptCount == 1)
-            #expect(error as? NetworkError == NetworkError.cancelled)
+            if case NetworkError.cancelled = error {
+                // Test passes - correct error type
+            } else {
+                Issue.record("Expected NetworkError.cancelled")
+            }
         }
     }
     
@@ -274,7 +290,11 @@ struct RetryUtilityTests {
         } catch {
             // Should stop at the non-retriable error
             #expect(attemptCount == 3)
-            #expect(error as? NetworkError == NetworkError.unauthorized)
+            if case NetworkError.unauthorized = error {
+                // Test passes - correct error type
+            } else {
+                Issue.record("Expected NetworkError.unauthorized")
+            }
         }
     }
     
