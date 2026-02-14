@@ -50,7 +50,7 @@ struct ViewModelEdgeCasesTests {
     @Test func testProfileViewModelEmptyPosts() async throws {
         let mockUserService = MockUserService()
         let mockPostService = MockPostService()
-        mockUserService.fetchMyPostsBehavior = .emptyState
+        mockUserService.getUserPostsBehavior = .emptyState
         
         let viewModel = ProfileViewModel(userService: mockUserService, postService: mockPostService)
         let authState = createMockAuthState()
@@ -65,7 +65,7 @@ struct ViewModelEdgeCasesTests {
     @Test func testProfileViewModelEmptyComments() async throws {
         let mockUserService = MockUserService()
         let mockPostService = MockPostService()
-        mockUserService.fetchMyCommentsBehavior = .emptyState
+        mockUserService.getUserCommentsBehavior = .emptyState
         
         let viewModel = ProfileViewModel(userService: mockUserService, postService: mockPostService)
         let authState = createMockAuthState()
@@ -421,7 +421,7 @@ struct ViewModelEdgeCasesTests {
         
         // Configure to return empty pagination (last page)
         mockUserService.mockPosts = []
-        mockUserService.fetchMyPostsBehavior = .emptyState
+        mockUserService.getUserPostsBehavior = .emptyState
         
         let viewModel = ProfileViewModel(userService: mockUserService, postService: mockPostService)
         let authState = createMockAuthState()
