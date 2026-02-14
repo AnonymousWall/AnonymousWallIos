@@ -48,7 +48,7 @@ class ForgotPasswordViewModel: ObservableObject {
         
         Task {
             do {
-                _ = try await authService.sendEmailVerificationCode(email: email, purpose: "password-reset")
+                _ = try await authService.sendEmailVerificationCode(email: email, purpose: "reset_password")
                 isSendingCode = false
                 codeSent = true
                 startCountdownTimer()
