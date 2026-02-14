@@ -15,4 +15,5 @@ enum HTTPStatus {
     static let forbidden = 403
     static let notFound = 404
     static let timeout = 408
+    static let serverErrorRange = 500...599
 }

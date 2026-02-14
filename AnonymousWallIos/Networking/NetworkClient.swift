@@ -8,8 +8,8 @@
 import Foundation
 
 protocol NetworkClientProtocol {
-    func performRequest<T: Decodable>(_ request: URLRequest) async throws -> T
-    func performRequestWithoutResponse(_ request: URLRequest) async throws
+    func performRequest<T: Decodable>(_ request: URLRequest, retryPolicy: RetryPolicy) async throws -> T
+    func performRequestWithoutResponse(_ request: URLRequest, retryPolicy: RetryPolicy) async throws
 }
 
 class NetworkClient: NetworkClientProtocol {
@@ -30,7 +30,19 @@ class NetworkClient: NetworkClientProtocol {
     
     // MARK: - Request Execution
     
-    func performRequest<T: Decodable>(_ request: URLRequest) async throws -> T {
+    func performRequest<T: Decodable>(_ request: URLRequest, retryPolicy: RetryPolicy = .default) async throws -> T {
+        return try await RetryUtility.execute(policy: retryPolicy) {
+            try await self.executeRequest(request)
+        }
+    }
+    
+    func performRequestWithoutResponse(_ request: URLRequest, retryPolicy: RetryPolicy = .default) async throws {
+        let _: EmptyResponse = try await performRequest(request, retryPolicy: retryPolicy)
+    }
+    
+    // MARK: - Internal Request Execution
+    
+    private func executeRequest<T: Decodable>(_ request: URLRequest) async throws -> T {
         let modifiedRequest = request
         
         // Log request in development
@@ -75,6 +87,11 @@ class NetworkClient: NetworkClientProtocol {
             case HTTPStatus.timeout:
                 throw NetworkError.timeout
                 
+            case HTTPStatus.serverErrorRange:
+                // Server errors (5xx) - retriable
+                let errorMessage = extractErrorMessage(from: data) ?? "Server error: \(httpResponse.statusCode)"
+                throw NetworkError.serverError(errorMessage)
+                
             default:
                 // Try to decode error response
                 let errorMessage = extractErrorMessage(from: data) ?? "Server error: \(httpResponse.statusCode)"
@@ -96,10 +113,6 @@ class NetworkClient: NetworkClientProtocol {
         } catch {
             throw NetworkError.networkError(error)
         }
-    }
-    
-    func performRequestWithoutResponse(_ request: URLRequest) async throws {
-        let _: EmptyResponse = try await performRequest(request)
     }
     
     // MARK: - Helper Methods
