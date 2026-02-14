@@ -64,7 +64,9 @@ struct PostRowView: View {
                 .font(.system(size: 15))
                 .foregroundColor(.primary)
                 .lineSpacing(2)
-                .fixedSize(horizontal: false, vertical: true)
+                .lineLimit(UIConstants.postRowContentMaxLines)
+                .truncationMode(.tail)
+                .accessibilityHint("Tap to view full post")
             
             // Footer with time and actions
             HStack(spacing: 16) {
@@ -163,7 +165,7 @@ struct PostRowView: View {
         post: Post(
             id: "1",
             title: "Sample Post Title",
-            content: "This is a sample anonymous post on the wall!",
+            content: "This is a sample anonymous post on the wall! Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.",
             wall: "CAMPUS",
             likes: 5,
             comments: 2,
