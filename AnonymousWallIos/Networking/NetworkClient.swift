@@ -90,7 +90,7 @@ class NetworkClient: NetworkClientProtocol {
             case HTTPStatus.serverErrorRange:
                 // Server errors (5xx) - retriable
                 let errorMessage = extractErrorMessage(from: data) ?? "Server error: \(httpResponse.statusCode)"
-                throw NetworkError.serverError(errorMessage)
+                throw NetworkError.serverError5xx(errorMessage, statusCode: httpResponse.statusCode)
                 
             default:
                 // Try to decode error response

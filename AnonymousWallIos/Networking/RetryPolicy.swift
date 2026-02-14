@@ -67,10 +67,9 @@ struct RetryPolicy {
             switch networkError {
             case .timeout, .noConnection:
                 return true
-            case .serverError(let message):
+            case .serverError5xx:
                 // Retry server errors (5xx responses)
-                // The NetworkClient converts 5xx to serverError
-                return message.contains("Server error:")
+                return true
             case .cancelled:
                 return false
             default:

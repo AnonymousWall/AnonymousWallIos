@@ -106,8 +106,8 @@ struct RetryIntegrationTests {
         let policy = RetryPolicy.default
         
         // 5xx errors should be retriable
-        let error500 = NetworkError.serverError("Server error: 500")
-        let error503 = NetworkError.serverError("Server error: 503")
+        let error500 = NetworkError.serverError5xx("Internal Server Error", statusCode: 500)
+        let error503 = NetworkError.serverError5xx("Service Unavailable", statusCode: 503)
         
         #expect(policy.shouldRetry(error500) == true)
         #expect(policy.shouldRetry(error503) == true)
@@ -231,7 +231,7 @@ struct RetryIntegrationTests {
         
         // 4. Only network errors and 5xx are retried
         #expect(RetryPolicy.default.shouldRetry(NetworkError.timeout) == true)
-        #expect(RetryPolicy.default.shouldRetry(NetworkError.serverError("Server error: 500")) == true)
+        #expect(RetryPolicy.default.shouldRetry(NetworkError.serverError5xx("Internal Server Error", statusCode: 500)) == true)
         #expect(RetryPolicy.default.shouldRetry(NetworkError.unauthorized) == false)
     }
 }

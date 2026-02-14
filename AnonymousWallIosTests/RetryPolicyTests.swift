@@ -137,14 +137,14 @@ struct RetryPolicyTests {
     
     @Test func testShouldRetryServerError5xx() {
         let policy = RetryPolicy.default
-        let error = NetworkError.serverError("Server error: 500")
+        let error = NetworkError.serverError5xx("Internal Server Error", statusCode: 500)
         
         #expect(policy.shouldRetry(error) == true)
     }
     
     @Test func testShouldRetryServerError503() {
         let policy = RetryPolicy.default
-        let error = NetworkError.serverError("Server error: 503")
+        let error = NetworkError.serverError5xx("Service Unavailable", statusCode: 503)
         
         #expect(policy.shouldRetry(error) == true)
     }

@@ -183,7 +183,7 @@ struct RetryUtilityTests {
         do {
             _ = try await RetryUtility.execute(policy: policy) {
                 attemptCount += 1
-                throw NetworkError.serverError("Server error: 500")
+                throw NetworkError.serverError5xx("Internal Server Error", statusCode: 500)
             }
             Issue.record("Expected error to be thrown")
         } catch {
