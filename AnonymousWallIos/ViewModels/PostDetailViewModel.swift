@@ -287,7 +287,7 @@ class PostDetailViewModel: ObservableObject {
                 sort: selectedSortOrder
             )
             comments = response.data
-            pagination.updateAfterLoad(totalPages: response.pagination.totalPages)
+            pagination.update(totalPages: response.pagination.totalPages)
         } catch is CancellationError {
             return
         } catch NetworkError.cancelled {
@@ -321,7 +321,7 @@ class PostDetailViewModel: ObservableObject {
             )
             
             comments.append(contentsOf: response.data)
-            pagination.updateAfterLoadingMore(totalPages: response.pagination.totalPages)
+            pagination.update(totalPages: response.pagination.totalPages)
         } catch is CancellationError {
             return
         } catch NetworkError.cancelled {

@@ -29,10 +29,10 @@ struct Pagination {
         hasMorePages = true
     }
     
-    /// Updates pagination state after loading a page
+    /// Updates pagination state based on total pages
     /// - Parameters:
     ///   - totalPages: Total number of pages available
-    mutating func updateAfterLoad(totalPages: Int) {
+    mutating func update(totalPages: Int) {
         hasMorePages = currentPage < totalPages
     }
     
@@ -42,12 +42,5 @@ struct Pagination {
         let nextPage = currentPage + 1
         currentPage = nextPage
         return nextPage
-    }
-    
-    /// Updates pagination state after loading more items
-    /// - Parameters:
-    ///   - totalPages: Total number of pages available
-    mutating func updateAfterLoadingMore(totalPages: Int) {
-        hasMorePages = currentPage < totalPages
     }
 }

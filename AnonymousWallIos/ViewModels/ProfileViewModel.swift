@@ -203,7 +203,7 @@ class ProfileViewModel: ObservableObject {
                 sort: postSortOrder
             )
             myPosts = response.data
-            postsPagination.updateAfterLoad(totalPages: response.pagination.totalPages)
+            postsPagination.update(totalPages: response.pagination.totalPages)
         } catch is CancellationError {
             return
         } catch NetworkError.cancelled {
@@ -236,7 +236,7 @@ class ProfileViewModel: ObservableObject {
             )
             
             myPosts.append(contentsOf: response.data)
-            postsPagination.updateAfterLoadingMore(totalPages: response.pagination.totalPages)
+            postsPagination.update(totalPages: response.pagination.totalPages)
         } catch is CancellationError {
             return
         } catch NetworkError.cancelled {
@@ -268,7 +268,7 @@ class ProfileViewModel: ObservableObject {
                 sort: commentSortOrder
             )
             myComments = response.data
-            commentsPagination.updateAfterLoad(totalPages: response.pagination.totalPages)
+            commentsPagination.update(totalPages: response.pagination.totalPages)
             
             // Load post information for each comment
             await loadPostsForComments(authState: authState)
@@ -304,7 +304,7 @@ class ProfileViewModel: ObservableObject {
             )
             
             myComments.append(contentsOf: response.data)
-            commentsPagination.updateAfterLoadingMore(totalPages: response.pagination.totalPages)
+            commentsPagination.update(totalPages: response.pagination.totalPages)
             
             // Load post information for new comments
             await loadPostsForComments(authState: authState)

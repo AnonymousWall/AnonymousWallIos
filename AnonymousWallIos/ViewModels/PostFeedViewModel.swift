@@ -148,7 +148,7 @@ class PostFeedViewModel: ObservableObject {
                 sort: selectedSortOrder
             )
             posts = response.data
-            pagination.updateAfterLoad(totalPages: response.pagination.totalPages)
+            pagination.update(totalPages: response.pagination.totalPages)
         } catch is CancellationError {
             return
         } catch NetworkError.cancelled {
@@ -182,7 +182,7 @@ class PostFeedViewModel: ObservableObject {
             )
             
             posts.append(contentsOf: response.data)
-            pagination.updateAfterLoadingMore(totalPages: response.pagination.totalPages)
+            pagination.update(totalPages: response.pagination.totalPages)
         } catch is CancellationError {
             return
         } catch NetworkError.cancelled {
