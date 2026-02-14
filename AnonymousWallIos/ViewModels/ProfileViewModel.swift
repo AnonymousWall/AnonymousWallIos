@@ -20,12 +20,10 @@ class ProfileViewModel: ObservableObject {
     @Published var commentSortOrder: SortOrder = .newest
     
     // MARK: - Pagination State
-    @Published var currentPostsPage = 1
-    @Published var hasMorePosts = true
-    @Published var isLoadingMorePosts = false
+    private var postsPagination = Pagination()
+    private var commentsPagination = Pagination()
     
-    @Published var currentCommentsPage = 1
-    @Published var hasMoreComments = true
+    @Published var isLoadingMorePosts = false
     @Published var isLoadingMoreComments = false
     
     // MARK: - Private Properties
@@ -57,10 +55,10 @@ class ProfileViewModel: ObservableObject {
         loadTask?.cancel()
         
         if selectedSegment == 0 {
-            resetPostsPagination()
+            postsPagination.reset()
             await loadPosts(authState: authState)
         } else {
-            resetCommentsPagination()
+            commentsPagination.reset()
             await loadComments(authState: authState)
         }
     }
@@ -84,7 +82,7 @@ class ProfileViewModel: ObservableObject {
     func postSortChanged(authState: AuthState) {
         HapticFeedback.selection()
         myPosts = []
-        resetPostsPagination()
+        postsPagination.reset()
         loadTask?.cancel()
         loadTask = Task {
             await loadPosts(authState: authState)
@@ -95,7 +93,7 @@ class ProfileViewModel: ObservableObject {
         HapticFeedback.selection()
         myComments = []
         commentPostMap = [:]
-        resetCommentsPagination()
+        commentsPagination.reset()
         loadTask?.cancel()
         loadTask = Task {
             await loadComments(authState: authState)
@@ -103,22 +101,22 @@ class ProfileViewModel: ObservableObject {
     }
     
     func loadMorePostsIfNeeded(for post: Post, authState: AuthState) {
-        guard !isLoadingMorePosts && hasMorePosts else { return }
+        guard !isLoadingMorePosts && postsPagination.hasMorePages else { return }
         guard post.id == myPosts.last?.id else { return }
         
         Task {
-            guard !isLoadingMorePosts && hasMorePosts else { return }
+            guard !isLoadingMorePosts && postsPagination.hasMorePages else { return }
             isLoadingMorePosts = true
             await performLoadMorePosts(authState: authState)
         }
     }
     
     func loadMoreCommentsIfNeeded(for comment: Comment, authState: AuthState) {
-        guard !isLoadingMoreComments && hasMoreComments else { return }
+        guard !isLoadingMoreComments && commentsPagination.hasMorePages else { return }
         guard comment.id == myComments.last?.id else { return }
         
         Task {
-            guard !isLoadingMoreComments && hasMoreComments else { return }
+            guard !isLoadingMoreComments && commentsPagination.hasMorePages else { return }
             isLoadingMoreComments = true
             await performLoadMoreComments(authState: authState)
         }
@@ -152,7 +150,7 @@ class ProfileViewModel: ObservableObject {
         Task {
             do {
                 _ = try await postService.hidePost(postId: post.id, token: token, userId: userId)
-                resetPostsPagination()
+                postsPagination.reset()
                 await loadPosts(authState: authState)
             } catch {
                 errorMessage = "Failed to delete post: \(error.localizedDescription)"
@@ -170,7 +168,7 @@ class ProfileViewModel: ObservableObject {
         Task {
             do {
                 _ = try await postService.hideComment(postId: post.id, commentId: comment.id, token: token, userId: userId)
-                resetCommentsPagination()
+                commentsPagination.reset()
                 await loadComments(authState: authState)
             } catch {
                 errorMessage = "Failed to delete comment: \(error.localizedDescription)"
@@ -183,16 +181,6 @@ class ProfileViewModel: ObservableObject {
     }
     
     // MARK: - Private Methods
-    private func resetPostsPagination() {
-        currentPostsPage = 1
-        hasMorePosts = true
-    }
-    
-    private func resetCommentsPagination() {
-        currentCommentsPage = 1
-        hasMoreComments = true
-    }
-    
     private func loadPosts(authState: AuthState) async {
         guard let token = authState.authToken,
               let userId = authState.currentUser?.id else {
@@ -210,12 +198,12 @@ class ProfileViewModel: ObservableObject {
             let response = try await userService.getUserPosts(
                 token: token,
                 userId: userId,
-                page: currentPostsPage,
+                page: postsPagination.currentPage,
                 limit: 20,
                 sort: postSortOrder
             )
             myPosts = response.data
-            hasMorePosts = currentPostsPage < response.pagination.totalPages
+            postsPagination.update(totalPages: response.pagination.totalPages)
         } catch is CancellationError {
             return
         } catch NetworkError.cancelled {
@@ -236,7 +224,7 @@ class ProfileViewModel: ObservableObject {
             isLoadingMorePosts = false
         }
         
-        let nextPage = currentPostsPage + 1
+        let nextPage = postsPagination.advanceToNextPage()
         
         do {
             let response = try await userService.getUserPosts(
@@ -247,9 +235,8 @@ class ProfileViewModel: ObservableObject {
                 sort: postSortOrder
             )
             
-            currentPostsPage = nextPage
             myPosts.append(contentsOf: response.data)
-            hasMorePosts = currentPostsPage < response.pagination.totalPages
+            postsPagination.update(totalPages: response.pagination.totalPages)
         } catch is CancellationError {
             return
         } catch NetworkError.cancelled {
@@ -276,12 +263,12 @@ class ProfileViewModel: ObservableObject {
             let response = try await userService.getUserComments(
                 token: token,
                 userId: userId,
-                page: currentCommentsPage,
+                page: commentsPagination.currentPage,
                 limit: 20,
                 sort: commentSortOrder
             )
             myComments = response.data
-            hasMoreComments = currentCommentsPage < response.pagination.totalPages
+            commentsPagination.update(totalPages: response.pagination.totalPages)
             
             // Load post information for each comment
             await loadPostsForComments(authState: authState)
@@ -305,7 +292,7 @@ class ProfileViewModel: ObservableObject {
             isLoadingMoreComments = false
         }
         
-        let nextPage = currentCommentsPage + 1
+        let nextPage = commentsPagination.advanceToNextPage()
         
         do {
             let response = try await userService.getUserComments(
@@ -316,9 +303,8 @@ class ProfileViewModel: ObservableObject {
                 sort: commentSortOrder
             )
             
-            currentCommentsPage = nextPage
             myComments.append(contentsOf: response.data)
-            hasMoreComments = currentCommentsPage < response.pagination.totalPages
+            commentsPagination.update(totalPages: response.pagination.totalPages)
             
             // Load post information for new comments
             await loadPostsForComments(authState: authState)

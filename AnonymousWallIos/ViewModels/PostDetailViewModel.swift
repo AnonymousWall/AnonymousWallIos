@@ -24,8 +24,7 @@ class PostDetailViewModel: ObservableObject {
     private let postService: PostServiceProtocol
     
     // MARK: - Private Properties
-    private var currentPage = 1
-    private var hasMorePages = true
+    private var pagination = Pagination()
     private var loadCommentsTask: Task<Void, Never>?
     private var refreshPostTask: Task<Void, Never>?
     
@@ -70,7 +69,7 @@ class PostDetailViewModel: ObservableObject {
     
     func refreshComments(postId: String, authState: AuthState) async {
         loadCommentsTask?.cancel()
-        resetPagination()
+        pagination.reset()
         loadCommentsTask = Task {
             await performLoadComments(postId: postId, authState: authState)
         }
@@ -78,11 +77,11 @@ class PostDetailViewModel: ObservableObject {
     }
     
     func loadMoreCommentsIfNeeded(for comment: Comment, postId: String, authState: AuthState) {
-        guard !isLoadingMoreComments && hasMorePages else { return }
+        guard !isLoadingMoreComments && pagination.hasMorePages else { return }
         guard comment.id == comments.last?.id else { return }
         
         Task {
-            guard !isLoadingMoreComments && hasMorePages else { return }
+            guard !isLoadingMoreComments && pagination.hasMorePages else { return }
             isLoadingMoreComments = true
             await performLoadMoreComments(postId: postId, authState: authState)
         }
@@ -92,7 +91,7 @@ class PostDetailViewModel: ObservableObject {
         HapticFeedback.selection()
         loadCommentsTask?.cancel()
         comments = []
-        resetPagination()
+        pagination.reset()
         loadCommentsTask = Task {
             await performLoadComments(postId: postId, authState: authState)
         }
@@ -128,7 +127,7 @@ class PostDetailViewModel: ObservableObject {
                 onSuccess()
                 // Reload comments to show the new one
                 loadCommentsTask?.cancel()
-                resetPagination()
+                pagination.reset()
                 loadCommentsTask = Task {
                     await performLoadComments(postId: postId, authState: authState)
                 }
@@ -204,7 +203,7 @@ class PostDetailViewModel: ObservableObject {
                 
                 // Reload comments to remove the deleted one
                 loadCommentsTask?.cancel()
-                resetPagination()
+                pagination.reset()
                 loadCommentsTask = Task {
                     await performLoadComments(postId: postId, authState: authState)
                 }
@@ -265,11 +264,6 @@ class PostDetailViewModel: ObservableObject {
     }
     
     // MARK: - Private Methods
-    private func resetPagination() {
-        currentPage = 1
-        hasMorePages = true
-    }
-    
     private func performLoadComments(postId: String, authState: AuthState) async {
         guard let token = authState.authToken,
               let userId = authState.currentUser?.id else {
@@ -288,12 +282,12 @@ class PostDetailViewModel: ObservableObject {
                 postId: postId,
                 token: token,
                 userId: userId,
-                page: currentPage,
+                page: pagination.currentPage,
                 limit: 20,
                 sort: selectedSortOrder
             )
             comments = response.data
-            hasMorePages = currentPage < response.pagination.totalPages
+            pagination.update(totalPages: response.pagination.totalPages)
         } catch is CancellationError {
             return
         } catch NetworkError.cancelled {
@@ -314,7 +308,7 @@ class PostDetailViewModel: ObservableObject {
             isLoadingMoreComments = false
         }
         
-        let nextPage = currentPage + 1
+        let nextPage = pagination.advanceToNextPage()
         
         do {
             let response = try await postService.getComments(
@@ -326,9 +320,8 @@ class PostDetailViewModel: ObservableObject {
                 sort: selectedSortOrder
             )
             
-            currentPage = nextPage
             comments.append(contentsOf: response.data)
-            hasMorePages = currentPage < response.pagination.totalPages
+            pagination.update(totalPages: response.pagination.totalPages)
         } catch is CancellationError {
             return
         } catch NetworkError.cancelled {
