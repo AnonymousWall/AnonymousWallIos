@@ -8,6 +8,7 @@
 import SwiftUI
 
 /// Coordinator for managing chat navigation
+@MainActor
 class ChatCoordinator: Coordinator {
     enum Destination: Hashable {
         case chatDetail(otherUserId: String, otherUserName: String)
