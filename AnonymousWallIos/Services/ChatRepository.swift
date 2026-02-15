@@ -42,7 +42,17 @@ class ChatRepository {
             .compactMap { [weak self] message -> (Message, String)? in
                 guard let self = self else { return nil }
                 // Determine conversation user ID (the other user)
-                let conversationUserId = message.senderId
+                // For incoming messages: senderId is the other user
+                // For outgoing messages (echoed back): receiverId is the other user
+                // We need to check against current user ID to determine which is which
+                guard let currentUserId = self.cachedUserId else {
+                    // Fallback: assume incoming message (senderId is other user)
+                    return (message, message.senderId)
+                }
+                
+                // If we sent this message (echo), the conversation is with the receiver
+                // If we received this message, the conversation is with the sender
+                let conversationUserId = message.senderId == currentUserId ? message.receiverId : message.senderId
                 return (message, conversationUserId)
             }
             .eraseToAnyPublisher()
@@ -399,8 +409,15 @@ class ChatRepository {
                 guard let self = self else { return }
                 
                 Task { @MainActor in
-                    // Determine conversation user ID (sender for received messages)
-                    let conversationUserId = message.senderId
+                    // Determine conversation user ID (the other user)
+                    // For incoming: senderId is the other user
+                    // For outgoing echo: receiverId is the other user
+                    guard let currentUserId = self.cachedUserId else {
+                        Logger.chat.warning("Cannot determine conversation user ID: missing current user ID")
+                        return
+                    }
+                    
+                    let conversationUserId = message.senderId == currentUserId ? message.receiverId : message.senderId
                     
                     // Check if this is a reconciliation of our sent message
                     let isReconciled = await self.reconcileIncomingMessage(message, conversationUserId: conversationUserId)
