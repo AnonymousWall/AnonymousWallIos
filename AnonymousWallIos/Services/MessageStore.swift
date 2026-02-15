@@ -18,8 +18,8 @@ actor MessageStore {
     /// Temporary messages pending server confirmation (by temporary ID)
     private var temporaryMessages: [String: TemporaryMessage] = [:]
     
-    /// UUID string length for temporary message detection
-    private let uuidLength = 36
+    /// Time threshold for matching temporary messages with server confirmations (in seconds)
+    private let temporaryMessageMatchThreshold: TimeInterval = 10
     
     // MARK: - Message Operations
     
@@ -40,20 +40,20 @@ actor MessageStore {
         
         // Check if this might be a confirmation of a temporary message
         // (same content, sender, receiver, but within a reasonable time window)
-        let recentTimeThreshold: TimeInterval = 10 // 10 seconds
         if let messageTimestamp = message.timestamp {
             if let tempMessageIndex = messages.firstIndex(where: { existingMsg in
                 // Check if it's a temporary message (UUID format) with matching content
-                existingMsg.id.count == uuidLength && // UUID length
-                existingMsg.senderId == message.senderId &&
-                existingMsg.receiverId == message.receiverId &&
-                existingMsg.content == message.content &&
-                existingMsg.id != message.id // Different IDs
+                // Verify it's actually a UUID by attempting to create UUID from string
+                guard UUID(uuidString: existingMsg.id) != nil else { return false }
+                return existingMsg.senderId == message.senderId &&
+                    existingMsg.receiverId == message.receiverId &&
+                    existingMsg.content == message.content &&
+                    existingMsg.id != message.id // Different IDs
             }) {
                 // Found potential temporary message, check time difference
                 if let tempTimestamp = messages[tempMessageIndex].timestamp {
                     let timeDiff = abs(messageTimestamp.timeIntervalSince(tempTimestamp))
-                    if timeDiff < recentTimeThreshold {
+                    if timeDiff < temporaryMessageMatchThreshold {
                         Logger.chat.info("MessageStore: Replacing temporary message \(messages[tempMessageIndex].id) with confirmed \(message.id)")
                         messages.remove(at: tempMessageIndex)
                     }
@@ -81,11 +81,15 @@ actor MessageStore {
             return date1 < date2
         }
         
-        // Log sorted order
+        // Log sorted order (only in debug builds for performance)
+        #if DEBUG
         Logger.chat.info("MessageStore: After sort, message count: \(messages.count)")
         for (index, msg) in messages.enumerated() {
             Logger.chat.debug("  [\(index)] id=\(msg.id) time=\(msg.createdAt) sender=\(msg.senderId)")
         }
+        #else
+        Logger.chat.info("MessageStore: After sort, message count: \(messages.count)")
+        #endif
         
         messagesByConversation[conversationUserId] = messages
         return true
