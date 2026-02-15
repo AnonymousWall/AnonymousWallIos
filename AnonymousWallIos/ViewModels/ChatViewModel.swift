@@ -21,6 +21,9 @@ class ChatViewModel: ObservableObject {
     @Published var connectionState: WebSocketConnectionState = .disconnected
     @Published var isTyping = false
     
+    /// Version number that increments when messages array changes, forcing SwiftUI to rebuild
+    @Published var messagesVersion = UUID()
+    
     // MARK: - Private Properties
     
     private let repository: ChatRepository
@@ -317,5 +320,7 @@ class ChatViewModel: ObservableObject {
             Logger.chat.debug("  [\(index)] id=\(msg.id) time=\(msg.createdAt) sender=\(msg.senderId) read=\(msg.readStatus)")
         }
         messages = storedMessages
+        // Increment version to force SwiftUI to rebuild the message list
+        messagesVersion = UUID()
     }
 }

@@ -50,6 +50,7 @@ struct ChatView: View {
                         }
                     }
                     .padding()
+                    .id(viewModel.messagesVersion) // Force rebuild when messages change
                 }
                 .onChange(of: viewModel.messages.count) { _ in
                     // Auto-scroll to bottom when new message arrives
