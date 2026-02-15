@@ -103,6 +103,23 @@ class ConversationsViewModel: ObservableObject {
         loadConversations(authState: authState)
     }
     
+    /// Clear unread count for a specific conversation (when user enters that conversation)
+    /// - Parameter userId: The user ID of the conversation
+    func clearUnreadCount(for userId: String) {
+        if let index = conversations.firstIndex(where: { $0.userId == userId }) {
+            var updatedConversation = conversations[index]
+            // Create a new conversation with unread count set to 0
+            updatedConversation = Conversation(
+                userId: updatedConversation.userId,
+                profileName: updatedConversation.profileName,
+                lastMessage: updatedConversation.lastMessage,
+                unreadCount: 0
+            )
+            conversations[index] = updatedConversation
+            Logger.chat.info("Cleared unread count for conversation with user: \(userId)")
+        }
+    }
+    
     /// Disconnect WebSocket when view disappears
     func disconnect() {
         repository.disconnect()
@@ -116,6 +133,15 @@ class ConversationsViewModel: ObservableObject {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] count in
                 self?.unreadCount = count
+            }
+            .store(in: &cancellables)
+        
+        // Observe conversation marked as read events
+        repository.conversationReadPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] userId in
+                guard let self = self else { return }
+                self.clearUnreadCount(for: userId)
             }
             .store(in: &cancellables)
         

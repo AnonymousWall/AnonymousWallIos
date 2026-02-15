@@ -20,6 +20,9 @@ class ChatRepository {
     
     private var cancellables = Set<AnyCancellable>()
     
+    // Subject for conversation read events
+    private let conversationReadSubject = PassthroughSubject<String, Never>()
+    
     // Published properties for UI observation
     @Published private(set) var connectionState: WebSocketConnectionState = .disconnected
     
@@ -45,6 +48,11 @@ class ChatRepository {
     
     var unreadCountPublisher: AnyPublisher<Int, Never> {
         webSocketManager.unreadCountPublisher
+    }
+    
+    /// Publisher that notifies when a conversation is marked as read (user ID)
+    var conversationReadPublisher: AnyPublisher<String, Never> {
+        conversationReadSubject.eraseToAnyPublisher()
     }
     
     // MARK: - Initialization
@@ -204,6 +212,9 @@ class ChatRepository {
         
         // Send to server
         try await chatService.markConversationAsRead(otherUserId: otherUserId, token: token, userId: userId)
+        
+        // Notify observers that this conversation was marked as read
+        conversationReadSubject.send(otherUserId)
     }
     
     /// Send typing indicator
