@@ -9,47 +9,46 @@ import SwiftUI
 
 struct ConversationsListView: View {
     @EnvironmentObject var authState: AuthState
-    @StateObject var viewModel: ConversationsViewModel
+    @ObservedObject var viewModel: ConversationsViewModel
+    var onSelectConversation: ((String, String) -> Void)?
     
     var body: some View {
-        NavigationStack {
-            Group {
-                if viewModel.isLoadingConversations {
-                    ProgressView()
-                } else if viewModel.conversations.isEmpty {
-                    emptyStateView
-                } else {
-                    conversationsList
+        Group {
+            if viewModel.isLoadingConversations {
+                ProgressView()
+            } else if viewModel.conversations.isEmpty {
+                emptyStateView
+            } else {
+                conversationsList
+            }
+        }
+        .navigationTitle("Messages")
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                if viewModel.unreadCount > 0 {
+                    Badge(count: viewModel.unreadCount)
                 }
             }
-            .navigationTitle("Messages")
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    if viewModel.unreadCount > 0 {
-                        Badge(count: viewModel.unreadCount)
-                    }
-                }
+        }
+        .onAppear {
+            viewModel.loadConversations(authState: authState)
+        }
+        .onDisappear {
+            viewModel.disconnect()
+        }
+        .refreshable {
+            await viewModel.refreshConversations(authState: authState)
+        }
+        .alert("Error", isPresented: .constant(viewModel.errorMessage != nil)) {
+            Button("Retry") {
+                viewModel.retry(authState: authState)
             }
-            .onAppear {
-                viewModel.loadConversations(authState: authState)
+            Button("Cancel", role: .cancel) {
+                viewModel.errorMessage = nil
             }
-            .onDisappear {
-                viewModel.disconnect()
-            }
-            .refreshable {
-                await viewModel.refreshConversations(authState: authState)
-            }
-            .alert("Error", isPresented: .constant(viewModel.errorMessage != nil)) {
-                Button("Retry") {
-                    viewModel.retry(authState: authState)
-                }
-                Button("Cancel", role: .cancel) {
-                    viewModel.errorMessage = nil
-                }
-            } message: {
-                if let error = viewModel.errorMessage {
-                    Text(error)
-                }
+        } message: {
+            if let error = viewModel.errorMessage {
+                Text(error)
             }
         }
     }
@@ -59,7 +58,9 @@ struct ConversationsListView: View {
     private var conversationsList: some View {
         List {
             ForEach(viewModel.conversations) { conversation in
-                NavigationLink(destination: chatDestination(for: conversation)) {
+                Button {
+                    onSelectConversation?(conversation.userId, conversation.profileName)
+                } label: {
                     ConversationRowView(conversation: conversation)
                 }
                 .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
@@ -84,26 +85,6 @@ struct ConversationsListView: View {
                 .multilineTextAlignment(.center)
         }
         .padding()
-    }
-    
-    private func chatDestination(for conversation: Conversation) -> some View {
-        // Create shared instances for the chat
-        let messageStore = MessageStore()
-        let webSocketManager = ChatWebSocketManager()
-        let repository = ChatRepository(
-            chatService: ChatService.shared,
-            webSocketManager: webSocketManager,
-            messageStore: messageStore
-        )
-        let chatViewModel = ChatViewModel(
-            otherUserId: conversation.userId,
-            otherUserName: conversation.profileName,
-            repository: repository,
-            messageStore: messageStore
-        )
-        
-        return ChatView(viewModel: chatViewModel)
-            .environmentObject(authState)
     }
 }
 
