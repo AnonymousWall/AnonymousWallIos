@@ -315,10 +315,10 @@ class ChatRepository {
                     let conversationUserId: String
                     if message.senderId == currentUserId {
                         conversationUserId = message.receiverId
-                        Logger.chat.info("WebSocket message from me to \(conversationUserId), storing in conversation with \(conversationUserId)")
+                        Logger.chat.info("WebSocket: Own message sent to \(conversationUserId), storing in their conversation")
                     } else {
                         conversationUserId = message.senderId
-                        Logger.chat.info("WebSocket message from \(conversationUserId) to me, storing in conversation with \(conversationUserId)")
+                        Logger.chat.info("WebSocket: Received message from \(conversationUserId), storing in their conversation")
                     }
                     
                     await self.messageStore.addMessage(message, for: conversationUserId)

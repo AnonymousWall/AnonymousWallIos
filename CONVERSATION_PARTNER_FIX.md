@@ -48,7 +48,9 @@ var messagePublisher: AnyPublisher<(Message, String), Never> {
 
 **Problem**: Always using `message.senderId` means:
 - When I receive a message FROM someone → Correct (conversation is with sender)
-- When I receive MY OWN sent message back → WRONG (should be conversation with receiver)
+- When my own sent message comes back via WebSocket → WRONG (should be conversation with receiver)
+
+**Note**: WebSocket broadcasts messages to all connected clients, including the sender. When you send a message, you receive it back through WebSocket to confirm delivery.
 
 ## The Fix ✅
 
