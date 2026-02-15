@@ -8,6 +8,7 @@
 import SwiftUI
 
 /// Coordinator for managing home feed navigation
+@MainActor
 class HomeCoordinator: Coordinator {
     enum Destination: Hashable {
         case postDetail(Post)

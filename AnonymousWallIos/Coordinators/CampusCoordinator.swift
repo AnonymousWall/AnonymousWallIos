@@ -8,6 +8,7 @@
 import SwiftUI
 
 /// Coordinator for managing campus feed navigation
+@MainActor
 class CampusCoordinator: Coordinator {
     enum Destination: Hashable {
         case postDetail(Post)

@@ -146,4 +146,7 @@ extension Logger {
     
     /// Shared logger for data operations (storage, caching, etc.)
     static let data = Logger(category: "Data")
+    
+    /// Shared logger for chat operations
+    static let chat = Logger(category: "Chat")
 }

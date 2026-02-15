@@ -34,26 +34,33 @@ struct TabBarView: View {
                 }
                 .tag(2)
             
-            // Tab 4: Profile
-            ProfileView(coordinator: coordinator.profileCoordinator)
+            // Tab 4: Messages
+            MessagesView(coordinator: coordinator.chatCoordinator)
                 .tabItem {
-                    Label("Profile", systemImage: coordinator.selectedTab == 3 ? "person.fill" : "person")
+                    Label("Messages", systemImage: coordinator.selectedTab == 3 ? "bubble.left.and.bubble.right.fill" : "bubble.left.and.bubble.right")
                 }
                 .tag(3)
             
-            // Tab 5: Market (dummy)
-            MarketView()
+            // Tab 5: Profile
+            ProfileView(coordinator: coordinator.profileCoordinator)
                 .tabItem {
-                    Label("Market", systemImage: coordinator.selectedTab == 4 ? "cart.fill" : "cart")
+                    Label("Profile", systemImage: coordinator.selectedTab == 4 ? "person.fill" : "person")
                 }
                 .tag(4)
             
-            // Tab 6: Internship (dummy)
-            InternshipView()
+            // Tab 6: Market (dummy)
+            MarketView()
                 .tabItem {
-                    Label("Internship", systemImage: coordinator.selectedTab == 5 ? "briefcase.fill" : "briefcase")
+                    Label("Market", systemImage: coordinator.selectedTab == 5 ? "cart.fill" : "cart")
                 }
                 .tag(5)
+            
+            // Tab 7: Internship (dummy)
+            InternshipView()
+                .tabItem {
+                    Label("Internship", systemImage: coordinator.selectedTab == 6 ? "briefcase.fill" : "briefcase")
+                }
+                .tag(6)
         }
         .accentColor(.primaryPurple)
         .onChange(of: coordinator.selectedTab) { _, _ in
