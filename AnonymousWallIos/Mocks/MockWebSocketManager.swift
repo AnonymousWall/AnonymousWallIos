@@ -67,7 +67,7 @@ class MockWebSocketManager: ChatWebSocketManagerProtocol {
         connectCalled = true
         
         if simulateConnectionFailure {
-            connectionStateSubject.send(.failed(NetworkError.serverError(500, "Connection failed")))
+            connectionStateSubject.send(.failed(NetworkError.serverError("Connection failed")))
         } else if shouldAutoConnect {
             connectionStateSubject.send(.connecting)
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
