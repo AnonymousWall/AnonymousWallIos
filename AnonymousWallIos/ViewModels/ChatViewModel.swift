@@ -28,6 +28,8 @@ class ChatViewModel: ObservableObject {
     private var cancellables = Set<AnyCancellable>()
     private var loadTask: Task<Void, Never>?
     private var typingTimer: Timer?
+    private var isViewActive = false
+    private var currentAuthState: AuthState?
     
     /// The other user's ID (conversation partner)
     let otherUserId: String
@@ -63,6 +65,9 @@ class ChatViewModel: ObservableObject {
             errorMessage = "Authentication required"
             return
         }
+        
+        // Store auth state for auto-marking messages as read
+        currentAuthState = authState
         
         loadTask?.cancel()
         loadTask = Task { [weak self] in
@@ -207,8 +212,14 @@ class ChatViewModel: ObservableObject {
         }
     }
     
+    /// Called when view appears
+    func viewDidAppear() {
+        isViewActive = true
+    }
+    
     /// Disconnect WebSocket when view disappears
     func disconnect() {
+        isViewActive = false
         repository.disconnect()
     }
     
@@ -238,6 +249,12 @@ class ChatViewModel: ObservableObject {
                 if conversationUserId == self.otherUserId {
                     Task {
                         await self.refreshMessagesFromStore()
+                        
+                        // Auto-mark as read if view is active and message is from other user
+                        if self.isViewActive && message.senderId == self.otherUserId && !message.readStatus,
+                           let authState = self.currentAuthState {
+                            self.markAsRead(messageId: message.id, authState: authState)
+                        }
                     }
                 }
             }

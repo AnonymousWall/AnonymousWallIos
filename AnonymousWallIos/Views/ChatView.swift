@@ -93,7 +93,13 @@ struct ChatView: View {
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
             viewModel.loadMessages(authState: authState)
-            viewModel.markConversationAsRead(authState: authState)
+            viewModel.viewDidAppear()
+            // Mark conversation as read when view appears
+            Task {
+                // Small delay to ensure messages are loaded first
+                try? await Task.sleep(nanoseconds: 500_000_000) // 0.5 seconds
+                viewModel.markConversationAsRead(authState: authState)
+            }
         }
         .onDisappear {
             viewModel.disconnect()
