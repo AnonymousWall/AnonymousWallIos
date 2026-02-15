@@ -93,12 +93,12 @@ class ChatWebSocketManager: ChatWebSocketManagerProtocol {
         self.token = token
         self.userId = userId
         
-        guard case .disconnected = connectionState else {
-            if case .reconnecting = connectionState {
-                // Allow reconnecting state to proceed
-            } else {
-                return
-            }
+        // Only proceed if disconnected or reconnecting
+        switch connectionState {
+        case .disconnected, .reconnecting:
+            break // Proceed with connection
+        default:
+            return // Already connecting or connected
         }
         
         connectionStateSubject.send(.connecting)
