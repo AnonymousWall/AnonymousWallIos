@@ -76,7 +76,11 @@ class ChatWebSocketManager: ChatWebSocketManagerProtocol {
     init() {}
     
     deinit {
-        disconnect()
+        // Disconnect must be called on main actor, but deinit is not isolated
+        // The cleanup will happen when the actor is deallocated
+        heartbeatTask?.cancel()
+        receiveTask?.cancel()
+        webSocketTask?.cancel(with: .goingAway, reason: nil)
     }
     
     // MARK: - Connection Management
@@ -89,8 +93,12 @@ class ChatWebSocketManager: ChatWebSocketManagerProtocol {
         self.token = token
         self.userId = userId
         
-        guard connectionState == .disconnected || connectionState == .reconnecting else {
-            return
+        guard case .disconnected = connectionState else {
+            if case .reconnecting = connectionState {
+                // Allow reconnecting state to proceed
+            } else {
+                return
+            }
         }
         
         connectionStateSubject.send(.connecting)
@@ -115,7 +123,7 @@ class ChatWebSocketManager: ChatWebSocketManagerProtocol {
     ///   - receiverId: Recipient user ID
     ///   - content: Message content
     func sendMessage(receiverId: String, content: String) {
-        guard connectionState == .connected else {
+        guard case .connected = connectionState else {
             Logger.chat.warning("Cannot send message: not connected")
             return
         }
@@ -139,7 +147,7 @@ class ChatWebSocketManager: ChatWebSocketManagerProtocol {
     /// Send typing indicator
     /// - Parameter receiverId: Recipient user ID
     func sendTypingIndicator(receiverId: String) {
-        guard connectionState == .connected else { return }
+        guard case .connected = connectionState else { return }
         
         let message = WebSocketMessage(
             type: .typing,
@@ -160,7 +168,7 @@ class ChatWebSocketManager: ChatWebSocketManagerProtocol {
     /// Mark message as read
     /// - Parameter messageId: Message ID to mark as read
     func markAsRead(messageId: String) {
-        guard connectionState == .connected else { return }
+        guard case .connected = connectionState else { return }
         
         let message = WebSocketMessage(
             type: .markRead,
