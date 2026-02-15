@@ -312,6 +312,10 @@ class ChatViewModel: ObservableObject {
     
     private func refreshMessagesFromStore() async {
         let storedMessages = await messageStore.getMessages(for: otherUserId)
+        Logger.chat.info("ChatViewModel: Refreshing messages for \(otherUserId), count: \(storedMessages.count)")
+        for (index, msg) in storedMessages.enumerated() {
+            Logger.chat.debug("  [\(index)] id=\(msg.id) time=\(msg.createdAt) sender=\(msg.senderId) read=\(msg.readStatus)")
+        }
         messages = storedMessages
     }
 }

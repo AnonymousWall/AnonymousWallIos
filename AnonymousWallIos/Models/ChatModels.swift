@@ -41,9 +41,7 @@ struct Message: Codable, Identifiable, Hashable {
     
     /// Create a copy with updated read status
     func withReadStatus(_ read: Bool) -> Message {
-        var copy = self
-        copy.localStatus = read ? .read : .delivered
-        return Message(
+        var newMessage = Message(
             id: self.id,
             senderId: self.senderId,
             receiverId: self.receiverId,
@@ -51,6 +49,9 @@ struct Message: Codable, Identifiable, Hashable {
             readStatus: read,
             createdAt: self.createdAt
         )
+        // Preserve the local status
+        newMessage.localStatus = read ? .read : self.localStatus
+        return newMessage
     }
     
     /// Create a copy with updated local status

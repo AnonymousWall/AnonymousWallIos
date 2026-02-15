@@ -25,14 +25,51 @@ actor MessageStore {
     ///   - message: Message to add
     ///   - conversationUserId: The other user's ID in the conversation
     /// - Returns: True if message was added (not duplicate), false otherwise
+    /// Add a message to the store
+    /// - Parameters:
+    ///   - message: Message to add
+    ///   - conversationUserId: The other user's ID
+    /// - Returns: True if message was added (not duplicate), false otherwise
     @discardableResult
     func addMessage(_ message: Message, for conversationUserId: String) -> Bool {
         var messages = messagesByConversation[conversationUserId] ?? []
         
-        // Check for duplicates
+        // Check for duplicates by ID
         if messages.contains(where: { $0.id == message.id }) {
+            Logger.chat.debug("MessageStore: Duplicate message \(message.id), skipping")
             return false
         }
+        
+        // Check if this might be a confirmation of a temporary message
+        // (same content, sender, receiver, but within a reasonable time window)
+        let recentTimeThreshold: TimeInterval = 10 // 10 seconds
+        if let messageTimestamp = message.timestamp {
+            if let tempMessageIndex = messages.firstIndex(where: { existingMsg in
+                // Check if it's a temporary message (UUID format) with matching content
+                existingMsg.id.count == 36 && // UUID length
+                existingMsg.senderId == message.senderId &&
+                existingMsg.receiverId == message.receiverId &&
+                existingMsg.content == message.content &&
+                existingMsg.id != message.id // Different IDs
+            }) {
+                // Found potential temporary message, check time difference
+                if let tempTimestamp = messages[tempMessageIndex].timestamp {
+                    let timeDiff = abs(messageTimestamp.timeIntervalSince(tempTimestamp))
+                    if timeDiff < recentTimeThreshold {
+                        Logger.chat.info("MessageStore: Replacing temporary message \(messages[tempMessageIndex].id) with confirmed \(message.id)")
+                        messages.remove(at: tempMessageIndex)
+                    }
+                }
+            }
+        }
+        
+        // Log message details before insertion
+        Logger.chat.info("MessageStore: Adding message \(message.id) for conversation \(conversationUserId)")
+        Logger.chat.info("  - createdAt: \(message.createdAt)")
+        Logger.chat.info("  - timestamp: \(message.timestamp?.description ?? "nil")")
+        Logger.chat.info("  - senderId: \(message.senderId)")
+        Logger.chat.info("  - receiverId: \(message.receiverId)")
+        Logger.chat.info("  - Current message count: \(messages.count)")
         
         // Insert and sort by timestamp (always use parsed Date for reliable ordering)
         messages.append(message)
@@ -40,9 +77,16 @@ actor MessageStore {
             // Always parse to Date for consistent comparison
             guard let date1 = msg1.timestamp, let date2 = msg2.timestamp else {
                 // Fallback to string comparison if parsing fails (should be rare)
+                Logger.chat.warning("MessageStore: Failed to parse timestamp, using string comparison")
                 return msg1.createdAt < msg2.createdAt
             }
             return date1 < date2
+        }
+        
+        // Log sorted order
+        Logger.chat.info("MessageStore: After sort, message count: \(messages.count)")
+        for (index, msg) in messages.enumerated() {
+            Logger.chat.debug("  [\(index)] id=\(msg.id) time=\(msg.createdAt) sender=\(msg.senderId)")
         }
         
         messagesByConversation[conversationUserId] = messages
