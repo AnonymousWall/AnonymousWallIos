@@ -282,6 +282,106 @@ struct ChatViewModelTests {
         #expect(mockService.getMessageHistoryCalled == true)
     }
     
+    // MARK: - View Lifecycle Tests
+    
+    @Test func testViewLifecycleTracking() async throws {
+        let (viewModel, _, _) = createTestViewModel()
+        
+        // Initially inactive
+        // Note: isViewActive is private, so we test via behavior
+        
+        // Simulate view appearing
+        viewModel.viewDidAppear()
+        
+        // Simulate view disappearing
+        viewModel.viewWillDisappear()
+        
+        // Test passes if no errors occur
+    }
+    
+    @Test func testAutoMarkAsReadWhenViewIsActive() async throws {
+        let (viewModel, mockService, mockWebSocket) = createTestViewModel()
+        let authState = createMockAuthState()
+        
+        // Setup mock data
+        mockService.mockMessages = []
+        
+        // Load messages to establish connection
+        viewModel.loadMessages(authState: authState)
+        try await Task.sleep(nanoseconds: 200_000_000)
+        
+        // Mark view as active
+        viewModel.viewDidAppear()
+        
+        // Simulate receiving a message from the other user while view is active
+        let incomingMessage = createMockMessage(id: "new-msg", senderId: "user2", receiverId: "user1")
+        mockWebSocket.simulateReceiveMessage(incomingMessage)
+        
+        // Wait for auto-mark-as-read to process
+        try await Task.sleep(nanoseconds: 300_000_000)
+        
+        // Verify read receipt was sent via WebSocket
+        #expect(mockWebSocket.markAsReadCalled == true)
+        #expect(mockWebSocket.lastMarkReadMessageId == "new-msg")
+    }
+    
+    @Test func testDoNotAutoMarkAsReadWhenViewIsInactive() async throws {
+        let (viewModel, mockService, mockWebSocket) = createTestViewModel()
+        let authState = createMockAuthState()
+        
+        // Setup mock data
+        mockService.mockMessages = []
+        
+        // Load messages to establish connection
+        viewModel.loadMessages(authState: authState)
+        try await Task.sleep(nanoseconds: 200_000_000)
+        
+        // Mark view as active then immediately inactive
+        viewModel.viewDidAppear()
+        viewModel.viewWillDisappear()
+        
+        // Reset the mock to clear previous calls
+        mockWebSocket.reset()
+        mockWebSocket.connect(token: "test", userId: "user1")
+        
+        // Simulate receiving a message from the other user while view is inactive
+        let incomingMessage = createMockMessage(id: "new-msg-2", senderId: "user2", receiverId: "user1")
+        mockWebSocket.simulateReceiveMessage(incomingMessage)
+        
+        // Wait for potential auto-mark-as-read (should not happen)
+        try await Task.sleep(nanoseconds: 300_000_000)
+        
+        // Verify read receipt was NOT sent (view is inactive)
+        #expect(mockWebSocket.markAsReadCalled == false)
+    }
+    
+    @Test func testDoNotAutoMarkAsReadForOwnMessages() async throws {
+        let (viewModel, mockService, mockWebSocket) = createTestViewModel()
+        let authState = createMockAuthState()
+        
+        // Setup mock data
+        mockService.mockMessages = []
+        
+        // Load messages and mark view as active
+        viewModel.loadMessages(authState: authState)
+        try await Task.sleep(nanoseconds: 200_000_000)
+        viewModel.viewDidAppear()
+        
+        // Reset mock to clear previous calls
+        mockWebSocket.markAsReadCalled = false
+        mockWebSocket.lastMarkReadMessageId = nil
+        
+        // Simulate receiving our own message (sent by user1)
+        let ownMessage = createMockMessage(id: "own-msg", senderId: "user1", receiverId: "user2")
+        mockWebSocket.simulateReceiveMessage(ownMessage)
+        
+        // Wait
+        try await Task.sleep(nanoseconds: 300_000_000)
+        
+        // Verify read receipt was NOT sent (it's our own message)
+        #expect(mockWebSocket.markAsReadCalled == false)
+    }
+    
     // MARK: - Test Helpers
     
     private func createTestViewModel() -> (ChatViewModel, MockChatService, MockWebSocketManager) {
