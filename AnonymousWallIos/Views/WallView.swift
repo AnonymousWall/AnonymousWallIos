@@ -171,7 +171,8 @@ struct WallView: View {
             // Small delay to allow view to fully load before presenting sheet
             if authState.needsPasswordSetup && !authState.hasShownPasswordSetup {
                 authState.markPasswordSetupShown()
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                Task {
+                    try? await Task.sleep(nanoseconds: 500_000_000) // 0.5 seconds
                     showSetPassword = true
                 }
             }

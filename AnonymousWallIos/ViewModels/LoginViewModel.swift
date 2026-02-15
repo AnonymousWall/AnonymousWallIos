@@ -36,6 +36,13 @@ class LoginViewModel: ObservableObject {
         self.authService = authService
     }
     
+    deinit {
+        #if DEBUG
+        Logger.app.debug("✅ LoginViewModel deinitialized")
+        #endif
+        cleanup()
+    }
+    
     // MARK: - Computed Properties
     var isLoginButtonDisabled: Bool {
         if loginMethod == .password {

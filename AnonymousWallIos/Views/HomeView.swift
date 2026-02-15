@@ -167,7 +167,8 @@ struct HomeView: View {
             // Show password setup if needed (only once)
             if authState.needsPasswordSetup && !authState.hasShownPasswordSetup {
                 authState.markPasswordSetupShown()
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                Task {
+                    try? await Task.sleep(nanoseconds: 500_000_000) // 0.5 seconds
                     coordinator.navigate(to: .setPassword)
                 }
             }

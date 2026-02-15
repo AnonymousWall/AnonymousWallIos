@@ -33,6 +33,12 @@ class PostDetailViewModel: ObservableObject {
         self.postService = postService
     }
     
+    deinit {
+        #if DEBUG
+        Logger.app.debug("✅ PostDetailViewModel deinitialized")
+        #endif
+    }
+    
     // MARK: - Public Methods
     
     /// Refresh the post to get the latest comment count

@@ -27,6 +27,13 @@ class PostFeedViewModel: ObservableObject {
         self.wallType = wallType
     }
     
+    deinit {
+        #if DEBUG
+        Logger.app.debug("✅ PostFeedViewModel deinitialized")
+        #endif
+        cleanup()
+    }
+    
     // MARK: - Public Methods
     func loadPosts(authState: AuthState) {
         loadTask?.cancel()
