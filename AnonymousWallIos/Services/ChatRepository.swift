@@ -126,7 +126,7 @@ class ChatRepository {
         await messageStore.addMessage(displayMessage, for: receiverId)
         
         // Send via WebSocket if connected, otherwise fallback to REST
-        if webSocketManager.connectionState == .connected {
+        if case .connected = webSocketManager.connectionState {
             webSocketManager.sendMessage(receiverId: receiverId, content: content)
         } else {
             // Fallback to REST API
@@ -185,7 +185,7 @@ class ChatRepository {
         await messageStore.updateReadStatus(messageId: messageId, for: otherUserId, read: true)
         
         // Send via WebSocket if connected
-        if webSocketManager.connectionState == .connected {
+        if case .connected = webSocketManager.connectionState {
             webSocketManager.markAsRead(messageId: messageId)
         }
         
@@ -209,7 +209,7 @@ class ChatRepository {
     /// Send typing indicator
     /// - Parameter receiverId: Recipient user ID
     func sendTypingIndicator(receiverId: String) {
-        guard webSocketManager.connectionState == .connected else { return }
+        guard case .connected = webSocketManager.connectionState else { return }
         webSocketManager.sendTypingIndicator(receiverId: receiverId)
     }
     
