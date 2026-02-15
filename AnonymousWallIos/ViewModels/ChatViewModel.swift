@@ -140,7 +140,11 @@ class ChatViewModel: ObservableObject {
     }
     
     /// Mark message as read
-    func markAsRead(messageId: String, authState: AuthState) {
+    /// - Parameters:
+    ///   - messageId: Message ID
+    ///   - authState: Auth state
+    ///   - refreshStore: Whether to refresh messages from store after (default: true)
+    func markAsRead(messageId: String, authState: AuthState, refreshStore: Bool = true) {
         guard let token = authState.authToken,
               let userId = authState.currentUser?.id else {
             return
@@ -157,8 +161,10 @@ class ChatViewModel: ObservableObject {
                     userId: userId
                 )
                 
-                // Refresh messages from store
-                await refreshMessagesFromStore()
+                // Conditionally refresh messages from store
+                if refreshStore {
+                    await refreshMessagesFromStore()
+                }
                 
             } catch {
                 Logger.chat.error("Failed to mark message as read: \(error)")
@@ -250,7 +256,8 @@ class ChatViewModel: ObservableObject {
                         // Auto-mark as read if view is active and message is from other user
                         if self.isViewActive && message.senderId == self.otherUserId && !message.readStatus,
                            let authState = self.currentAuthState {
-                            self.markAsRead(messageId: message.id, authState: authState)
+                            // Mark as read without refreshing again (we just refreshed above)
+                            self.markAsRead(messageId: message.id, authState: authState, refreshStore: false)
                         }
                     }
                 }
@@ -290,6 +297,33 @@ class ChatViewModel: ObservableObject {
     
     private func refreshMessagesFromStore() async {
         let storedMessages = await messageStore.getMessages(for: otherUserId)
+        
+        // Validate ordering in debug mode
+        #if DEBUG
+        validateMessageOrdering(storedMessages)
+        #endif
+        
         messages = storedMessages
     }
+    
+    #if DEBUG
+    /// Validate that messages are properly ordered
+    private func validateMessageOrdering(_ messages: [Message]) {
+        guard messages.count > 1 else { return }
+        
+        for i in 0..<(messages.count - 1) {
+            let current = messages[i]
+            let next = messages[i + 1]
+            
+            guard let currentTime = current.timestamp,
+                  let nextTime = next.timestamp else {
+                continue
+            }
+            
+            if currentTime > nextTime {
+                Logger.chat.error("Message ordering violation detected: \(current.id) > \(next.id)")
+            }
+        }
+    }
+    #endif
 }
