@@ -23,6 +23,9 @@ class ChatRepository {
     // Subject for conversation read events
     private let conversationReadSubject = PassthroughSubject<String, Never>()
     
+    // Track current user ID for determining conversation partner
+    private var currentUserId: String?
+    
     // Published properties for UI observation
     @Published private(set) var connectionState: WebSocketConnectionState = .disconnected
     
@@ -30,9 +33,18 @@ class ChatRepository {
     var messagePublisher: AnyPublisher<(Message, String), Never> {
         webSocketManager.messagePublisher
             .compactMap { [weak self] message -> (Message, String)? in
-                guard let self = self else { return nil }
-                // Determine conversation user ID (the other user)
-                let conversationUserId = message.senderId
+                guard let self = self, let currentUserId = self.currentUserId else { return nil }
+                
+                // Determine conversation user ID (the other user in the conversation)
+                // If I sent the message: conversation is with the receiver
+                // If I received the message: conversation is with the sender
+                let conversationUserId: String
+                if message.senderId == currentUserId {
+                    conversationUserId = message.receiverId
+                } else {
+                    conversationUserId = message.senderId
+                }
+                
                 return (message, conversationUserId)
             }
             .eraseToAnyPublisher()
@@ -76,6 +88,7 @@ class ChatRepository {
     ///   - token: Authentication token
     ///   - userId: Current user ID
     func connect(token: String, userId: String) {
+        self.currentUserId = userId
         webSocketManager.connect(token: token, userId: userId)
     }
     
@@ -293,11 +306,21 @@ class ChatRepository {
         // Observe incoming messages and store them
         webSocketManager.messagePublisher
             .sink { [weak self] message in
-                guard let self = self else { return }
+                guard let self = self, let currentUserId = self.currentUserId else { return }
                 
                 Task {
-                    // Determine conversation user ID (sender for received messages)
-                    let conversationUserId = message.senderId
+                    // Determine conversation user ID (the other user in the conversation)
+                    // If I sent the message: conversation is with the receiver
+                    // If I received the message: conversation is with the sender
+                    let conversationUserId: String
+                    if message.senderId == currentUserId {
+                        conversationUserId = message.receiverId
+                        Logger.chat.info("WebSocket message from me (senderId=\(message.senderId)) to \(conversationUserId), storing in conversation with \(conversationUserId)")
+                    } else {
+                        conversationUserId = message.senderId
+                        Logger.chat.info("WebSocket message from \(conversationUserId) to me (receiverId=\(message.receiverId)), storing in conversation with \(conversationUserId)")
+                    }
+                    
                     await self.messageStore.addMessage(message, for: conversationUserId)
                 }
             }
