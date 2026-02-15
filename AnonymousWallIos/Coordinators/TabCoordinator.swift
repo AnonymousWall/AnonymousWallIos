@@ -8,6 +8,7 @@
 import SwiftUI
 
 /// Coordinator for managing tab navigation and child coordinators
+@MainActor
 class TabCoordinator: ObservableObject {
     @Published var homeCoordinator = HomeCoordinator()
     @Published var campusCoordinator = CampusCoordinator()

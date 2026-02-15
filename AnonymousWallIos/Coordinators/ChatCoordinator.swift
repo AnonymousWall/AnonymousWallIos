@@ -8,6 +8,7 @@
 import SwiftUI
 
 /// Coordinator for managing chat navigation
+@MainActor
 class ChatCoordinator: Coordinator {
     enum Destination: Hashable {
         case chatDetail(otherUserId: String, otherUserName: String)
@@ -16,25 +17,20 @@ class ChatCoordinator: Coordinator {
     @Published var path = NavigationPath()
     @Published var selectedConversation: (userId: String, userName: String)?
     
-    // Chat infrastructure - lazy initialized to avoid @MainActor requirements at init time
-    private(set) lazy var messageStore: MessageStore = {
-        MessageStore()
-    }()
-    
-    private(set) lazy var webSocketManager: ChatWebSocketManager = {
-        ChatWebSocketManager()
-    }()
-    
-    private(set) lazy var chatRepository: ChatRepository = {
-        ChatRepository(
-            chatService: ChatService.shared,
-            webSocketManager: self.webSocketManager,
-            messageStore: self.messageStore
-        )
-    }()
+    // Chat infrastructure - initialized on main actor
+    private(set) var messageStore: MessageStore
+    private(set) var webSocketManager: ChatWebSocketManager
+    private(set) var chatRepository: ChatRepository
     
     init() {
-        // Lazy properties handle initialization when first accessed
+        // Initialize on main actor
+        self.messageStore = MessageStore()
+        self.webSocketManager = ChatWebSocketManager()
+        self.chatRepository = ChatRepository(
+            chatService: ChatService.shared,
+            webSocketManager: webSocketManager,
+            messageStore: messageStore
+        )
     }
     
     func navigate(to destination: Destination) {

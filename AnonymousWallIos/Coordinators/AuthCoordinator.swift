@@ -8,6 +8,7 @@
 import SwiftUI
 
 /// Coordinator for managing authentication-related navigation
+@MainActor
 class AuthCoordinator: Coordinator {
     enum Destination: Hashable {
         case login
