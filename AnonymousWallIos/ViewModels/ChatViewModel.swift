@@ -77,8 +77,8 @@ class ChatViewModel: ObservableObject {
             errorMessage = nil
             
             do {
-                // Load initial messages via REST
-                let loadedMessages = try await repository.loadMessages(
+                // Atomically load messages and connect WebSocket to avoid race condition
+                let loadedMessages = try await repository.loadMessagesAndConnect(
                     otherUserId: otherUserId,
                     token: token,
                     userId: userId,
@@ -88,9 +88,6 @@ class ChatViewModel: ObservableObject {
                 
                 // Update UI
                 messages = loadedMessages
-                
-                // Connect WebSocket for real-time updates
-                repository.connect(token: token, userId: userId)
                 
             } catch {
                 errorMessage = "Failed to load messages: \(error.localizedDescription)"

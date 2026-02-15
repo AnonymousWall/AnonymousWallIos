@@ -128,10 +128,22 @@ class ConversationsViewModel: ObservableObject {
                 // Update the corresponding conversation
                 if let index = self.conversations.firstIndex(where: { $0.userId == conversationUserId }) {
                     var updatedConversation = self.conversations[index]
-                    // Note: In a full implementation, we'd update lastMessage and unreadCount
-                    // For now, just trigger a re-sort
+                    
+                    // Create updated conversation with new last message
+                    let updatedConv = Conversation(
+                        userId: updatedConversation.userId,
+                        profileName: updatedConversation.profileName,
+                        lastMessage: message,
+                        unreadCount: message.readStatus ? updatedConversation.unreadCount : updatedConversation.unreadCount + 1
+                    )
+                    
+                    // Remove old and insert at top (most recent)
                     self.conversations.remove(at: index)
-                    self.conversations.insert(updatedConversation, at: 0)
+                    self.conversations.insert(updatedConv, at: 0)
+                } else {
+                    // New conversation - fetch full list to get profile name
+                    // In production, you might want to debounce this or handle it differently
+                    Logger.chat.info("New conversation detected: \(conversationUserId)")
                 }
             }
             .store(in: &cancellables)

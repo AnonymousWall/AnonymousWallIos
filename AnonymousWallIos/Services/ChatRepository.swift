@@ -23,6 +23,13 @@ class ChatRepository {
     // Track pending temporary messages for reconciliation
     private var pendingTemporaryMessages: [String: String] = [:] // [tempId: receiverId]
     
+    // Track active conversations that need recovery on reconnect
+    private var activeConversations: Set<String> = []
+    
+    // Store auth credentials for recovery
+    private var cachedToken: String?
+    private var cachedUserId: String?
+    
     // Published properties for UI observation
     @Published private(set) var connectionState: WebSocketConnectionState = .disconnected
     
@@ -71,6 +78,10 @@ class ChatRepository {
     ///   - token: Authentication token
     ///   - userId: Current user ID
     func connect(token: String, userId: String) {
+        // Cache credentials for recovery
+        cachedToken = token
+        cachedUserId = userId
+        
         webSocketManager.connect(token: token, userId: userId)
     }
     
@@ -81,7 +92,37 @@ class ChatRepository {
     
     // MARK: - Message Operations
     
-    /// Load initial messages via REST API
+    /// Load initial messages and establish WebSocket connection atomically
+    /// - Parameters:
+    ///   - otherUserId: The other user's ID
+    ///   - token: Authentication token
+    ///   - userId: Current user ID
+    ///   - page: Page number (default: 1)
+    ///   - limit: Messages per page (default: 50)
+    /// - Returns: Array of messages
+    func loadMessagesAndConnect(otherUserId: String, token: String, userId: String, page: Int = 1, limit: Int = 50) async throws -> [Message] {
+        // Track this conversation as active
+        activeConversations.insert(otherUserId)
+        
+        // Connect WebSocket first to avoid missing messages during load
+        connect(token: token, userId: userId)
+        
+        // Load messages via REST
+        let response = try await chatService.getMessageHistory(
+            otherUserId: otherUserId,
+            page: page,
+            limit: limit,
+            token: token,
+            userId: userId
+        )
+        
+        // Store messages
+        await messageStore.addMessages(response.messages, for: otherUserId)
+        
+        return response.messages
+    }
+    
+    /// Load initial messages via REST API (legacy method, prefer loadMessagesAndConnect)
     /// - Parameters:
     ///   - otherUserId: The other user's ID
     ///   - token: Authentication token
@@ -334,11 +375,36 @@ class ChatRepository {
         // Observe connection state
         webSocketManager.connectionStatePublisher
             .sink { [weak self] state in
-                self?.connectionState = state
+                guard let self = self else { return }
+                self.connectionState = state
                 
-                // Handle reconnection - recover messages
+                // Handle reconnection - recover messages for active conversations
                 if case .connected = state {
-                    Logger.chat.info("WebSocket reconnected, recovering messages")
+                    Logger.chat.info("WebSocket reconnected, recovering messages for active conversations")
+                    
+                    // Recover messages for all active conversations
+                    Task { @MainActor in
+                        guard let token = self.cachedToken,
+                              let userId = self.cachedUserId else {
+                            Logger.chat.warning("Cannot recover messages: missing credentials")
+                            return
+                        }
+                        
+                        for conversationUserId in self.activeConversations {
+                            do {
+                                let recovered = try await self.recoverMessages(
+                                    otherUserId: conversationUserId,
+                                    token: token,
+                                    userId: userId
+                                )
+                                if !recovered.isEmpty {
+                                    Logger.chat.info("Recovered \(recovered.count) messages for conversation: \(conversationUserId)")
+                                }
+                            } catch {
+                                Logger.chat.error("Failed to recover messages for \(conversationUserId): \(error)")
+                            }
+                        }
+                    }
                 }
             }
             .store(in: &cancellables)
