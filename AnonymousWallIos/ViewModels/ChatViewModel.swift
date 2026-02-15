@@ -29,6 +29,9 @@ class ChatViewModel: ObservableObject {
     private var loadTask: Task<Void, Never>?
     private var typingTimer: Timer?
     
+    /// Track if view is currently active (on screen)
+    private var isViewActive = false
+    
     /// The other user's ID (conversation partner)
     let otherUserId: String
     let otherUserName: String
@@ -207,6 +210,18 @@ class ChatViewModel: ObservableObject {
         }
     }
     
+    /// Called when view appears
+    func viewDidAppear() {
+        isViewActive = true
+        Logger.chat.info("ChatView became active for user: \(otherUserId)")
+    }
+    
+    /// Called when view disappears
+    func viewWillDisappear() {
+        isViewActive = false
+        Logger.chat.info("ChatView became inactive for user: \(otherUserId)")
+    }
+    
     /// Disconnect WebSocket when view disappears
     func disconnect() {
         repository.disconnect()
@@ -236,8 +251,29 @@ class ChatViewModel: ObservableObject {
                 
                 // Only handle messages for this conversation
                 if conversationUserId == self.otherUserId {
-                    Task {
+                    Task { [weak self] in
+                        guard let self = self else { return }
+                        
                         await self.refreshMessagesFromStore()
+                        
+                        // Auto-mark as read if view is active and message is from other user
+                        if self.isViewActive && message.senderId == self.otherUserId && !message.readStatus {
+                            Logger.chat.info("Auto-marking message as read (view is active): \(message.id)")
+                            
+                            // Get auth state - we need to pass this from the view
+                            // For now, mark locally and send read receipt via WebSocket
+                            await self.messageStore.updateReadStatus(
+                                messageId: message.id,
+                                for: self.otherUserId,
+                                read: true
+                            )
+                            
+                            // Send read receipt via WebSocket
+                            self.repository.sendReadReceipt(messageId: message.id)
+                            
+                            // Refresh to update UI
+                            await self.refreshMessagesFromStore()
+                        }
                     }
                 }
             }

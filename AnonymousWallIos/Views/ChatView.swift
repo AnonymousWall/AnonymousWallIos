@@ -92,10 +92,12 @@ struct ChatView: View {
         .navigationTitle(viewModel.otherUserName)
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
+            viewModel.viewDidAppear()
             viewModel.loadMessages(authState: authState)
             viewModel.markConversationAsRead(authState: authState)
         }
         .onDisappear {
+            viewModel.viewWillDisappear()
             viewModel.disconnect()
         }
         .alert("Error", isPresented: .constant(viewModel.errorMessage != nil)) {

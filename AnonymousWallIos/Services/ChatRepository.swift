@@ -213,6 +213,13 @@ class ChatRepository {
         webSocketManager.sendTypingIndicator(receiverId: receiverId)
     }
     
+    /// Send read receipt via WebSocket
+    /// - Parameter messageId: Message ID to mark as read
+    func sendReadReceipt(messageId: String) {
+        guard case .connected = webSocketManager.connectionState else { return }
+        webSocketManager.markAsRead(messageId: messageId)
+    }
+    
     /// Load conversations list
     /// - Parameters:
     ///   - token: Authentication token

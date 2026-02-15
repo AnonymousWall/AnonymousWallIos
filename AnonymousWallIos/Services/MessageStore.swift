@@ -34,10 +34,12 @@ actor MessageStore {
             return false
         }
         
-        // Insert and sort by timestamp
+        // Insert and sort by timestamp (always use parsed Date for reliable ordering)
         messages.append(message)
         messages.sort { msg1, msg2 in
+            // Always parse to Date for consistent comparison
             guard let date1 = msg1.timestamp, let date2 = msg2.timestamp else {
+                // Fallback to string comparison if parsing fails (should be rare)
                 return msg1.createdAt < msg2.createdAt
             }
             return date1 < date2
