@@ -147,5 +147,25 @@ class ConversationsViewModel: ObservableObject {
                 }
             }
             .store(in: &cancellables)
+        
+        // Observe conversation read events to reset unread count
+        repository.conversationReadPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] conversationUserId in
+                guard let self = self else { return }
+                
+                // Find and update the conversation to reset unread count
+                if let index = self.conversations.firstIndex(where: { $0.userId == conversationUserId }) {
+                    let conversation = self.conversations[index]
+                    let updatedConv = Conversation(
+                        userId: conversation.userId,
+                        profileName: conversation.profileName,
+                        lastMessage: conversation.lastMessage,
+                        unreadCount: 0  // Reset to 0
+                    )
+                    self.conversations[index] = updatedConv
+                }
+            }
+            .store(in: &cancellables)
     }
 }

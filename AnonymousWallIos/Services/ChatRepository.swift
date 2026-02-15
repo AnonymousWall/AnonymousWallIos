@@ -30,6 +30,9 @@ class ChatRepository {
     private var cachedToken: String?
     private var cachedUserId: String?
     
+    // Subject for read status updates
+    private var conversationReadSubject = PassthroughSubject<String, Never>()
+    
     // Published properties for UI observation
     @Published private(set) var connectionState: WebSocketConnectionState = .disconnected
     
@@ -47,6 +50,10 @@ class ChatRepository {
     
     var typingPublisher: AnyPublisher<String, Never> {
         webSocketManager.typingPublisher
+    }
+    
+    var conversationReadPublisher: AnyPublisher<String, Never> {
+        conversationReadSubject.eraseToAnyPublisher()
     }
     
     var readReceiptPublisher: AnyPublisher<String, Never> {
@@ -177,38 +184,12 @@ class ChatRepository {
             // Send via WebSocket - will be echoed back by server
             webSocketManager.sendMessage(receiverId: receiverId, content: content)
             
-            // Also use REST as fallback to ensure delivery
-            Task {
-                do {
-                    let confirmedMessage = try await chatService.sendMessage(
-                        receiverId: receiverId,
-                        content: content,
-                        token: token,
-                        userId: userId
-                    )
-                    
-                    // Only reconcile if temp message still pending
-                    if pendingTemporaryMessages[temporaryId] != nil {
-                        await reconcileTemporaryMessage(
-                            temporaryId: temporaryId,
-                            confirmedMessage: confirmedMessage,
-                            receiverId: receiverId
-                        )
-                    }
-                } catch {
-                    // Mark as failed only if still pending
-                    if pendingTemporaryMessages[temporaryId] != nil {
-                        await messageStore.updateLocalStatus(
-                            messageId: temporaryId,
-                            for: receiverId,
-                            status: .failed
-                        )
-                        pendingTemporaryMessages.removeValue(forKey: temporaryId)
-                    }
-                }
-            }
+            // Note: We rely on WebSocket echo for confirmation
+            // If WebSocket fails to deliver, user will see message stuck in "sending" state
+            // and can retry manually. This prevents duplicate messages from dual REST+WS sending.
+            
         } else {
-            // Fallback to REST API only
+            // Fallback to REST API only when WebSocket is disconnected
             Task {
                 do {
                     let confirmedMessage = try await chatService.sendMessage(
@@ -276,6 +257,9 @@ class ChatRepository {
         
         // Send to server
         try await chatService.markConversationAsRead(otherUserId: otherUserId, token: token, userId: userId)
+        
+        // Notify observers that conversation was read
+        conversationReadSubject.send(otherUserId)
     }
     
     /// Send typing indicator
