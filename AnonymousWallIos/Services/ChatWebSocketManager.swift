@@ -199,18 +199,15 @@ class ChatWebSocketManager: ChatWebSocketManagerProtocol {
         let host = config.apiBaseURL.replacingOccurrences(of: "http://", with: "").replacingOccurrences(of: "https://", with: "")
         let wsURLString = "\(wsScheme)://\(host)/ws/chat"
         
-        guard let url = URL(string: wsURLString) else {
-            connectionStateSubject.send(.failed(NetworkError.invalidURL))
-            return
-        }
-        
         // Create WebSocket connection with authentication
-        var request = URLRequest(url: url)
-        request.setValue("access_token", forHTTPHeaderField: "Sec-WebSocket-Protocol")
-        request.setValue(token, forHTTPHeaderField: "Sec-WebSocket-Protocol")
-        
+        guard let url = URL(string: wsURLString) else {
+                connectionStateSubject.send(.failed(NetworkError.invalidURL))
+                return
+            }
+
         let session = URLSession(configuration: .default)
-        webSocketTask = session.webSocketTask(with: request)
+
+        webSocketTask = session.webSocketTask(with: url, protocols: [token])
         webSocketTask?.resume()
         
         // Start receiving messages
