@@ -8,6 +8,7 @@
 import SwiftUI
 
 /// Main app coordinator managing high-level navigation
+@MainActor
 class AppCoordinator: ObservableObject {
     @Published var authCoordinator = AuthCoordinator()
     @Published var tabCoordinator = TabCoordinator()

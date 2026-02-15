@@ -8,6 +8,7 @@
 import SwiftUI
 
 /// Coordinator for managing profile navigation
+@MainActor
 class ProfileCoordinator: Coordinator {
     enum Destination: Hashable {
         case postDetail(Post)
