@@ -32,7 +32,7 @@ class ChatService: ChatServiceProtocol {
             .setBody(request)
             .build()
         
-        return try await networkClient.request(urlRequest, responseType: Message.self)
+        return try await networkClient.performRequest(urlRequest)
     }
     
     func getMessageHistory(otherUserId: String, page: Int = 1, limit: Int = 50, token: String, userId: String) async throws -> MessageHistoryResponse {
@@ -48,7 +48,7 @@ class ChatService: ChatServiceProtocol {
             .addQueryItems(queryItems)
             .build()
         
-        return try await networkClient.request(urlRequest, responseType: MessageHistoryResponse.self)
+        return try await networkClient.performRequest(urlRequest)
     }
     
     func getConversations(token: String, userId: String) async throws -> [Conversation] {
@@ -58,7 +58,7 @@ class ChatService: ChatServiceProtocol {
             .setToken(token)
             .build()
         
-        let response = try await networkClient.request(urlRequest, responseType: ConversationsResponse.self)
+        let response: ConversationsResponse = try await networkClient.performRequest(urlRequest)
         return response.conversations
     }
     
@@ -69,7 +69,7 @@ class ChatService: ChatServiceProtocol {
             .setToken(token)
             .build()
         
-        let _: MarkReadResponse = try await networkClient.request(urlRequest, responseType: MarkReadResponse.self)
+        let _: MarkReadResponse = try await networkClient.performRequest(urlRequest)
     }
     
     func markConversationAsRead(otherUserId: String, token: String, userId: String) async throws {
@@ -79,6 +79,6 @@ class ChatService: ChatServiceProtocol {
             .setToken(token)
             .build()
         
-        let _: MarkReadResponse = try await networkClient.request(urlRequest, responseType: MarkReadResponse.self)
+        let _: MarkReadResponse = try await networkClient.performRequest(urlRequest)
     }
 }
