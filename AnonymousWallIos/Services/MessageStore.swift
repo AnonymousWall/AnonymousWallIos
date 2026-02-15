@@ -18,17 +18,15 @@ actor MessageStore {
     /// Temporary messages pending server confirmation (by temporary ID)
     private var temporaryMessages: [String: TemporaryMessage] = [:]
     
+    /// UUID string length for temporary message detection
+    private let uuidLength = 36
+    
     // MARK: - Message Operations
     
     /// Add a message to the store
     /// - Parameters:
     ///   - message: Message to add
     ///   - conversationUserId: The other user's ID in the conversation
-    /// - Returns: True if message was added (not duplicate), false otherwise
-    /// Add a message to the store
-    /// - Parameters:
-    ///   - message: Message to add
-    ///   - conversationUserId: The other user's ID
     /// - Returns: True if message was added (not duplicate), false otherwise
     @discardableResult
     func addMessage(_ message: Message, for conversationUserId: String) -> Bool {
@@ -46,7 +44,7 @@ actor MessageStore {
         if let messageTimestamp = message.timestamp {
             if let tempMessageIndex = messages.firstIndex(where: { existingMsg in
                 // Check if it's a temporary message (UUID format) with matching content
-                existingMsg.id.count == 36 && // UUID length
+                existingMsg.id.count == uuidLength && // UUID length
                 existingMsg.senderId == message.senderId &&
                 existingMsg.receiverId == message.receiverId &&
                 existingMsg.content == message.content &&

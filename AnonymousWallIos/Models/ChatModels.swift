@@ -49,7 +49,7 @@ struct Message: Codable, Identifiable, Hashable {
             readStatus: read,
             createdAt: self.createdAt
         )
-        // Preserve the local status
+        // Preserve the local status.
         newMessage.localStatus = read ? .read : self.localStatus
         return newMessage
     }
