@@ -20,6 +20,19 @@ class ChatRepository {
     
     private var cancellables = Set<AnyCancellable>()
     
+    // Track pending temporary messages for reconciliation
+    private var pendingTemporaryMessages: [String: String] = [:] // [tempId: receiverId]
+    
+    // Track active conversations that need recovery on reconnect
+    private var activeConversations: Set<String> = []
+    
+    // Store auth credentials for recovery
+    private var cachedToken: String?
+    private var cachedUserId: String?
+    
+    // Subject for read status updates
+    private var conversationReadSubject = PassthroughSubject<String, Never>()
+    
     // Published properties for UI observation
     @Published private(set) var connectionState: WebSocketConnectionState = .disconnected
     
@@ -29,7 +42,17 @@ class ChatRepository {
             .compactMap { [weak self] message -> (Message, String)? in
                 guard let self = self else { return nil }
                 // Determine conversation user ID (the other user)
-                let conversationUserId = message.senderId
+                // For incoming messages: senderId is the other user
+                // For outgoing messages (echoed back): receiverId is the other user
+                // We need to check against current user ID to determine which is which
+                guard let currentUserId = self.cachedUserId else {
+                    // Fallback: assume incoming message (senderId is other user)
+                    return (message, message.senderId)
+                }
+                
+                // If we sent this message (echo), the conversation is with the receiver
+                // If we received this message, the conversation is with the sender
+                let conversationUserId = message.senderId == currentUserId ? message.receiverId : message.senderId
                 return (message, conversationUserId)
             }
             .eraseToAnyPublisher()
@@ -37,6 +60,10 @@ class ChatRepository {
     
     var typingPublisher: AnyPublisher<String, Never> {
         webSocketManager.typingPublisher
+    }
+    
+    var conversationReadPublisher: AnyPublisher<String, Never> {
+        conversationReadSubject.eraseToAnyPublisher()
     }
     
     var readReceiptPublisher: AnyPublisher<String, Never> {
@@ -68,6 +95,10 @@ class ChatRepository {
     ///   - token: Authentication token
     ///   - userId: Current user ID
     func connect(token: String, userId: String) {
+        // Cache credentials for recovery
+        cachedToken = token
+        cachedUserId = userId
+        
         webSocketManager.connect(token: token, userId: userId)
     }
     
@@ -78,7 +109,37 @@ class ChatRepository {
     
     // MARK: - Message Operations
     
-    /// Load initial messages via REST API
+    /// Load initial messages and establish WebSocket connection atomically
+    /// - Parameters:
+    ///   - otherUserId: The other user's ID
+    ///   - token: Authentication token
+    ///   - userId: Current user ID
+    ///   - page: Page number (default: 1)
+    ///   - limit: Messages per page (default: 50)
+    /// - Returns: Array of messages
+    func loadMessagesAndConnect(otherUserId: String, token: String, userId: String, page: Int = 1, limit: Int = 50) async throws -> [Message] {
+        // Track this conversation as active
+        activeConversations.insert(otherUserId)
+        
+        // Connect WebSocket first to avoid missing messages during load
+        connect(token: token, userId: userId)
+        
+        // Load messages via REST
+        let response = try await chatService.getMessageHistory(
+            otherUserId: otherUserId,
+            page: page,
+            limit: limit,
+            token: token,
+            userId: userId
+        )
+        
+        // Store messages
+        await messageStore.addMessages(response.messages, for: otherUserId)
+        
+        return response.messages
+    }
+    
+    /// Load initial messages via REST API (legacy method, prefer loadMessagesAndConnect)
     /// - Parameters:
     ///   - otherUserId: The other user's ID
     ///   - token: Authentication token
@@ -121,15 +182,24 @@ class ChatRepository {
         // Store temporary message
         await messageStore.addTemporaryMessage(tempMessage)
         
+        // Track for reconciliation
+        pendingTemporaryMessages[temporaryId] = receiverId
+        
         // Add to conversation for immediate UI update
         let displayMessage = tempMessage.toDisplayMessage(senderId: userId)
         await messageStore.addMessage(displayMessage, for: receiverId)
         
         // Send via WebSocket if connected, otherwise fallback to REST
         if case .connected = webSocketManager.connectionState {
+            // Send via WebSocket - will be echoed back by server
             webSocketManager.sendMessage(receiverId: receiverId, content: content)
+            
+            // Note: We rely on WebSocket echo for confirmation
+            // If WebSocket fails to deliver, user will see message stuck in "sending" state
+            // and can retry manually. This prevents duplicate messages from dual REST+WS sending.
+            
         } else {
-            // Fallback to REST API
+            // Fallback to REST API only when WebSocket is disconnected
             Task {
                 do {
                     let confirmedMessage = try await chatService.sendMessage(
@@ -139,18 +209,10 @@ class ChatRepository {
                         userId: userId
                     )
                     
-                    // Replace temporary message with confirmed one
-                    await messageStore.confirmTemporaryMessage(
+                    await reconcileTemporaryMessage(
                         temporaryId: temporaryId,
                         confirmedMessage: confirmedMessage,
-                        for: receiverId
-                    )
-                    
-                    // Update status to sent
-                    await messageStore.updateLocalStatus(
-                        messageId: confirmedMessage.id,
-                        for: receiverId,
-                        status: .sent
+                        receiverId: receiverId
                     )
                 } catch {
                     // Mark as failed
@@ -159,6 +221,7 @@ class ChatRepository {
                         for: receiverId,
                         status: .failed
                     )
+                    pendingTemporaryMessages.removeValue(forKey: temporaryId)
                     throw error
                 }
             }
@@ -204,6 +267,9 @@ class ChatRepository {
         
         // Send to server
         try await chatService.markConversationAsRead(otherUserId: otherUserId, token: token, userId: userId)
+        
+        // Notify observers that conversation was read
+        conversationReadSubject.send(otherUserId)
     }
     
     /// Send typing indicator
@@ -259,15 +325,80 @@ class ChatRepository {
     
     // MARK: - Private Methods
     
+    /// Reconcile temporary message with server-confirmed message
+    private func reconcileTemporaryMessage(temporaryId: String, confirmedMessage: Message, receiverId: String) async {
+        // Remove from pending tracking
+        pendingTemporaryMessages.removeValue(forKey: temporaryId)
+        
+        // Replace temporary message with confirmed one
+        await messageStore.confirmTemporaryMessage(
+            temporaryId: temporaryId,
+            confirmedMessage: confirmedMessage,
+            for: receiverId
+        )
+        
+        // Update status to sent
+        await messageStore.updateLocalStatus(
+            messageId: confirmedMessage.id,
+            for: receiverId,
+            status: .sent
+        )
+    }
+    
+    /// Reconcile incoming WebSocket message with potential temporary message
+    /// Returns true if message was a reconciliation of a temp message, false if it's a new message
+    private func reconcileIncomingMessage(_ message: Message, conversationUserId: String) async -> Bool {
+        // Check if this is our own sent message (echoed back)
+        // Look for pending temporary messages that match
+        for (tempId, receiverId) in pendingTemporaryMessages where receiverId == conversationUserId {
+            if let tempMsg = await messageStore.getTemporaryMessage(id: tempId),
+               tempMsg.content == message.content {
+                // This is our sent message echoed back - reconcile it
+                await reconcileTemporaryMessage(
+                    temporaryId: tempId,
+                    confirmedMessage: message,
+                    receiverId: receiverId
+                )
+                return true
+            }
+        }
+        return false
+    }
+    
     private func setupWebSocketObservers() {
         // Observe connection state
         webSocketManager.connectionStatePublisher
             .sink { [weak self] state in
-                self?.connectionState = state
+                guard let self = self else { return }
+                self.connectionState = state
                 
-                // Handle reconnection - recover messages
+                // Handle reconnection - recover messages for active conversations
                 if case .connected = state {
-                    Logger.chat.info("WebSocket reconnected, recovering messages")
+                    Logger.chat.info("WebSocket reconnected, recovering messages for active conversations")
+                    
+                    // Recover messages for all active conversations
+                    Task { @MainActor in
+                        guard let token = self.cachedToken,
+                              let userId = self.cachedUserId else {
+                            Logger.chat.warning("Cannot recover messages: missing credentials")
+                            return
+                        }
+                        
+                        for conversationUserId in self.activeConversations {
+                            do {
+                                let recovered = try await self.recoverMessages(
+                                    otherUserId: conversationUserId,
+                                    token: token,
+                                    userId: userId
+                                )
+                                if !recovered.isEmpty {
+                                    Logger.chat.info("Recovered \(recovered.count) messages for conversation: \(conversationUserId)")
+                                }
+                            } catch {
+                                Logger.chat.error("Failed to recover messages for \(conversationUserId): \(error)")
+                            }
+                        }
+                    }
                 }
             }
             .store(in: &cancellables)
@@ -277,10 +408,24 @@ class ChatRepository {
             .sink { [weak self] message in
                 guard let self = self else { return }
                 
-                Task {
-                    // Determine conversation user ID (sender for received messages)
-                    let conversationUserId = message.senderId
-                    await self.messageStore.addMessage(message, for: conversationUserId)
+                Task { @MainActor in
+                    // Determine conversation user ID (the other user)
+                    // For incoming: senderId is the other user
+                    // For outgoing echo: receiverId is the other user
+                    guard let currentUserId = self.cachedUserId else {
+                        Logger.chat.warning("Cannot determine conversation user ID: missing current user ID")
+                        return
+                    }
+                    
+                    let conversationUserId = message.senderId == currentUserId ? message.receiverId : message.senderId
+                    
+                    // Check if this is a reconciliation of our sent message
+                    let isReconciled = await self.reconcileIncomingMessage(message, conversationUserId: conversationUserId)
+                    
+                    // Only add if not reconciled (to avoid duplicates)
+                    if !isReconciled {
+                        await self.messageStore.addMessage(message, for: conversationUserId)
+                    }
                 }
             }
             .store(in: &cancellables)
@@ -290,13 +435,23 @@ class ChatRepository {
             .sink { [weak self] messageId in
                 guard let self = self else { return }
                 
-                Task {
-                    // Update read status for the message
-                    // Note: We need to find which conversation this message belongs to
-                    // This is a simplification - in production you'd track message-to-conversation mapping
-                    Logger.chat.info("Received read receipt for message: \(messageId)")
+                Task { @MainActor in
+                    // Find the conversation that contains this message and update read status
+                    // We need to search all conversations to find the message
+                    await self.updateReadReceiptForMessage(messageId: messageId)
                 }
             }
             .store(in: &cancellables)
+    }
+    
+    /// Update read receipt for a message across all conversations
+    private func updateReadReceiptForMessage(messageId: String) async {
+        // Find which conversation contains this message
+        if let conversationUserId = await messageStore.findConversation(forMessageId: messageId) {
+            await messageStore.updateReadStatus(messageId: messageId, for: conversationUserId, read: true)
+            Logger.chat.info("Updated read receipt for message: \(messageId) in conversation: \(conversationUserId)")
+        } else {
+            Logger.chat.warning("Could not find conversation for message: \(messageId)")
+        }
     }
 }

@@ -34,13 +34,18 @@ actor MessageStore {
             return false
         }
         
-        // Insert and sort by timestamp
+        // Insert and sort by timestamp with stable ordering
         messages.append(message)
         messages.sort { msg1, msg2 in
             guard let date1 = msg1.timestamp, let date2 = msg2.timestamp else {
                 return msg1.createdAt < msg2.createdAt
             }
-            return date1 < date2
+            // Use timestamp comparison first
+            if date1 != date2 {
+                return date1 < date2
+            }
+            // Use message ID as tiebreaker for deterministic ordering
+            return msg1.id < msg2.id
         }
         
         messagesByConversation[conversationUserId] = messages
@@ -54,13 +59,36 @@ actor MessageStore {
     /// - Returns: Number of new messages added
     @discardableResult
     func addMessages(_ messages: [Message], for conversationUserId: String) -> Int {
-        var addedCount = 0
-        for message in messages {
-            if addMessage(message, for: conversationUserId) {
-                addedCount += 1
-            }
+        var existingMessages = messagesByConversation[conversationUserId] ?? []
+        
+        // Create a set of existing IDs for O(1) lookup
+        let existingIds = Set(existingMessages.map { $0.id })
+        
+        // Filter out duplicates
+        let newMessages = messages.filter { !existingIds.contains($0.id) }
+        
+        if newMessages.isEmpty {
+            return 0
         }
-        return addedCount
+        
+        // Append all new messages
+        existingMessages.append(contentsOf: newMessages)
+        
+        // Sort once after all additions
+        existingMessages.sort { msg1, msg2 in
+            guard let date1 = msg1.timestamp, let date2 = msg2.timestamp else {
+                return msg1.createdAt < msg2.createdAt
+            }
+            // Use timestamp comparison first
+            if date1 != date2 {
+                return date1 < date2
+            }
+            // Use message ID as tiebreaker for deterministic ordering
+            return msg1.id < msg2.id
+        }
+        
+        messagesByConversation[conversationUserId] = existingMessages
+        return newMessages.count
     }
     
     /// Get all messages for a conversation
@@ -198,5 +226,19 @@ actor MessageStore {
         guard let messages = messagesByConversation[conversationUserId] else { return [] }
         
         return messages.filter { $0.createdAt > timestamp }
+    }
+    
+    // MARK: - Message Lookup
+    
+    /// Find conversation user ID for a given message ID
+    /// - Parameter messageId: Message ID to find
+    /// - Returns: Conversation user ID if found, nil otherwise
+    func findConversation(forMessageId messageId: String) -> String? {
+        for (conversationUserId, messages) in messagesByConversation {
+            if messages.contains(where: { $0.id == messageId }) {
+                return conversationUserId
+            }
+        }
+        return nil
     }
 }
