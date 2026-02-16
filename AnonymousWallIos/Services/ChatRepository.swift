@@ -33,6 +33,9 @@ class ChatRepository {
     // Subject for read status updates
     private var conversationReadSubject = PassthroughSubject<String, Never>()
     
+    // Subject for read receipt completion (after MessageStore is updated)
+    private var readReceiptCompletedSubject = PassthroughSubject<String, Never>()
+    
     // Published properties for UI observation
     @Published private(set) var connectionState: WebSocketConnectionState = .disconnected
     
@@ -64,6 +67,10 @@ class ChatRepository {
     
     var conversationReadPublisher: AnyPublisher<String, Never> {
         conversationReadSubject.eraseToAnyPublisher()
+    }
+    
+    var readReceiptCompletedPublisher: AnyPublisher<String, Never> {
+        readReceiptCompletedSubject.eraseToAnyPublisher()
     }
     
     var readReceiptPublisher: AnyPublisher<String, Never> {
@@ -450,6 +457,9 @@ class ChatRepository {
         if let conversationUserId = await messageStore.findConversation(forMessageId: messageId) {
             await messageStore.updateReadStatus(messageId: messageId, for: conversationUserId, read: true)
             Logger.chat.info("Updated read receipt for message: \(messageId) in conversation: \(conversationUserId)")
+            
+            // Notify that read receipt update is complete
+            readReceiptCompletedSubject.send(messageId)
         } else {
             Logger.chat.warning("Could not find conversation for message: \(messageId)")
         }
