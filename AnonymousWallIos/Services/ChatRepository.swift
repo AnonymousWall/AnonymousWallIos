@@ -457,11 +457,11 @@ class ChatRepository {
         if let conversationUserId = await messageStore.findConversation(forMessageId: messageId) {
             await messageStore.updateReadStatus(messageId: messageId, for: conversationUserId, read: true)
             Logger.chat.info("Updated read receipt for message: \(messageId) in conversation: \(conversationUserId)")
-            
-            // Notify that read receipt update is complete
-            readReceiptCompletedSubject.send(messageId)
         } else {
             Logger.chat.warning("Could not find conversation for message: \(messageId)")
         }
+        
+        // Notify that read receipt processing is complete (whether successful or not)
+        readReceiptCompletedSubject.send(messageId)
     }
 }
