@@ -69,10 +69,15 @@ class ChatRepository {
         conversationReadSubject.eraseToAnyPublisher()
     }
     
+    /// Publisher for read receipt completion events (after MessageStore is updated)
+    /// ViewModels should subscribe to this instead of readReceiptPublisher to ensure
+    /// they refresh after the MessageStore has been updated with the read status.
     var readReceiptCompletedPublisher: AnyPublisher<String, Never> {
         readReceiptCompletedSubject.eraseToAnyPublisher()
     }
     
+    /// Raw read receipt publisher from WebSocket (for internal use)
+    /// External consumers should use readReceiptCompletedPublisher instead.
     var readReceiptPublisher: AnyPublisher<String, Never> {
         webSocketManager.readReceiptPublisher
     }
