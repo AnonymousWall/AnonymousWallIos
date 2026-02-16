@@ -271,6 +271,12 @@ class ChatWebSocketManager: ChatWebSocketManagerProtocol {
                 if let senderId = wsMessage.senderId {
                     typingSubject.send(senderId)
                 }
+            case .markRead:
+                // Backend notifies original sender that their message was read
+                if let messageId = wsMessage.messageId {
+                    readReceiptSubject.send(messageId)
+                    Logger.chat.debug("Received markRead notification for message: \(messageId)")
+                }
                 
             case .readReceipt:
                 if let messageId = wsMessage.messageId {
