@@ -32,30 +32,17 @@ class ChatRepository {
     
     // Subject for read status updates
     private var conversationReadSubject = PassthroughSubject<String, Never>()
+    private var readReceiptSubject = PassthroughSubject<String, Never>()
+    
+    // Subject for message updates (emitted AFTER reconciliation)
+    private var messageSubject = PassthroughSubject<(Message, String), Never>()
     
     // Published properties for UI observation
     @Published private(set) var connectionState: WebSocketConnectionState = .disconnected
     
     // Combine publishers
     var messagePublisher: AnyPublisher<(Message, String), Never> {
-        webSocketManager.messagePublisher
-            .compactMap { [weak self] message -> (Message, String)? in
-                guard let self = self else { return nil }
-                // Determine conversation user ID (the other user)
-                // For incoming messages: senderId is the other user
-                // For outgoing messages (echoed back): receiverId is the other user
-                // We need to check against current user ID to determine which is which
-                guard let currentUserId = self.cachedUserId else {
-                    // Fallback: assume incoming message (senderId is other user)
-                    return (message, message.senderId)
-                }
-                
-                // If we sent this message (echo), the conversation is with the receiver
-                // If we received this message, the conversation is with the sender
-                let conversationUserId = message.senderId == currentUserId ? message.receiverId : message.senderId
-                return (message, conversationUserId)
-            }
-            .eraseToAnyPublisher()
+        messageSubject.eraseToAnyPublisher()
     }
     
     var typingPublisher: AnyPublisher<String, Never> {
@@ -67,7 +54,7 @@ class ChatRepository {
     }
     
     var readReceiptPublisher: AnyPublisher<String, Never> {
-        webSocketManager.readReceiptPublisher
+        readReceiptSubject.eraseToAnyPublisher()
     }
     
     var unreadCountPublisher: AnyPublisher<Int, Never> {
@@ -262,8 +249,8 @@ class ChatRepository {
     ///   - token: Authentication token
     ///   - userId: Current user ID
     func markConversationAsRead(otherUserId: String, token: String, userId: String) async throws {
-        // Update locally first
-        await messageStore.markAllAsRead(for: otherUserId)
+        // Update locally first - only mark messages where current user is receiver
+        await messageStore.markAllAsRead(for: otherUserId, currentUserId: userId)
         
         // Send to server
         try await chatService.markConversationAsRead(otherUserId: otherUserId, token: token, userId: userId)
@@ -327,41 +314,56 @@ class ChatRepository {
     
     /// Reconcile temporary message with server-confirmed message
     private func reconcileTemporaryMessage(temporaryId: String, confirmedMessage: Message, receiverId: String) async {
+        Logger.chat.debug("🔄 Reconciling temp message \(temporaryId) with confirmed \(confirmedMessage.id)")
+        
         // Remove from pending tracking
         pendingTemporaryMessages.removeValue(forKey: temporaryId)
+        
+        // Set correct local status before storing
+        let messageWithStatus = confirmedMessage.withLocalStatus(.sent)
+        Logger.chat.debug("✅ Set localStatus to .sent for message \(confirmedMessage.id)")
         
         // Replace temporary message with confirmed one
         await messageStore.confirmTemporaryMessage(
             temporaryId: temporaryId,
-            confirmedMessage: confirmedMessage,
+            confirmedMessage: messageWithStatus,
             for: receiverId
         )
         
-        // Update status to sent
-        await messageStore.updateLocalStatus(
-            messageId: confirmedMessage.id,
-            for: receiverId,
-            status: .sent
-        )
+        Logger.chat.info("✅ Reconciliation complete: \(temporaryId) -> \(confirmedMessage.id)")
     }
     
     /// Reconcile incoming WebSocket message with potential temporary message
     /// Returns true if message was a reconciliation of a temp message, false if it's a new message
     private func reconcileIncomingMessage(_ message: Message, conversationUserId: String) async -> Bool {
+        Logger.chat.debug("🔍 Checking if message \(message.id) is a reconciliation (content: '\(message.content.prefix(20))...')")
+        Logger.chat.debug("   Pending temp messages: \(pendingTemporaryMessages.keys.joined(separator: ", "))")
+        
         // Check if this is our own sent message (echoed back)
         // Look for pending temporary messages that match
         for (tempId, receiverId) in pendingTemporaryMessages where receiverId == conversationUserId {
-            if let tempMsg = await messageStore.getTemporaryMessage(id: tempId),
-               tempMsg.content == message.content {
-                // This is our sent message echoed back - reconcile it
-                await reconcileTemporaryMessage(
-                    temporaryId: tempId,
-                    confirmedMessage: message,
-                    receiverId: receiverId
-                )
-                return true
+            if let tempMsg = await messageStore.getTemporaryMessage(id: tempId) {
+                Logger.chat.debug("   Comparing with temp \(tempId): '\(tempMsg.content.prefix(20))...'")
+                
+                if tempMsg.content == message.content {
+                    // This is our sent message echoed back - reconcile it
+                    Logger.chat.info("✅ RECONCILIATION MATCH! Temp \(tempId) matches server message \(message.id)")
+                    
+                    await reconcileTemporaryMessage(
+                        temporaryId: tempId,
+                        confirmedMessage: message,
+                        receiverId: receiverId
+                    )
+                    return true
+                } else {
+                    Logger.chat.debug("   ❌ Content mismatch")
+                }
+            } else {
+                Logger.chat.debug("   ⚠️ Temp message \(tempId) not found in store")
             }
         }
+        
+        Logger.chat.debug("❌ No reconciliation match found for message \(message.id)")
         return false
     }
     
@@ -408,6 +410,8 @@ class ChatRepository {
             .sink { [weak self] message in
                 guard let self = self else { return }
                 
+                Logger.chat.debug("📨 WebSocket message received: \(message.id) from sender: \(message.senderId)")
+                
                 Task { @MainActor in
                     // Determine conversation user ID (the other user)
                     // For incoming: senderId is the other user
@@ -418,13 +422,32 @@ class ChatRepository {
                     }
                     
                     let conversationUserId = message.senderId == currentUserId ? message.receiverId : message.senderId
+                    let isOwnMessage = message.senderId == currentUserId
+                    
+                    Logger.chat.debug("   Conversation: \(conversationUserId), isOwnMessage: \(isOwnMessage)")
                     
                     // Check if this is a reconciliation of our sent message
                     let isReconciled = await self.reconcileIncomingMessage(message, conversationUserId: conversationUserId)
                     
                     // Only add if not reconciled (to avoid duplicates)
                     if !isReconciled {
+                        Logger.chat.debug("   Adding as new message to store")
                         await self.messageStore.addMessage(message, for: conversationUserId)
+                    } else {
+                        Logger.chat.debug("   Message was reconciled, not adding as new")
+                    }
+                    
+                    // ✅ CRITICAL FIX: Emit message event AFTER reconciliation completes
+                    // This ensures ViewModel refreshes and sees the updated message
+                    // Get the reconciled message from store (has correct localStatus)
+                    let messages = await self.messageStore.getMessages(for: conversationUserId)
+                    if let reconciledMessage = messages.first(where: { $0.id == message.id }) {
+                        Logger.chat.debug("   📤 Emitting reconciled message \(reconciledMessage.id) with localStatus: \(reconciledMessage.localStatus)")
+                        self.messageSubject.send((reconciledMessage, conversationUserId))
+                    } else {
+                        // Fallback: emit original message if not found (shouldn't happen)
+                        Logger.chat.warning("   ⚠️ Reconciled message not found in store, emitting original")
+                        self.messageSubject.send((message, conversationUserId))
                     }
                 }
             }
@@ -436,9 +459,11 @@ class ChatRepository {
                 guard let self = self else { return }
                 
                 Task { @MainActor in
-                    // Find the conversation that contains this message and update read status
-                    // We need to search all conversations to find the message
+                    // Update store first
                     await self.updateReadReceiptForMessage(messageId: messageId)
+                    
+                    // Then notify observers (ViewModel will refresh from updated store)
+                    self.readReceiptSubject.send(messageId)
                 }
             }
             .store(in: &cancellables)

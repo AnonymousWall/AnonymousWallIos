@@ -30,13 +30,41 @@ struct Message: Codable, Identifiable, Hashable {
         case createdAt
     }
     
+    // Custom decoder to set localStatus based on readStatus
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(String.self, forKey: .id)
+        senderId = try container.decode(String.self, forKey: .senderId)
+        receiverId = try container.decode(String.self, forKey: .receiverId)
+        content = try container.decode(String.self, forKey: .content)
+        readStatus = try container.decode(Bool.self, forKey: .readStatus)
+        createdAt = try container.decode(String.self, forKey: .createdAt)
+        
+        // Set localStatus based on readStatus from server
+        localStatus = readStatus ? .read : .sent
+    }
+    
+    // Manual init for creating messages programmatically
+    init(id: String, senderId: String, receiverId: String, content: String, readStatus: Bool, createdAt: String) {
+        self.id = id
+        self.senderId = senderId
+        self.receiverId = receiverId
+        self.content = content
+        self.readStatus = readStatus
+        self.createdAt = createdAt
+        self.localStatus = readStatus ? .read : .sent
+    }
+    
     // Hashable conformance based on id
     func hash(into hasher: inout Hasher) {
         hasher.combine(id)
     }
     
+    // ✅ FIX: Include localStatus in equality check so SwiftUI detects changes!
     static func == (lhs: Message, rhs: Message) -> Bool {
-        lhs.id == rhs.id
+        lhs.id == rhs.id &&
+        lhs.readStatus == rhs.readStatus &&
+        lhs.localStatus == rhs.localStatus
     }
     
     /// Create a copy with updated read status
