@@ -148,6 +148,7 @@ struct MessageStoreTests {
         
         let messages = await store.getMessages(for: "user1")
         #expect(messages[0].readStatus == true)
+        #expect(messages[0].localStatus == .read) // Verify localStatus is also updated
     }
     
     @Test func testMarkAllAsRead() async throws {
@@ -165,6 +166,7 @@ struct MessageStoreTests {
         let storedMessages = await store.getMessages(for: "user1")
         for message in storedMessages {
             #expect(message.readStatus == true)
+            #expect(message.localStatus == .read) // Verify localStatus is also updated
         }
     }
     
@@ -180,6 +182,48 @@ struct MessageStoreTests {
         
         let messages = await store.getMessages(for: "user1")
         #expect(messages[0].localStatus == .sent)
+    }
+    
+    // MARK: - Message Model Tests
+    
+    @Test func testMessageWithReadStatusPreservesLocalStatus() async throws {
+        // Test that withReadStatus correctly updates both readStatus and localStatus
+        let message = createMockMessage(id: "msg1", senderId: "user1", receiverId: "user2", readStatus: false)
+        
+        // Update read status to true
+        let updatedMessage = message.withReadStatus(true)
+        
+        // Verify both readStatus and localStatus are updated
+        #expect(updatedMessage.readStatus == true)
+        #expect(updatedMessage.localStatus == .read)
+        
+        // Test updating back to false (unread)
+        let unreadMessage = updatedMessage.withReadStatus(false)
+        #expect(unreadMessage.readStatus == false)
+        #expect(unreadMessage.localStatus == .delivered)
+    }
+    
+    @Test func testMessageWithReadStatusMaintainsOtherFields() async throws {
+        // Ensure withReadStatus doesn't corrupt other message fields
+        let message = createMockMessage(
+            id: "msg-123",
+            senderId: "user1",
+            receiverId: "user2",
+            content: "Hello World",
+            readStatus: false,
+            createdAt: "2026-02-15T12:30:00Z"
+        )
+        
+        let updatedMessage = message.withReadStatus(true)
+        
+        // Verify all fields are preserved
+        #expect(updatedMessage.id == "msg-123")
+        #expect(updatedMessage.senderId == "user1")
+        #expect(updatedMessage.receiverId == "user2")
+        #expect(updatedMessage.content == "Hello World")
+        #expect(updatedMessage.createdAt == "2026-02-15T12:30:00Z")
+        #expect(updatedMessage.readStatus == true)
+        #expect(updatedMessage.localStatus == .read)
     }
     
     // MARK: - Temporary Message Tests
