@@ -119,13 +119,18 @@ actor MessageStore {
         }
     }
     
-    /// Mark all messages from a user as read
-    /// - Parameter conversationUserId: The other user's ID
-    func markAllAsRead(for conversationUserId: String) {
+    /// Mark all messages from the other user as read (only messages where current user is receiver)
+    /// - Parameters:
+    ///   - conversationUserId: The other user's ID
+    ///   - currentUserId: Current user's ID (to filter only received messages)
+    func markAllAsRead(for conversationUserId: String, currentUserId: String) {
         guard var messages = messagesByConversation[conversationUserId] else { return }
         
         messages = messages.map { message in
-            if !message.readStatus {
+            // Only mark as read if:
+            // 1. Not already read
+            // 2. Current user is the receiver (not the sender)
+            if !message.readStatus && message.receiverId == currentUserId {
                 return message.withReadStatus(true)
             }
             return message
