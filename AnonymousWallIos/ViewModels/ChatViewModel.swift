@@ -282,8 +282,8 @@ class ChatViewModel: ObservableObject {
             }
             .store(in: &cancellables)
         
-        // Observe read receipts (after MessageStore is updated)
-        repository.readReceiptCompletedPublisher
+        // Observe read receipts
+        repository.readReceiptPublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] messageId in
                 guard let self = self else { return }

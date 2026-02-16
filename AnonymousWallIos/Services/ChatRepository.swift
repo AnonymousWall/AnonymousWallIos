@@ -33,9 +33,6 @@ class ChatRepository {
     // Subject for read status updates
     private var conversationReadSubject = PassthroughSubject<String, Never>()
     
-    // Subject for read receipt completion (after MessageStore is updated)
-    private var readReceiptCompletedSubject = PassthroughSubject<String, Never>()
-    
     // Published properties for UI observation
     @Published private(set) var connectionState: WebSocketConnectionState = .disconnected
     
@@ -69,15 +66,6 @@ class ChatRepository {
         conversationReadSubject.eraseToAnyPublisher()
     }
     
-    /// Publisher for read receipt completion events (after MessageStore is updated)
-    /// ViewModels should subscribe to this instead of readReceiptPublisher to ensure
-    /// they refresh after the MessageStore has been updated with the read status.
-    var readReceiptCompletedPublisher: AnyPublisher<String, Never> {
-        readReceiptCompletedSubject.eraseToAnyPublisher()
-    }
-    
-    /// Raw read receipt publisher from WebSocket (for internal use)
-    /// External consumers should use readReceiptCompletedPublisher instead.
     var readReceiptPublisher: AnyPublisher<String, Never> {
         webSocketManager.readReceiptPublisher
     }
@@ -465,8 +453,5 @@ class ChatRepository {
         } else {
             Logger.chat.warning("Could not find conversation for message: \(messageId)")
         }
-        
-        // Notify that read receipt processing is complete (whether successful or not)
-        readReceiptCompletedSubject.send(messageId)
     }
 }
