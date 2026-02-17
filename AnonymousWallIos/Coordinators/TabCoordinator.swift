@@ -16,6 +16,12 @@ class TabCoordinator: ObservableObject {
     @Published var chatCoordinator = ChatCoordinator()
     @Published var selectedTab = 0
     
+    init() {
+        // Set up back-references for cross-coordinator navigation
+        homeCoordinator.tabCoordinator = self
+        campusCoordinator.tabCoordinator = self
+    }
+    
     func selectTab(_ index: Int) {
         selectedTab = index
     }

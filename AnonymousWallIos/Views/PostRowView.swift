@@ -12,6 +12,7 @@ struct PostRowView: View {
     let isOwnPost: Bool
     var onLike: () -> Void
     var onDelete: () -> Void
+    var onTapAuthor: (() -> Void)?
     
     @State private var showDeleteConfirmation = false
     
@@ -46,11 +47,25 @@ struct PostRowView: View {
                     .shadow(color: wallColor.opacity(0.3), radius: 4, x: 0, y: 2)
                     .accessibilityLabel("Posted on \(wallDisplayName) wall")
                 
-                Text("by \(isOwnPost ? "Me" : post.author.profileName)")
-                    .font(.caption)
-                    .fontWeight(.medium)
-                    .foregroundColor(.secondary)
-                    .accessibilityLabel(isOwnPost ? "Posted by you" : "Posted by \(post.author.profileName)")
+                if isOwnPost {
+                    Text("by Me")
+                        .font(.caption)
+                        .fontWeight(.medium)
+                        .foregroundColor(.secondary)
+                        .accessibilityLabel("Posted by you")
+                } else {
+                    Button(action: {
+                        onTapAuthor?()
+                    }) {
+                        Text("by \(post.author.profileName)")
+                            .font(.caption)
+                            .fontWeight(.medium)
+                            .foregroundColor(.blue)
+                            .underline()
+                    }
+                    .accessibilityLabel("Posted by \(post.author.profileName)")
+                    .accessibilityHint("Double tap to message \(post.author.profileName)")
+                }
                 
                 Spacer()
             }
@@ -189,7 +204,8 @@ struct PostRowView: View {
         ),
         isOwnPost: false,
         onLike: {},
-        onDelete: {}
+        onDelete: {},
+        onTapAuthor: {}
     )
     .padding()
 }
