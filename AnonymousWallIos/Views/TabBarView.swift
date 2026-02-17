@@ -48,19 +48,19 @@ struct TabBarView: View {
                 }
                 .tag(4)
             
-            // Tab 6: Market (dummy)
-            MarketView()
-                .tabItem {
-                    Label("Market", systemImage: coordinator.selectedTab == 5 ? "cart.fill" : "cart")
-                }
-                .tag(5)
-            
-            // Tab 7: Internship (dummy)
-            InternshipView()
-                .tabItem {
-                    Label("Internship", systemImage: coordinator.selectedTab == 6 ? "briefcase.fill" : "briefcase")
-                }
-                .tag(6)
+//            // Tab 6: Market (dummy)
+//            MarketView()
+//                .tabItem {
+//                    Label("Market", systemImage: coordinator.selectedTab == 5 ? "cart.fill" : "cart")
+//                }
+//                .tag(5)
+//            
+//            // Tab 7: Internship (dummy)
+//            InternshipView()
+//                .tabItem {
+//                    Label("Internship", systemImage: coordinator.selectedTab == 6 ? "briefcase.fill" : "briefcase")
+//                }
+//                .tag(6)
         }
         .accentColor(.primaryPurple)
         .onChange(of: coordinator.selectedTab) { _, _ in

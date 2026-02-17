@@ -38,6 +38,11 @@ struct MessagesView: View {
                 }
             }
         }
+        .onDisappear {
+            // ✅ Only disconnect when leaving the messages tab entirely
+            // NOT when navigating between ConversationsListView and ChatView
+            conversationsViewModel.disconnect()
+        }
     }
 }
 

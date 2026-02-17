@@ -33,9 +33,12 @@ struct ConversationsListView: View {
         .onAppear {
             viewModel.loadConversations(authState: authState)
         }
-        .onDisappear {
-            viewModel.disconnect()
-        }
+        // ✅ REMOVED: .onDisappear { viewModel.disconnect() }
+        // Disconnecting here caused "request cancelled" errors because:
+        // 1. User taps a conversation → ConversationsListView disappears
+        // 2. onDisappear fires → disconnect() kills the WebSocket
+        // 3. Any in-flight network request gets cancelled
+        // WebSocket lifecycle is now managed at MessagesView (tab) level
         .refreshable {
             await viewModel.refreshConversations(authState: authState)
         }
