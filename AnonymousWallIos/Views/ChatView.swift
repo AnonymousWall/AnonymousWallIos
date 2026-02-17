@@ -103,6 +103,9 @@ struct ChatView: View {
         }
         .onDisappear {
             viewModel.disconnect()
+            // Note: disconnect() no longer calls repository.disconnect()
+            // It only sets isViewActive = false
+            // WebSocket lifecycle is managed at MessagesView (tab) level
         }
         .alert("Error", isPresented: .constant(viewModel.errorMessage != nil)) {
             Button("Retry") {

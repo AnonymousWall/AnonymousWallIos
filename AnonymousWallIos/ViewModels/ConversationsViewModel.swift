@@ -1,5 +1,5 @@
 //
-//  ConversationsViewModel.swift
+//  ConversationsViewModel.swift (with debug logging)
 //  AnonymousWallIos
 //
 //  ViewModel for conversations list screen
@@ -15,7 +15,11 @@ class ConversationsViewModel: ObservableObject {
     @Published var conversations: [Conversation] = []
     @Published var isLoadingConversations = false
     @Published var errorMessage: String?
-    @Published var unreadCount: Int = 0
+    @Published var unreadCount: Int = 0 {
+        didSet {
+            Logger.chat.info("📊 unreadCount changed from \(oldValue) to \(unreadCount)")
+        }
+    }
     
     // MARK: - Private Properties
     
@@ -27,10 +31,12 @@ class ConversationsViewModel: ObservableObject {
     
     init(repository: ChatRepository) {
         self.repository = repository
+        Logger.chat.info("🎬 ConversationsViewModel initialized")
         setupObservers()
     }
     
     deinit {
+        Logger.chat.info("💀 ConversationsViewModel deinitialized")
         loadTask?.cancel()
     }
     
@@ -63,8 +69,14 @@ class ConversationsViewModel: ObservableObject {
                 repository.connect(token: token, userId: userId)
                 
             } catch {
-                errorMessage = "Failed to load conversations: \(error.localizedDescription)"
-                Logger.chat.error("Failed to load conversations: \(error)")
+                // Don't show error for cancellation (e.g. when navigating away)
+                if (error as? URLError)?.code == .cancelled ||
+                   error is CancellationError {
+                    Logger.chat.debug("loadConversations cancelled (navigating away)")
+                } else {
+                    errorMessage = "Failed to load conversations: \(error.localizedDescription)"
+                    Logger.chat.error("Failed to load conversations: \(error)")
+                }
             }
             
             isLoadingConversations = false
@@ -91,8 +103,13 @@ class ConversationsViewModel: ObservableObject {
                 conversations = loadedConversations
                 
             } catch {
-                errorMessage = "Failed to refresh conversations: \(error.localizedDescription)"
-                Logger.chat.error("Failed to refresh conversations: \(error)")
+                if (error as? URLError)?.code == .cancelled ||
+                   error is CancellationError {
+                    Logger.chat.debug("refreshConversations cancelled")
+                } else {
+                    errorMessage = "Failed to refresh conversations: \(error.localizedDescription)"
+                    Logger.chat.error("Failed to refresh conversations: \(error)")
+                }
             }
         }
         await loadTask?.value
@@ -105,25 +122,39 @@ class ConversationsViewModel: ObservableObject {
     
     /// Disconnect WebSocket when view disappears
     func disconnect() {
+        Logger.chat.info("🔌 ConversationsViewModel disconnect called")
         repository.disconnect()
     }
     
     // MARK: - Private Methods
     
     private func setupObservers() {
+        Logger.chat.info("🔗 Setting up observers in ConversationsViewModel")
+        
         // Observe unread count updates from WebSocket
         repository.unreadCountPublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] count in
-                self?.unreadCount = count
+                guard let self = self else { return }
+                Logger.chat.info("📊 ViewModel received unread count from repository: \(count)")
+                Logger.chat.info("📊 Current unreadCount before update: \(self.unreadCount)")
+                self.unreadCount = count
+                Logger.chat.info("📊 Current unreadCount after update: \(self.unreadCount)")
+                
+                // Force objectWillChange to fire (shouldn't be necessary but worth trying)
+                self.objectWillChange.send()
             }
             .store(in: &cancellables)
+        
+        Logger.chat.info("📊 Subscribed to unreadCountPublisher, total subscriptions: \(cancellables.count)")
         
         // Observe new messages to update conversation list
         repository.messagePublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] (message, conversationUserId) in
                 guard let self = self else { return }
+                
+                Logger.chat.debug("📨 ViewModel received message for conversation: \(conversationUserId)")
                 
                 // Update the corresponding conversation
                 if let index = self.conversations.firstIndex(where: { $0.userId == conversationUserId }) {
@@ -142,7 +173,6 @@ class ConversationsViewModel: ObservableObject {
                     self.conversations.insert(updatedConv, at: 0)
                 } else {
                     // New conversation - fetch full list to get profile name
-                    // In production, you might want to debounce this or handle it differently
                     Logger.chat.info("New conversation detected: \(conversationUserId)")
                 }
             }
@@ -154,6 +184,8 @@ class ConversationsViewModel: ObservableObject {
             .sink { [weak self] conversationUserId in
                 guard let self = self else { return }
                 
+                Logger.chat.debug("📖 ViewModel received conversationRead event for: \(conversationUserId)")
+                
                 // Find and update the conversation to reset unread count
                 if let index = self.conversations.firstIndex(where: { $0.userId == conversationUserId }) {
                     let conversation = self.conversations[index]
@@ -164,6 +196,7 @@ class ConversationsViewModel: ObservableObject {
                         unreadCount: 0  // Reset to 0
                     )
                     self.conversations[index] = updatedConv
+                    Logger.chat.debug("📖 Updated conversation unreadCount to 0 for: \(conversationUserId)")
                 }
             }
             .store(in: &cancellables)

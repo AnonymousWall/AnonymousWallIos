@@ -354,7 +354,7 @@ class ChatWebSocketManager: ChatWebSocketManagerProtocol {
             reconnectAttempts += 1
             connectionStateSubject.send(.reconnecting)
             
-            let delay = min(pow(2.0, Double(reconnectAttempts)), 30.0) // Cap at 30 seconds
+            let delay = min(pow(1.5, Double(reconnectAttempts)), 10.0) // Cap at 10 seconds
             Logger.chat.info("Reconnecting in \(delay) seconds (attempt \(reconnectAttempts))")
             
             Task { [weak self] in

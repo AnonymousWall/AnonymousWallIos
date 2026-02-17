@@ -20,6 +20,8 @@ struct PostDetailView: View {
     @State private var showReportSuccessAlert = false
     @State private var reportSuccessMessage = ""
     
+    var onTapAuthor: ((String, String) -> Void)?
+    
     var body: some View {
         VStack(spacing: 0) {
             // Post content
@@ -169,6 +171,9 @@ struct PostDetailView: View {
                                     onReport: {
                                         viewModel.commentToReport = comment
                                         showReportCommentDialog = true
+                                    },
+                                    onTapAuthor: {
+                                        onTapAuthor?(comment.author.id, comment.author.profileName)
                                     }
                                 )
                                 .onAppear {
@@ -325,6 +330,7 @@ struct CommentRowView: View {
     let isOwnComment: Bool
     var onDelete: () -> Void
     var onReport: () -> Void
+    var onTapAuthor: (() -> Void)?
     
     var body: some View {
         HStack(spacing: 0) {
@@ -338,11 +344,25 @@ struct CommentRowView: View {
                 // Comment content
                 VStack(alignment: .leading, spacing: 4) {
                     // Author name
-                    Text(isOwnComment ? "Me" : comment.author.profileName)
-                        .font(.caption)
-                        .fontWeight(.semibold)
-                        .foregroundColor(isOwnComment ? .white : .blue)
-                        .accessibilityLabel(isOwnComment ? "Your comment" : "Comment by \(comment.author.profileName)")
+                    if isOwnComment {
+                        Text("Me")
+                            .font(.caption)
+                            .fontWeight(.semibold)
+                            .foregroundColor(.white)
+                            .accessibilityLabel("Your comment")
+                    } else {
+                        Button(action: {
+                            onTapAuthor?()
+                        }) {
+                            Text(comment.author.profileName)
+                                .font(.caption)
+                                .fontWeight(.semibold)
+                                .foregroundColor(.white)
+                                .underline()
+                        }
+                        .accessibilityLabel("Comment by \(comment.author.profileName)")
+                        .accessibilityHint("Double tap to message \(comment.author.profileName)")
+                    }
                     
                     Text(comment.text)
                         .font(.body)

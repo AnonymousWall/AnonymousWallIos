@@ -220,10 +220,13 @@ class ChatViewModel: ObservableObject {
         isViewActive = true
     }
     
-    /// Disconnect WebSocket when view disappears
+    /// Called when view disappears (does NOT disconnect WebSocket)
     func disconnect() {
         isViewActive = false
-        repository.disconnect()
+        // Note: WebSocket is NOT disconnected here intentionally.
+        // The WebSocket lifecycle is managed at the MessagesView (tab) level.
+        // Disconnecting here would kill the connection during normal navigation
+        // between ConversationsListView and ChatView, causing "request cancelled" errors.
     }
     
     /// Retry loading messages

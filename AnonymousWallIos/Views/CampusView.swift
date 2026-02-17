@@ -104,7 +104,10 @@ struct CampusView: View {
                                         post: post,
                                         isOwnPost: post.author.id == authState.currentUser?.id,
                                         onLike: { viewModel.toggleLike(for: post, authState: authState) },
-                                        onDelete: { viewModel.deletePost(post, authState: authState) }
+                                        onDelete: { viewModel.deletePost(post, authState: authState) },
+                                        onTapAuthor: {
+                                            coordinator.navigateToChatWithUser(userId: post.author.id, userName: post.author.profileName)
+                                        }
                                     )
                                 }
                                 .buttonStyle(PlainButtonStyle())
@@ -147,13 +150,23 @@ struct CampusView: View {
                 switch destination {
                 case .postDetail(let post):
                     if let index = viewModel.posts.firstIndex(where: { $0.id == post.id }) {
-                        PostDetailView(post: Binding(
-                            get: { viewModel.posts[index] },
-                            set: { viewModel.posts[index] = $0 }
-                        ))
+                        PostDetailView(
+                            post: Binding(
+                                get: { viewModel.posts[index] },
+                                set: { viewModel.posts[index] = $0 }
+                            ),
+                            onTapAuthor: { userId, userName in
+                                coordinator.navigateToChatWithUser(userId: userId, userName: userName)
+                            }
+                        )
                     } else {
                         // Fallback if post is not found in the list
-                        PostDetailView(post: .constant(post))
+                        PostDetailView(
+                            post: .constant(post),
+                            onTapAuthor: { userId, userName in
+                                coordinator.navigateToChatWithUser(userId: userId, userName: userName)
+                            }
+                        )
                     }
                 case .setPassword:
                     EmptyView() // Handled as a sheet
