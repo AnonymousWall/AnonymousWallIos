@@ -393,7 +393,7 @@ struct ProfileCommentRowView: View {
     let comment: Comment
     
     private var parentTypeLabel: String {
-        switch comment.parentType {
+        switch comment.parentType?.uppercased() {
         case "INTERNSHIP": return "Internship"
         case "MARKETPLACE": return "Marketplace"
         default: return "Post"

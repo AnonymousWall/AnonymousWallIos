@@ -179,7 +179,7 @@ class ProfileViewModel: ObservableObject {
         
         Task {
             do {
-                switch comment.parentType {
+                switch comment.parentType?.uppercased() {
                 case "INTERNSHIP":
                     _ = try await internshipService.hideComment(internshipId: comment.postId, commentId: comment.id, token: token, userId: userId)
                 case "MARKETPLACE":
@@ -201,7 +201,7 @@ class ProfileViewModel: ObservableObject {
     
     /// Returns the navigation destination for a comment if the parent entity is already cached.
     func cachedDestination(for comment: Comment) -> ProfileCoordinator.Destination? {
-        switch comment.parentType {
+        switch comment.parentType?.uppercased() {
         case "INTERNSHIP":
             if let internship = commentInternshipMap[comment.postId] { return .internshipDetail(internship) }
         case "MARKETPLACE":
@@ -220,7 +220,7 @@ class ProfileViewModel: ObservableObject {
               let userId = authState.currentUser?.id else { return nil }
         
         let parentId = comment.postId
-        switch comment.parentType {
+        switch comment.parentType?.uppercased() {
         case "INTERNSHIP":
             do {
                 let internship = try await internshipService.getInternship(internshipId: parentId, token: token, userId: userId)
@@ -387,7 +387,7 @@ class ProfileViewModel: ObservableObject {
         
         for comment in myComments {
             let parentId = comment.postId
-            switch comment.parentType {
+            switch comment.parentType?.uppercased() {
             case "INTERNSHIP":
                 guard commentInternshipMap[parentId] == nil else { continue }
                 do {
