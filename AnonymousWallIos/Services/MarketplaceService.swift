@@ -68,7 +68,6 @@ class MarketplaceService: MarketplaceServiceProtocol {
         description: String?,
         category: String?,
         condition: String?,
-        contactInfo: String?,
         wall: WallType = .campus,
         token: String,
         userId: String
@@ -79,7 +78,6 @@ class MarketplaceService: MarketplaceServiceProtocol {
             description: description,
             category: category,
             condition: condition,
-            contactInfo: contactInfo,
             wall: wall.rawValue
         )
 

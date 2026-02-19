@@ -185,17 +185,6 @@ struct CreateMarketplaceView: View {
                     .accessibilityLabel("Category")
             }
 
-            // Contact info
-            VStack(alignment: .leading, spacing: 6) {
-                Text("Contact Info")
-                    .font(.subheadline).fontWeight(.medium)
-                    .padding(.horizontal)
-                TextField("e.g. email or phone", text: $viewModel.contactInfo)
-                    .textFieldStyle(RoundedBorderTextFieldStyle())
-                    .padding(.horizontal)
-                    .accessibilityLabel("Contact information")
-            }
-
             // Description
             VStack(alignment: .leading, spacing: 6) {
                 Text("Description")

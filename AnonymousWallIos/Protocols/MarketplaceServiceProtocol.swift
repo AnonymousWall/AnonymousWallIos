@@ -32,7 +32,6 @@ protocol MarketplaceServiceProtocol {
         description: String?,
         category: String?,
         condition: String?,
-        contactInfo: String?,
         wall: WallType,
         token: String,
         userId: String

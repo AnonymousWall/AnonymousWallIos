@@ -125,7 +125,6 @@ class MockMarketplaceService: MarketplaceServiceProtocol {
         description: String?,
         category: String?,
         condition: String?,
-        contactInfo: String?,
         wall: WallType,
         token: String,
         userId: String
@@ -140,7 +139,7 @@ class MockMarketplaceService: MarketplaceServiceProtocol {
                 description: description,
                 category: category,
                 condition: condition,
-                contactInfo: contactInfo,
+                contactInfo: nil,
                 sold: false,
                 wall: wall.rawValue,
                 comments: 0,

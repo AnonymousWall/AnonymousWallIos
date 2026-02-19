@@ -15,7 +15,6 @@ class CreateMarketplaceViewModel: ObservableObject {
     @Published var description = ""
     @Published var category = ""
     @Published var selectedCondition: String = ""
-    @Published var contactInfo = ""
     @Published var selectedWall: WallType = .campus
     @Published var isPosting = false
     @Published var errorMessage: String?
@@ -85,7 +84,6 @@ class CreateMarketplaceViewModel: ObservableObject {
 
         let trimmedDescription = description.trimmingCharacters(in: .whitespacesAndNewlines)
         let trimmedCategory = category.trimmingCharacters(in: .whitespacesAndNewlines)
-        let trimmedContact = contactInfo.trimmingCharacters(in: .whitespacesAndNewlines)
         let conditionValue = selectedCondition.isEmpty ? nil : selectedCondition
 
         Task {
@@ -96,7 +94,6 @@ class CreateMarketplaceViewModel: ObservableObject {
                     description: trimmedDescription.isEmpty ? nil : trimmedDescription,
                     category: trimmedCategory.isEmpty ? nil : trimmedCategory,
                     condition: conditionValue,
-                    contactInfo: trimmedContact.isEmpty ? nil : trimmedContact,
                     wall: selectedWall,
                     token: token,
                     userId: userId

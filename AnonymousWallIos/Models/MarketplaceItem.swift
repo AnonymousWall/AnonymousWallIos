@@ -67,7 +67,6 @@ struct CreateMarketplaceRequest: Codable {
     let description: String?
     let category: String?
     let condition: String?
-    let contactInfo: String?
     let wall: String
 }
 
