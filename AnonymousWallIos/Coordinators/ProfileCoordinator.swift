@@ -12,6 +12,8 @@ import SwiftUI
 class ProfileCoordinator: Coordinator {
     enum Destination: Hashable {
         case postDetail(Post)
+        case internshipDetail(Internship)  // ✅ Added
+        case marketplaceDetail(MarketplaceItem)  // ✅ Added
         case setPassword
         case changePassword
         case editProfileName
@@ -22,11 +24,19 @@ class ProfileCoordinator: Coordinator {
     @Published var showChangePassword = false
     @Published var showEditProfileName = false
     @Published var selectedPost: Post?
+    @Published var selectedInternship: Internship?  // ✅ Added
+    @Published var selectedMarketplaceItem: MarketplaceItem?  // ✅ Added
     
     func navigate(to destination: Destination) {
         switch destination {
         case .postDetail(let post):
             selectedPost = post
+            path.append(destination)
+        case .internshipDetail(let internship):  // ✅ Added
+            selectedInternship = internship
+            path.append(destination)
+        case .marketplaceDetail(let item):  // ✅ Added
+            selectedMarketplaceItem = item
             path.append(destination)
         case .setPassword:
             showSetPassword = true

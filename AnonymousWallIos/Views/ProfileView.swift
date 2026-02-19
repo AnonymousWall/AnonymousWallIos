@@ -262,21 +262,36 @@ struct ProfileView: View {
                         } else {
                             LazyVStack(spacing: 12) {
                                 ForEach(viewModel.myComments) { comment in
-                                    if let post = viewModel.commentPostMap[comment.postId] {
+                                    // ✅ NEW: Handle different parent types
+                                    if let parent = viewModel.commentParentMap[comment.postId] {
                                         Button {
-                                            coordinator.navigate(to: .postDetail(post))
+                                            switch parent {
+                                            case .post(let post):
+                                                coordinator.navigate(to: .postDetail(post))
+                                            case .internship(let internship):
+                                                coordinator.navigate(to: .internshipDetail(internship))
+                                            case .marketplace(let item):
+                                                coordinator.navigate(to: .marketplaceDetail(item))
+                                            }
                                         } label: {
-                                            ProfileCommentRowView(comment: comment)
+                                            ProfileCommentRowView(
+                                                comment: comment,
+                                                parentType: comment.parentType ?? "POST"
+                                            )
                                         }
                                         .buttonStyle(PlainButtonStyle())
                                         .onAppear {
                                             viewModel.loadMoreCommentsIfNeeded(for: comment, authState: authState)
                                         }
                                     } else {
-                                        ProfileCommentRowView(comment: comment)
-                                            .onAppear {
-                                                viewModel.loadMoreCommentsIfNeeded(for: comment, authState: authState)
-                                            }
+                                        // Show comment even if parent not loaded yet
+                                        ProfileCommentRowView(
+                                            comment: comment,
+                                            parentType: comment.parentType ?? "POST"
+                                        )
+                                        .onAppear {
+                                            viewModel.loadMoreCommentsIfNeeded(for: comment, authState: authState)
+                                        }
                                     }
                                 }
                                 
@@ -317,9 +332,12 @@ struct ProfileView: View {
                             set: { viewModel.myPosts[index] = $0 }
                         ))
                     } else {
-                        // Fallback if post is not found in the list
                         PostDetailView(post: .constant(post))
                     }
+                case .internshipDetail(let internship):  // ✅ Added
+                    InternshipDetailView(internship: .constant(internship))
+                case .marketplaceDetail(let item):  // ✅ Added
+                    MarketplaceDetailView(item: .constant(item))
                 case .setPassword:
                     EmptyView() // Handled as a sheet
                 case .changePassword:
@@ -388,6 +406,25 @@ struct ProfileView: View {
 // Simple comment row view component for profile
 struct ProfileCommentRowView: View {
     let comment: Comment
+    let parentType: String
+    
+    var parentBadgeColor: Color {
+        switch parentType {
+        case "POST": return .vibrantTeal
+        case "INTERNSHIP": return .orange
+        case "MARKETPLACE": return .green
+        default: return .gray
+        }
+    }
+    
+    var parentDisplayName: String {
+        switch parentType {
+        case "POST": return "Post"
+        case "INTERNSHIP": return "Internship"
+        case "MARKETPLACE": return "Marketplace"
+        default: return "Unknown"
+        }
+    }
     
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -396,11 +433,19 @@ struct ProfileCommentRowView: View {
                     .font(.caption)
                     .foregroundColor(.blue)
                     .fontWeight(.semibold)
+                
+                // Badge showing parent type
+                Text(parentDisplayName)
+                    .font(.caption2)
+                    .fontWeight(.semibold)
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 3)
+                    .background(parentBadgeColor)
+                    .cornerRadius(6)
+                
                 Spacer()
-            }
-            
-            HStack {
-                Spacer()
+                
                 Text(DateFormatting.formatRelativeTime(comment.createdAt))
                     .font(.caption2)
                     .foregroundColor(.gray)
@@ -415,6 +460,7 @@ struct ProfileCommentRowView: View {
         .cornerRadius(10)
     }
 }
+
 
 #Preview {
     ProfileView(coordinator: ProfileCoordinator())
