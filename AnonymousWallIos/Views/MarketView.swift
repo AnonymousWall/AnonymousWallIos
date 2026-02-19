@@ -2,39 +2,204 @@
 //  MarketView.swift
 //  AnonymousWallIos
 //
-//  Placeholder view for Market tab
+//  Marketplace feed view - campus and national walls
 //
 
 import SwiftUI
 
 struct MarketView: View {
+    @EnvironmentObject var authState: AuthState
+    @StateObject private var campusViewModel = MarketplaceFeedViewModel(wallType: .campus)
+    @StateObject private var nationalViewModel = MarketplaceFeedViewModel(wallType: .national)
+    @State private var selectedWall: WallType = .campus
+    @State private var showCreateItem = false
+
+    private var activeViewModel: MarketplaceFeedViewModel {
+        selectedWall == .campus ? campusViewModel : nationalViewModel
+    }
+
+    private let minimumScrollableHeight: CGFloat = 300
+
     var body: some View {
         NavigationStack {
-            VStack(spacing: 20) {
-                Image(systemName: "cart.fill")
-                    .font(.system(size: 80))
-                    .foregroundColor(.green)
-                
-                Text("Market")
-                    .font(.largeTitle)
-                    .fontWeight(.bold)
-                
-                Text("Coming Soon")
-                    .font(.title2)
-                    .foregroundColor(.gray)
-                
-                Text("Buy and sell items with other students")
-                    .font(.subheadline)
-                    .foregroundColor(.gray)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal)
+            VStack(spacing: 0) {
+                // Wall picker
+                Picker("Wall", selection: $selectedWall) {
+                    ForEach(WallType.allCases, id: \.self) { wall in
+                        Text(wall.displayName).tag(wall)
+                    }
+                }
+                .pickerStyle(SegmentedPickerStyle())
+                .padding(.horizontal)
+                .padding(.vertical, 8)
+                .accessibilityLabel("Select wall")
+                .accessibilityValue(selectedWall.displayName)
+                .onChange(of: selectedWall) { _, _ in
+                    HapticFeedback.selection()
+                    activeViewModel.loadItems(authState: authState)
+                }
+
+                // Sort and filter controls
+                HStack {
+                    // Sold filter
+                    Menu {
+                        Button("All Items") {
+                            activeViewModel.soldFilter = nil
+                            activeViewModel.sortOrderChanged(authState: authState)
+                        }
+                        Button("Available") {
+                            activeViewModel.soldFilter = false
+                            activeViewModel.sortOrderChanged(authState: authState)
+                        }
+                        Button("Sold") {
+                            activeViewModel.soldFilter = true
+                            activeViewModel.sortOrderChanged(authState: authState)
+                        }
+                    } label: {
+                        HStack(spacing: 4) {
+                            Image(systemName: "line.3.horizontal.decrease.circle")
+                                .font(.subheadline)
+                            Text(soldFilterLabel)
+                                .font(.subheadline)
+                        }
+                        .foregroundColor(.primary)
+                    }
+                    .accessibilityLabel("Filter by sold status: \(soldFilterLabel)")
+
+                    Spacer()
+
+                    Picker("Sort", selection: Binding(
+                        get: { activeViewModel.selectedSortOrder },
+                        set: { newValue in
+                            activeViewModel.selectedSortOrder = newValue
+                            activeViewModel.sortOrderChanged(authState: authState)
+                        }
+                    )) {
+                        ForEach(MarketplaceSortOrder.allCases, id: \.self) { order in
+                            Text(order.displayName).tag(order)
+                        }
+                    }
+                    .pickerStyle(.menu)
+                    .accessibilityLabel("Sort items")
+                }
+                .padding(.horizontal)
+                .padding(.bottom, 4)
+
+                // Feed
+                ScrollView {
+                    if activeViewModel.isLoading && activeViewModel.items.isEmpty {
+                        VStack {
+                            Spacer()
+                            ProgressView("Loading items...")
+                            Spacer()
+                        }
+                        .frame(maxWidth: .infinity, minHeight: minimumScrollableHeight)
+                    } else if activeViewModel.items.isEmpty && !activeViewModel.isLoading {
+                        VStack {
+                            Spacer()
+                            VStack(spacing: 16) {
+                                Image(systemName: "cart.fill")
+                                    .font(.system(size: 60))
+                                    .foregroundColor(.gray)
+                                    .accessibilityHidden(true)
+                                Text("No items yet")
+                                    .font(.headline)
+                                    .foregroundColor(.gray)
+                                Text("Be the first to list something!")
+                                    .font(.subheadline)
+                                    .foregroundColor(.gray)
+                            }
+                            .accessibilityElement(children: .combine)
+                            .accessibilityLabel("No items yet. Be the first to list something!")
+                            Spacer()
+                        }
+                        .frame(maxWidth: .infinity, minHeight: minimumScrollableHeight)
+                    } else {
+                        LazyVStack(spacing: 12) {
+                            ForEach(activeViewModel.items) { item in
+                                if let index = activeViewModel.items.firstIndex(where: { $0.id == item.id }) {
+                                    NavigationLink(destination: MarketplaceDetailView(
+                                        item: Binding(
+                                            get: { activeViewModel.items[index] },
+                                            set: { activeViewModel.items[index] = $0 }
+                                        )
+                                    )) {
+                                        MarketplaceRowView(
+                                            item: item,
+                                            isOwnItem: item.author.id == authState.currentUser?.id,
+                                            onDelete: { activeViewModel.deleteItem(item, authState: authState) }
+                                        )
+                                    }
+                                    .buttonStyle(PlainButtonStyle())
+                                    .accessibilityLabel("View listing: \(item.title)")
+                                    .accessibilityHint("Double tap to view details and comments")
+                                    .onAppear {
+                                        activeViewModel.loadMoreIfNeeded(for: item, authState: authState)
+                                    }
+                                }
+                            }
+
+                            if activeViewModel.isLoadingMore {
+                                HStack {
+                                    Spacer()
+                                    ProgressView().padding()
+                                    Spacer()
+                                }
+                            }
+                        }
+                        .padding()
+                    }
+                }
+                .refreshable {
+                    await activeViewModel.refreshItems(authState: authState)
+                }
+
+                if let errorMessage = activeViewModel.errorMessage {
+                    Text(errorMessage)
+                        .foregroundColor(.red)
+                        .font(.caption)
+                        .padding()
+                }
             }
-            .navigationTitle("Market")
+            .navigationTitle("Marketplace")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button(action: { showCreateItem = true }) {
+                        Image(systemName: "square.and.pencil")
+                            .font(.title3)
+                    }
+                    .accessibilityLabel("List item")
+                    .accessibilityHint("Double tap to create a new marketplace listing")
+                }
+            }
+        }
+        .sheet(isPresented: $showCreateItem) {
+            CreateMarketplaceView {
+                activeViewModel.loadItems(authState: authState)
+            }
+        }
+        .onAppear {
+            campusViewModel.loadItems(authState: authState)
+            nationalViewModel.loadItems(authState: authState)
+        }
+        .onDisappear {
+            campusViewModel.cleanup()
+            nationalViewModel.cleanup()
+        }
+    }
+
+    private var soldFilterLabel: String {
+        switch activeViewModel.soldFilter {
+        case .none: return "All"
+        case .some(false): return "Available"
+        case .some(true): return "Sold"
         }
     }
 }
 
 #Preview {
     MarketView()
+        .environmentObject(AuthState())
 }
+

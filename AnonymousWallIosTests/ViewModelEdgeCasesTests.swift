@@ -528,6 +528,7 @@ struct ViewModelEdgeCasesTests {
         return AnonymousWallIos.Comment(
             id: id,
             postId: "post-1",
+            parentType: "POST",
             text: text,
             author: Post.Author(
                 id: "author-id",
