@@ -211,7 +211,6 @@ struct MarketplaceRowView: View {
             description: "Barely used, excellent condition",
             category: "books",
             condition: "like_new",
-            contactInfo: "johndoe@harvard.edu",
             sold: false,
             wall: "CAMPUS",
             comments: 2,

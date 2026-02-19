@@ -14,7 +14,6 @@ struct MarketplaceItem: Codable, Identifiable, Hashable {
     let description: String?
     let category: String?
     let condition: String?
-    let contactInfo: String?
     let sold: Bool
     let wall: String
     let comments: Int
@@ -40,7 +39,6 @@ struct MarketplaceItem: Codable, Identifiable, Hashable {
             description: self.description,
             category: self.category,
             condition: self.condition,
-            contactInfo: self.contactInfo,
             sold: self.sold,
             wall: self.wall,
             comments: comments,
@@ -76,6 +74,5 @@ struct UpdateMarketplaceRequest: Codable {
     let description: String?
     let category: String?
     let condition: String?
-    let contactInfo: String?
     let sold: Bool?
 }

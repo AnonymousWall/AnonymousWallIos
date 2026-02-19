@@ -100,7 +100,6 @@ class MockMarketplaceService: MarketplaceServiceProtocol {
                 description: nil,
                 category: nil,
                 condition: nil,
-                contactInfo: nil,
                 sold: false,
                 wall: "CAMPUS",
                 comments: 0,
@@ -112,7 +111,7 @@ class MockMarketplaceService: MarketplaceServiceProtocol {
         case .emptyState:
             return MarketplaceItem(
                 id: "", title: "", price: 0, description: nil, category: nil, condition: nil,
-                contactInfo: nil, sold: false, wall: "", comments: 0,
+                sold: false, wall: "", comments: 0,
                 author: Post.Author(id: "", profileName: "", isAnonymous: false),
                 createdAt: "", updatedAt: ""
             )
@@ -139,7 +138,6 @@ class MockMarketplaceService: MarketplaceServiceProtocol {
                 description: description,
                 category: category,
                 condition: condition,
-                contactInfo: nil,
                 sold: false,
                 wall: wall.rawValue,
                 comments: 0,
@@ -153,7 +151,7 @@ class MockMarketplaceService: MarketplaceServiceProtocol {
         case .emptyState:
             return MarketplaceItem(
                 id: "", title: "", price: 0, description: nil, category: nil, condition: nil,
-                contactInfo: nil, sold: false, wall: "", comments: 0,
+                sold: false, wall: "", comments: 0,
                 author: Post.Author(id: "", profileName: "", isAnonymous: false),
                 createdAt: "", updatedAt: ""
             )
@@ -172,7 +170,7 @@ class MockMarketplaceService: MarketplaceServiceProtocol {
             return mockItem ?? MarketplaceItem(
                 id: itemId, title: request.title ?? "Updated", price: request.price ?? 0,
                 description: request.description, category: request.category,
-                condition: request.condition, contactInfo: request.contactInfo,
+                condition: request.condition,
                 sold: request.sold ?? false, wall: "CAMPUS", comments: 0,
                 author: Post.Author(id: userId, profileName: "Mock User", isAnonymous: false),
                 createdAt: "2026-02-19T00:00:00Z", updatedAt: "2026-02-19T00:00:00Z"
@@ -181,7 +179,7 @@ class MockMarketplaceService: MarketplaceServiceProtocol {
         case .emptyState:
             return MarketplaceItem(
                 id: "", title: "", price: 0, description: nil, category: nil, condition: nil,
-                contactInfo: nil, sold: false, wall: "", comments: 0,
+                sold: false, wall: "", comments: 0,
                 author: Post.Author(id: "", profileName: "", isAnonymous: false),
                 createdAt: "", updatedAt: ""
             )

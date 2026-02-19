@@ -109,21 +109,6 @@ struct MarketplaceDetailView: View {
                                 .accessibilityLabel("Description: \(description)")
                         }
 
-                        // Contact info
-                        if let contactInfo = item.contactInfo, !contactInfo.isEmpty {
-                            Divider()
-                            HStack(spacing: 8) {
-                                Image(systemName: "envelope.fill")
-                                    .font(.subheadline)
-                                    .foregroundColor(.blue)
-                                Text(contactInfo)
-                                    .font(.subheadline)
-                                    .foregroundColor(.blue)
-                            }
-                            .accessibilityElement(children: .combine)
-                            .accessibilityLabel("Contact: \(contactInfo)")
-                        }
-
                         // Footer
                         HStack {
                             HStack(spacing: 4) {
@@ -371,7 +356,6 @@ struct MarketplaceDetailView: View {
             description: "Barely used, excellent condition. Includes all problem sets.",
             category: "books",
             condition: "like_new",
-            contactInfo: "johndoe@harvard.edu",
             sold: false,
             wall: "CAMPUS",
             comments: 2,
