@@ -262,28 +262,42 @@ struct ProfileView: View {
                         } else {
                             LazyVStack(spacing: 12) {
                                 ForEach(viewModel.myComments) { comment in
-                                    ProfileCommentRowView(comment: comment)
-                                        .onTapGesture {
-                                            switch comment.parentType {
-                                            case "INTERNSHIP":
-                                                if let internship = viewModel.commentInternshipMap[comment.postId] {
-                                                    coordinator.navigate(to: .internshipDetail(internship))
-                                                }
-                                            case "MARKETPLACE":
-                                                if let item = viewModel.commentMarketplaceMap[comment.postId] {
-                                                    coordinator.navigate(to: .marketplaceDetail(item))
-                                                }
-                                            default:
-                                                if let post = viewModel.commentPostMap[comment.postId] {
-                                                    coordinator.navigate(to: .postDetail(post))
-                                                }
+                                    let destination: ProfileCoordinator.Destination? = {
+                                        switch comment.parentType {
+                                        case "INTERNSHIP":
+                                            if let internship = viewModel.commentInternshipMap[comment.postId] {
+                                                return .internshipDetail(internship)
+                                            }
+                                        case "MARKETPLACE":
+                                            if let item = viewModel.commentMarketplaceMap[comment.postId] {
+                                                return .marketplaceDetail(item)
+                                            }
+                                        default:
+                                            if let post = viewModel.commentPostMap[comment.postId] {
+                                                return .postDetail(post)
                                             }
                                         }
+                                        return nil
+                                    }()
+
+                                    if let destination {
+                                        Button {
+                                            coordinator.navigate(to: destination)
+                                        } label: {
+                                            ProfileCommentRowView(comment: comment)
+                                        }
+                                        .buttonStyle(PlainButtonStyle())
                                         .accessibilityLabel("View comment: \(comment.text)")
                                         .accessibilityHint("Double tap to view the original post")
                                         .onAppear {
                                             viewModel.loadMoreCommentsIfNeeded(for: comment, authState: authState)
                                         }
+                                    } else {
+                                        ProfileCommentRowView(comment: comment)
+                                            .onAppear {
+                                                viewModel.loadMoreCommentsIfNeeded(for: comment, authState: authState)
+                                            }
+                                    }
                                 }
                                 
                                 // Loading indicator at bottom
@@ -399,17 +413,21 @@ struct ProfileView: View {
 struct ProfileCommentRowView: View {
     let comment: Comment
     
+    private var parentTypeLabel: String {
+        switch comment.parentType {
+        case "INTERNSHIP": return "Internship"
+        case "MARKETPLACE": return "Marketplace"
+        default: return "Post"
+        }
+    }
+    
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
-                Text("Comment by Me")
+                Text("Comment on \(parentTypeLabel)")
                     .font(.caption)
                     .foregroundColor(.blue)
                     .fontWeight(.semibold)
-                Spacer()
-            }
-            
-            HStack {
                 Spacer()
                 Text(DateFormatting.formatRelativeTime(comment.createdAt))
                     .font(.caption2)
@@ -423,6 +441,7 @@ struct ProfileCommentRowView: View {
         .padding()
         .background(Color(.systemGray6))
         .cornerRadius(10)
+        .contentShape(Rectangle())
     }
 }
 
