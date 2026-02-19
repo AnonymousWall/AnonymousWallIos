@@ -22,6 +22,8 @@ struct ProfileViewModelTests {
         #expect(viewModel.myPosts.isEmpty)
         #expect(viewModel.myComments.isEmpty)
         #expect(viewModel.commentPostMap.isEmpty)
+        #expect(viewModel.commentInternshipMap.isEmpty)
+        #expect(viewModel.commentMarketplaceMap.isEmpty)
         #expect(viewModel.isLoading == false)
         #expect(viewModel.errorMessage == nil)
         #expect(viewModel.postSortOrder == .newest)
@@ -173,6 +175,31 @@ struct ProfileViewModelTests {
         #expect(viewModel.myComments.isEmpty)
     }
     
+    @Test func testCommentSortChangeClearsAllCommentMaps() async throws {
+        let mockUserService = MockUserService()
+        let mockPostService = MockPostService()
+        let viewModel = ProfileViewModel(userService: mockUserService, postService: mockPostService)
+        let authState = createMockAuthState()
+        
+        // Populate all three maps
+        let mockPost = createMockPost(id: "post-1", title: "Test Post")
+        viewModel.commentPostMap["p1"] = mockPost
+        viewModel.commentInternshipMap["i1"] = createMockInternship(id: "i1")
+        viewModel.commentMarketplaceMap["m1"] = createMockMarketplaceItem(id: "m1")
+        
+        #expect(!viewModel.commentPostMap.isEmpty)
+        #expect(!viewModel.commentInternshipMap.isEmpty)
+        #expect(!viewModel.commentMarketplaceMap.isEmpty)
+        
+        viewModel.commentSortOrder = .oldest
+        viewModel.commentSortChanged(authState: authState)
+        
+        // All maps should be cleared on sort change
+        #expect(viewModel.commentPostMap.isEmpty)
+        #expect(viewModel.commentInternshipMap.isEmpty)
+        #expect(viewModel.commentMarketplaceMap.isEmpty)
+    }
+    
     // MARK: - Pagination Tests
     
     @Test func testInitialPaginationState() async throws {
@@ -209,6 +236,8 @@ struct ProfileViewModelTests {
         let viewModel = ProfileViewModel()
         
         #expect(viewModel.commentPostMap.isEmpty)
+        #expect(viewModel.commentInternshipMap.isEmpty)
+        #expect(viewModel.commentMarketplaceMap.isEmpty)
     }
     
     @Test func testCommentPostMapClearedOnSort() async throws {
@@ -260,6 +289,76 @@ struct ProfileViewModelTests {
         // No direct pagination state is exposed in the public API
     }
     
+    // MARK: - Internship/Marketplace Comment Map Tests
+    
+    @Test func testCommentInternshipMapPopulatedOnLoad() async throws {
+        let mockUserService = MockUserService()
+        let mockPostService = MockPostService()
+        let mockInternshipService = MockInternshipService()
+        let mockMarketplaceService = MockMarketplaceService()
+        let viewModel = ProfileViewModel(
+            userService: mockUserService,
+            postService: mockPostService,
+            internshipService: mockInternshipService,
+            marketplaceService: mockMarketplaceService
+        )
+        let authState = createMockAuthState()
+        
+        // Set up a comment with INTERNSHIP parentType
+        let internshipComment = Comment(
+            id: "c1",
+            postId: "internship-1",
+            parentType: "INTERNSHIP",
+            text: "Great opportunity!",
+            author: Post.Author(id: "author-id", profileName: "Test Author", isAnonymous: true),
+            createdAt: "2026-02-09T00:00:00Z"
+        )
+        mockUserService.mockComments = [internshipComment]
+        mockInternshipService.getInternshipBehavior = .success
+        
+        viewModel.selectedSegment = 1
+        viewModel.segmentChanged(authState: authState)
+        
+        try await Task.sleep(nanoseconds: 500_000_000)
+        
+        // Internship map should be populated
+        #expect(viewModel.commentInternshipMap["internship-1"] != nil)
+    }
+    
+    @Test func testCommentMarketplaceMapPopulatedOnLoad() async throws {
+        let mockUserService = MockUserService()
+        let mockPostService = MockPostService()
+        let mockInternshipService = MockInternshipService()
+        let mockMarketplaceService = MockMarketplaceService()
+        let viewModel = ProfileViewModel(
+            userService: mockUserService,
+            postService: mockPostService,
+            internshipService: mockInternshipService,
+            marketplaceService: mockMarketplaceService
+        )
+        let authState = createMockAuthState()
+        
+        // Set up a comment with MARKETPLACE parentType
+        let marketplaceComment = Comment(
+            id: "c1",
+            postId: "item-1",
+            parentType: "MARKETPLACE",
+            text: "Is this available?",
+            author: Post.Author(id: "author-id", profileName: "Test Author", isAnonymous: true),
+            createdAt: "2026-02-09T00:00:00Z"
+        )
+        mockUserService.mockComments = [marketplaceComment]
+        mockMarketplaceService.getItemBehavior = .success
+        
+        viewModel.selectedSegment = 1
+        viewModel.segmentChanged(authState: authState)
+        
+        try await Task.sleep(nanoseconds: 500_000_000)
+        
+        // Marketplace map should be populated
+        #expect(viewModel.commentMarketplaceMap["item-1"] != nil)
+    }
+    
     // MARK: - Helper Methods
     
     private func createMockAuthState() -> AuthState {
@@ -296,10 +395,11 @@ struct ProfileViewModelTests {
         )
     }
     
-    private func createMockComment(id: String, text: String) -> AnonymousWallIos.Comment {
+    private func createMockComment(id: String, text: String, parentType: String = "POST") -> AnonymousWallIos.Comment {
         return AnonymousWallIos.Comment(
             id: id,
             postId: "post-1",
+            parentType: parentType,
             text: text,
             author: Post.Author(
                 id: "author-id",
@@ -307,6 +407,40 @@ struct ProfileViewModelTests {
                 isAnonymous: true
             ),
             createdAt: "2026-02-09T00:00:00Z"
+        )
+    }
+    
+    private func createMockInternship(id: String) -> Internship {
+        return Internship(
+            id: id,
+            company: "Test Company",
+            role: "Test Role",
+            salary: nil,
+            location: nil,
+            description: nil,
+            deadline: nil,
+            wall: "CAMPUS",
+            comments: 0,
+            author: Post.Author(id: "author-id", profileName: "Test Author", isAnonymous: false),
+            createdAt: "2026-02-09T00:00:00Z",
+            updatedAt: "2026-02-09T00:00:00Z"
+        )
+    }
+    
+    private func createMockMarketplaceItem(id: String) -> MarketplaceItem {
+        return MarketplaceItem(
+            id: id,
+            title: "Test Item",
+            price: 10.0,
+            description: nil,
+            category: nil,
+            condition: nil,
+            sold: false,
+            wall: "CAMPUS",
+            comments: 0,
+            author: Post.Author(id: "author-id", profileName: "Test Author", isAnonymous: false),
+            createdAt: "2026-02-09T00:00:00Z",
+            updatedAt: "2026-02-09T00:00:00Z"
         )
     }
 }

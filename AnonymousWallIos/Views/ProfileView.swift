@@ -262,22 +262,28 @@ struct ProfileView: View {
                         } else {
                             LazyVStack(spacing: 12) {
                                 ForEach(viewModel.myComments) { comment in
-                                    if let post = viewModel.commentPostMap[comment.postId] {
-                                        Button {
-                                            coordinator.navigate(to: .postDetail(post))
-                                        } label: {
-                                            ProfileCommentRowView(comment: comment)
+                                    ProfileCommentRowView(comment: comment)
+                                        .onTapGesture {
+                                            switch comment.parentType {
+                                            case "INTERNSHIP":
+                                                if let internship = viewModel.commentInternshipMap[comment.postId] {
+                                                    coordinator.navigate(to: .internshipDetail(internship))
+                                                }
+                                            case "MARKETPLACE":
+                                                if let item = viewModel.commentMarketplaceMap[comment.postId] {
+                                                    coordinator.navigate(to: .marketplaceDetail(item))
+                                                }
+                                            default:
+                                                if let post = viewModel.commentPostMap[comment.postId] {
+                                                    coordinator.navigate(to: .postDetail(post))
+                                                }
+                                            }
                                         }
-                                        .buttonStyle(PlainButtonStyle())
+                                        .accessibilityLabel("View comment: \(comment.text)")
+                                        .accessibilityHint("Double tap to view the original post")
                                         .onAppear {
                                             viewModel.loadMoreCommentsIfNeeded(for: comment, authState: authState)
                                         }
-                                    } else {
-                                        ProfileCommentRowView(comment: comment)
-                                            .onAppear {
-                                                viewModel.loadMoreCommentsIfNeeded(for: comment, authState: authState)
-                                            }
-                                    }
                                 }
                                 
                                 // Loading indicator at bottom
@@ -320,6 +326,10 @@ struct ProfileView: View {
                         // Fallback if post is not found in the list
                         PostDetailView(post: .constant(post))
                     }
+                case .internshipDetail(let internship):
+                    InternshipDetailView(internship: .constant(internship))
+                case .marketplaceDetail(let item):
+                    MarketplaceDetailView(item: .constant(item))
                 case .setPassword:
                     EmptyView() // Handled as a sheet
                 case .changePassword:

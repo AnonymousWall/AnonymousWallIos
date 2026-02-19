@@ -14,6 +14,8 @@ class ProfileViewModel: ObservableObject {
     @Published var myPosts: [Post] = []
     @Published var myComments: [Comment] = []
     @Published var commentPostMap: [String: Post] = [:]
+    @Published var commentInternshipMap: [String: Internship] = [:]
+    @Published var commentMarketplaceMap: [String: MarketplaceItem] = [:]
     @Published var isLoading = false
     @Published var errorMessage: String?
     @Published var postSortOrder: SortOrder = .newest
@@ -32,11 +34,20 @@ class ProfileViewModel: ObservableObject {
     // MARK: - Dependencies
     private let userService: UserServiceProtocol
     private let postService: PostServiceProtocol
+    private let internshipService: InternshipServiceProtocol
+    private let marketplaceService: MarketplaceServiceProtocol
     
     // MARK: - Initialization
-    init(userService: UserServiceProtocol = UserService.shared, postService: PostServiceProtocol = PostService.shared) {
+    init(
+        userService: UserServiceProtocol = UserService.shared,
+        postService: PostServiceProtocol = PostService.shared,
+        internshipService: InternshipServiceProtocol = InternshipService.shared,
+        marketplaceService: MarketplaceServiceProtocol = MarketplaceService.shared
+    ) {
         self.userService = userService
         self.postService = postService
+        self.internshipService = internshipService
+        self.marketplaceService = marketplaceService
     }
     
     // MARK: - Public Methods
@@ -93,6 +104,8 @@ class ProfileViewModel: ObservableObject {
         HapticFeedback.selection()
         myComments = []
         commentPostMap = [:]
+        commentInternshipMap = [:]
+        commentMarketplaceMap = [:]
         commentsPagination.reset()
         loadTask?.cancel()
         loadTask = Task {
@@ -160,14 +173,20 @@ class ProfileViewModel: ObservableObject {
     
     func deleteComment(_ comment: Comment, authState: AuthState) {
         guard let token = authState.authToken,
-              let userId = authState.currentUser?.id,
-              let post = commentPostMap[comment.postId] else {
+              let userId = authState.currentUser?.id else {
             return
         }
         
         Task {
             do {
-                _ = try await postService.hideComment(postId: post.id, commentId: comment.id, token: token, userId: userId)
+                switch comment.parentType {
+                case "INTERNSHIP":
+                    _ = try await internshipService.hideComment(internshipId: comment.postId, commentId: comment.id, token: token, userId: userId)
+                case "MARKETPLACE":
+                    _ = try await marketplaceService.hideComment(itemId: comment.postId, commentId: comment.id, token: token, userId: userId)
+                default:
+                    _ = try await postService.hideComment(postId: comment.postId, commentId: comment.id, token: token, userId: userId)
+                }
                 commentsPagination.reset()
                 await loadComments(authState: authState)
             } catch {
@@ -323,18 +342,33 @@ class ProfileViewModel: ObservableObject {
             return
         }
         
-        // Get unique post IDs that we don't have yet
-        let postIds = Set(myComments.map { $0.postId })
-        let missingPostIds = postIds.filter { commentPostMap[$0] == nil }
-        
-        // Fetch missing posts
-        for postId in missingPostIds {
-            do {
-                let post = try await postService.getPost(postId: postId, token: token, userId: userId)
-                commentPostMap[postId] = post
-            } catch {
-                // Silently fail for individual post fetches
-                continue
+        for comment in myComments {
+            let parentId = comment.postId
+            switch comment.parentType {
+            case "INTERNSHIP":
+                guard commentInternshipMap[parentId] == nil else { continue }
+                do {
+                    let internship = try await internshipService.getInternship(internshipId: parentId, token: token, userId: userId)
+                    commentInternshipMap[parentId] = internship
+                } catch {
+                    continue
+                }
+            case "MARKETPLACE":
+                guard commentMarketplaceMap[parentId] == nil else { continue }
+                do {
+                    let item = try await marketplaceService.getItem(itemId: parentId, token: token, userId: userId)
+                    commentMarketplaceMap[parentId] = item
+                } catch {
+                    continue
+                }
+            default:
+                guard commentPostMap[parentId] == nil else { continue }
+                do {
+                    let post = try await postService.getPost(postId: parentId, token: token, userId: userId)
+                    commentPostMap[parentId] = post
+                } catch {
+                    continue
+                }
             }
         }
     }
