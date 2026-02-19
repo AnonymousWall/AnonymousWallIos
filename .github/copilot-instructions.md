@@ -828,7 +828,7 @@ Response: 201 Created
 - `salary` is optional (VARCHAR(50))
 - `location` is optional (VARCHAR(255))
 - `description` is optional (TEXT)
-- `deadline` is optional (DATE format: YYYY-MM-DD)
+- `deadline` is optional (DATE format: YYYY-MM-DD, defaults to 1 month from creation date)
 - `wall` is optional (defaults to "campus"), must be "campus" or "national"
 
 **Wall Rules:**
@@ -1581,7 +1581,97 @@ Response: 200 OK
 - Performance: O(log K) where K is the user's total post count
 - Supports sorting by creation time, like count, or comment count
 
-#### 3. Update Profile Name (Requires Authentication)
+#### 3. Get User's Own Internships
+```http
+GET /api/v1/users/me/internships?page=1&limit=20&sort=NEWEST
+Authorization: Bearer {jwt-token}
+
+Response: 200 OK
+{
+    "data": [
+        {
+            "id": "uuid",
+            "company": "Google",
+            "role": "Software Engineer Intern",
+            "salary": "$8000/month",
+            "location": "Mountain View, CA",
+            "description": "Work on cutting-edge projects",
+            "deadline": "2026-06-30",
+            "wall": "campus",
+            "comments": 3,
+            "author": {
+                "id": "uuid",
+                "profileName": "Jane Smith",
+                "isAnonymous": false
+            },
+            "createdAt": "2026-01-28T...",
+            "updatedAt": "2026-01-28T..."
+        }
+    ],
+    "pagination": {
+        "page": 1,
+        "limit": 20,
+        "total": 5,
+        "totalPages": 1
+    }
+}
+```
+
+**Query Parameters:**
+- `page` (default: 1) - Page number (1-based)
+- `limit` (default: 20) - Internships per page (max: 100)
+- `sort` (default: "NEWEST") - Sort order: NEWEST, OLDEST
+
+**Notes:**
+- Returns all internship postings created by the authenticated user
+- Hidden (soft-deleted) internships are automatically excluded
+
+#### 4. Get User's Own Marketplace Items
+```http
+GET /api/v1/users/me/marketplaces?page=1&limit=20&sort=NEWEST
+Authorization: Bearer {jwt-token}
+
+Response: 200 OK
+{
+    "data": [
+        {
+            "id": "uuid",
+            "title": "MacBook Pro 2023",
+            "description": "Excellent condition, barely used",
+            "price": 1200.0,
+            "category": "electronics",
+            "condition": "like-new",
+            "sold": false,
+            "wall": "campus",
+            "comments": 2,
+            "author": {
+                "id": "uuid",
+                "profileName": "John Doe",
+                "isAnonymous": false
+            },
+            "createdAt": "2026-01-28T...",
+            "updatedAt": "2026-01-28T..."
+        }
+    ],
+    "pagination": {
+        "page": 1,
+        "limit": 20,
+        "total": 10,
+        "totalPages": 1
+    }
+}
+```
+
+**Query Parameters:**
+- `page` (default: 1) - Page number (1-based)
+- `limit` (default: 20) - Items per page (max: 100)
+- `sort` (default: "NEWEST") - Sort order: NEWEST, OLDEST
+
+**Notes:**
+- Returns all marketplace items listed by the authenticated user
+- Hidden (soft-deleted) items are automatically excluded
+
+#### 5. Update Profile Name (Requires Authentication)
 ```http
 PATCH /api/v1/users/me/profile/name
 Authorization: Bearer {jwt-token}
