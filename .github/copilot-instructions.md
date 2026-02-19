@@ -616,6 +616,7 @@ Response: 201 Created
 {
     "id": "uuid",
     "postId": "uuid",
+    "parentType": "POST",
     "text": "Great post!",
     "author": {
         "id": "uuid",
@@ -651,6 +652,7 @@ Response: 200 OK
         {
             "id": "uuid",
             "postId": "uuid",
+            "parentType": "POST",
             "text": "Great post!",
             "author": {
                 "id": "uuid",
@@ -779,6 +781,716 @@ Response: 201 Created
 - Reporting a comment increments the report count for the comment author
 - Duplicate reports by the same user will return: `400 Bad Request`
 
+### Internship Endpoints
+
+#### 1. Create Internship Posting
+```http
+POST /api/v1/internships
+Authorization: Bearer {jwt-token}
+Content-Type: application/json
+
+{
+    "company": "Google",
+    "role": "Software Engineer Intern",
+    "salary": "$8000/month",
+    "location": "Mountain View, CA",
+    "description": "Work on cutting-edge projects with experienced mentors",
+    "deadline": "2026-06-30",
+    "wall": "campus"
+}
+
+Response: 201 Created
+{
+    "id": "uuid",
+    "company": "Google",
+    "role": "Software Engineer Intern",
+    "salary": "$8000/month",
+    "location": "Mountain View, CA",
+    "description": "Work on cutting-edge projects with experienced mentors",
+    "deadline": "2026-06-30",
+    "wall": "CAMPUS",
+    "comments": 0,
+    "author": {
+        "id": "uuid",
+        "profileName": "John Recruiter",
+        "isAnonymous": false
+    },
+    "createdAt": "2026-02-18T...",
+    "updatedAt": "2026-02-18T..."
+}
+```
+
+**Request Validation:**
+- `company` is **required** (cannot be null, empty, or whitespace-only)
+- `company` maximum length: **255 characters**
+- `role` is **required** (cannot be null, empty, or whitespace-only)
+- `role` maximum length: **255 characters**
+- `salary` is optional (VARCHAR(50))
+- `location` is optional (VARCHAR(255))
+- `description` is optional (TEXT)
+- `deadline` is optional (DATE format: YYYY-MM-DD)
+- `wall` is optional (defaults to "campus"), must be "campus" or "national"
+
+**Wall Rules:**
+- **Campus wall**: Only users from the same school can see the posting
+- **National wall**: All authenticated users can see the posting
+
+**Error Responses:**
+```json
+// Missing or empty company
+400 Bad Request
+{
+    "error": "Company is required"
+}
+
+// Company exceeds 255 characters
+400 Bad Request
+{
+    "error": "Company name cannot exceed 255 characters"
+}
+
+// Missing or empty role
+400 Bad Request
+{
+    "error": "Role is required"
+}
+
+// Role exceeds 255 characters
+400 Bad Request
+{
+    "error": "Role cannot exceed 255 characters"
+}
+
+// User not found
+400 Bad Request
+{
+    "error": "User not found"
+}
+```
+
+#### 2. List Internship Postings
+```http
+GET /api/v1/internships?wall=campus&page=1&limit=20&sortBy=newest
+Authorization: Bearer {jwt-token}
+
+Response: 200 OK
+{
+    "data": [
+        {
+            "id": "uuid",
+            "company": "Google",
+            "role": "Software Engineer Intern",
+            "salary": "$8000/month",
+            "location": "Mountain View, CA",
+            "description": "Work on cutting-edge projects with experienced mentors",
+            "deadline": "2026-06-30",
+            "wall": "CAMPUS",
+            "comments": 3,
+            "author": {
+                "id": "uuid",
+                "profileName": "John Recruiter",
+                "isAnonymous": false
+            },
+            "createdAt": "2026-02-18T...",
+            "updatedAt": "2026-02-18T..."
+        }
+    ],
+    "pagination": {
+        "page": 1,
+        "limit": 20,
+        "total": 50,
+        "totalPages": 3
+    }
+}
+```
+
+**Query Parameters:**
+- `wall` (default: "campus") - Filter by "campus" or "national"
+- `page` (default: 1): Page number for pagination (1-based indexing)
+- `limit` (default: 20): Number of items per page (min: 1, max: 100)
+- `sortBy` (default: newest): Sort order - "newest" (newest first) or "oldest" (oldest first)
+
+**Wall Rules:**
+- **Campus**: Returns only internships from the same school as the authenticated user
+- **National**: Returns all national internships
+- Only non-hidden internships are returned
+
+#### 3. Get Internship Posting by ID
+```http
+GET /api/v1/internships/{internshipId}
+Authorization: Bearer {jwt-token}
+
+Response: 200 OK
+{
+    "id": "uuid",
+    "company": "Google",
+    "role": "Software Engineer Intern",
+    "salary": "$8000/month",
+    "location": "Mountain View, CA",
+    "description": "Work on cutting-edge projects with experienced mentors",
+    "deadline": "2026-06-30",
+    "wall": "CAMPUS",
+    "comments": 3,
+    "author": {
+        "id": "uuid",
+        "profileName": "John Recruiter",
+        "isAnonymous": false
+    },
+    "createdAt": "2026-02-18T...",
+    "updatedAt": "2026-02-18T..."
+}
+```
+
+**Error Responses:**
+```json
+// Internship not found
+404 Not Found
+
+// Campus internship from different school
+403 Forbidden
+{
+    "error": "You do not have access to internships from other schools"
+}
+```
+
+#### 4. Hide Internship Posting
+```http
+PATCH /api/v1/internships/{internshipId}/hide
+Authorization: Bearer {jwt-token}
+
+Response: 200 OK
+{
+    "message": "Internship posting hidden successfully"
+}
+```
+
+**Notes:**
+- Only the author can hide their own internship posting
+- Hidden internships are excluded from list results
+- Soft-delete operation (data is not permanently removed)
+
+**Error Responses:**
+```json
+// Not the author
+403 Forbidden
+{
+    "error": "You can only hide your own internship postings"
+}
+
+// Internship not found
+404 Not Found
+```
+
+#### 5. Unhide Internship Posting
+```http
+PATCH /api/v1/internships/{internshipId}/unhide
+Authorization: Bearer {jwt-token}
+
+Response: 200 OK
+{
+    "message": "Internship posting unhidden successfully"
+}
+```
+
+**Notes:**
+- Only the author can unhide their own internship posting
+- Unhidden internships reappear in list results
+
+**Error Responses:**
+```json
+// Not the author
+403 Forbidden
+{
+    "error": "You can only unhide your own internship postings"
+}
+
+// Internship not found
+404 Not Found
+```
+
+#### 6. Add Comment to Internship
+```http
+POST /api/v1/internships/{internshipId}/comments
+Authorization: Bearer {jwt-token}
+Content-Type: application/json
+
+{
+    "text": "Great opportunity!"
+}
+
+Response: 201 Created
+{
+    "id": "uuid",
+    "postId": "uuid",
+    "parentType": "INTERNSHIP",
+    "text": "Great opportunity!",
+    "author": {
+        "id": "uuid",
+        "profileName": "Anonymous",
+        "isAnonymous": true
+    },
+    "createdAt": "2026-02-18T..."
+}
+```
+
+**Validation Rules:**
+- `text` is **required** (cannot be null, empty, or whitespace-only)
+- `text` maximum length: **5000 characters**
+- For campus internships: only users from the same school can comment
+- For national internships: all authenticated users can comment
+
+#### 7. Get Comments for Internship
+```http
+GET /api/v1/internships/{internshipId}/comments?page=1&limit=20&sort=NEWEST
+Authorization: Bearer {jwt-token}
+
+Response: 200 OK
+{
+    "data": [
+        {
+            "id": "uuid",
+            "postId": "uuid",
+            "parentType": "INTERNSHIP",
+            "text": "Great opportunity!",
+            "author": {
+                "id": "uuid",
+                "profileName": "Jane Smith",
+                "isAnonymous": true
+            },
+            "createdAt": "2026-02-18T..."
+        }
+    ],
+    "pagination": {
+        "page": 1,
+        "limit": 20,
+        "total": 5,
+        "totalPages": 1
+    }
+}
+```
+
+**Query Parameters:**
+- `page` (default: 1) - Page number (1-based)
+- `limit` (default: 20) - Comments per page (max: 100)
+- `sort` (default: "NEWEST") - Sort order: NEWEST, OLDEST
+
+#### 8. Hide Comment on Internship
+```http
+PATCH /api/v1/internships/{internshipId}/comments/{commentId}/hide
+Authorization: Bearer {jwt-token}
+
+Response: 200 OK
+{
+    "message": "Comment hidden successfully"
+}
+```
+
+**Notes:**
+- Only the comment author can hide their own comment
+
+#### 9. Unhide Comment on Internship
+```http
+PATCH /api/v1/internships/{internshipId}/comments/{commentId}/unhide
+Authorization: Bearer {jwt-token}
+
+Response: 200 OK
+{
+    "message": "Comment unhidden successfully"
+}
+```
+
+**Notes:**
+- Only the comment author can unhide their own comment
+
+### Marketplace Endpoints
+
+#### 1. Create Marketplace Item
+```http
+POST /api/v1/marketplace
+Authorization: Bearer {jwt-token}
+Content-Type: application/json
+
+{
+    "title": "Used Calculus Textbook",
+    "price": 45.99,
+    "description": "Barely used, excellent condition",
+    "category": "books",
+    "condition": "like_new",
+    "contactInfo": "johndoe@harvard.edu",
+    "wall": "campus"
+}
+
+Response: 201 Created
+{
+    "id": "uuid",
+    "title": "Used Calculus Textbook",
+    "price": 45.99,
+    "description": "Barely used, excellent condition",
+    "category": "books",
+    "condition": "like_new",
+    "contactInfo": "johndoe@harvard.edu",
+    "sold": false,
+    "wall": "CAMPUS",
+    "comments": 0,
+    "author": {
+        "id": "uuid",
+        "profileName": "John Doe",
+        "isAnonymous": false
+    },
+    "createdAt": "2026-02-18T...",
+    "updatedAt": "2026-02-18T..."
+}
+```
+
+**Request Validation:**
+- `title` is **required** (cannot be null, empty, or whitespace-only)
+- `title` maximum length: **255 characters**
+- `price` is **required** and must be **≥ 0**
+- `price` maximum value: **99,999,999.99** (DECIMAL(10,2))
+- `description` is optional (max length: 5000 characters)
+- `category` is optional
+- `condition` is optional, valid values: "new", "like_new", "good", "fair", "poor"
+- `contactInfo` is optional
+- `wall` is optional (defaults to "campus"), must be "campus" or "national"
+
+**Wall Rules:**
+- **Campus wall**: Only users from the same school can see the item
+- **National wall**: All authenticated users can see the item
+
+**Error Responses:**
+```json
+// Missing or empty title
+400 Bad Request
+{
+    "error": "Title cannot be empty"
+}
+
+// Title exceeds 255 characters
+400 Bad Request
+{
+    "error": "Title cannot exceed 255 characters"
+}
+
+// Missing or invalid price
+400 Bad Request
+{
+    "error": "Price is required"
+}
+
+// Negative price
+400 Bad Request
+{
+    "error": "Price must be greater than or equal to 0"
+}
+
+// Invalid condition
+400 Bad Request
+{
+    "error": "Invalid condition. Must be one of: new, like_new, good, fair, poor"
+}
+```
+
+#### 2. List Marketplace Items
+```http
+GET /api/v1/marketplace?wall=campus&page=1&limit=20&sortBy=newest&sold=false
+Authorization: Bearer {jwt-token}
+
+Response: 200 OK
+{
+    "data": [
+        {
+            "id": "uuid",
+            "title": "Used Calculus Textbook",
+            "price": 45.99,
+            "description": "Barely used, excellent condition",
+            "category": "books",
+            "condition": "like_new",
+            "contactInfo": "johndoe@harvard.edu",
+            "sold": false,
+            "wall": "CAMPUS",
+            "comments": 2,
+            "author": {
+                "id": "uuid",
+                "profileName": "John Doe",
+                "isAnonymous": false
+            },
+            "createdAt": "2026-02-18T...",
+            "updatedAt": "2026-02-18T..."
+        }
+    ],
+    "pagination": {
+        "page": 1,
+        "limit": 20,
+        "total": 95,
+        "totalPages": 5
+    }
+}
+```
+
+**Query Parameters:**
+- `wall` (default: "campus") - Filter by "campus" or "national"
+- `page` (default: 1) - Page number (1-based)
+- `limit` (default: 20) - Items per page (max: 100)
+- `sortBy` (default: "newest") - Sort order:
+  - `newest` - Sort by creation date descending (newest first)
+  - `price-asc` - Sort by price ascending (lowest first)
+  - `price-desc` - Sort by price descending (highest first)
+- `sold` (optional) - Filter by sold status:
+  - `true` - Show only sold items
+  - `false` - Show only unsold items
+  - omit parameter - Show all items (both sold and unsold)
+
+**Wall Rules:**
+- **Campus**: Returns only items from the same school as the authenticated user
+- **National**: Returns all national items
+
+**Examples:**
+```http
+GET /api/v1/marketplace?wall=campus&sold=false&sortBy=price-asc
+GET /api/v1/marketplace?wall=national&sold=true&page=1&limit=10
+GET /api/v1/marketplace?sortBy=newest
+```
+
+#### 3. Get Marketplace Item by ID
+```http
+GET /api/v1/marketplace/{itemId}
+Authorization: Bearer {jwt-token}
+
+Response: 200 OK
+{
+    "id": "uuid",
+    "title": "Used Calculus Textbook",
+    "price": 45.99,
+    "description": "Barely used, excellent condition",
+    "category": "books",
+    "condition": "like_new",
+    "contactInfo": "johndoe@harvard.edu",
+    "sold": false,
+    "wall": "CAMPUS",
+    "comments": 2,
+    "author": {
+        "id": "uuid",
+        "profileName": "John Doe",
+        "isAnonymous": false
+    },
+    "createdAt": "2026-02-18T...",
+    "updatedAt": "2026-02-18T..."
+}
+
+Response: 404 Not Found
+{
+    "error": "Item not found"
+}
+```
+
+**Notes:**
+- For campus items: only users from the same school can access
+- For national items: all authenticated users can access
+
+#### 4. Update Marketplace Item (Partial Update)
+```http
+PUT /api/v1/marketplace/{itemId}
+Authorization: Bearer {jwt-token}
+Content-Type: application/json
+
+{
+    "title": "Used Calculus Textbook - Price Reduced",
+    "price": 35.99,
+    "sold": true
+}
+
+Response: 200 OK
+{
+    "id": "uuid",
+    "title": "Used Calculus Textbook - Price Reduced",
+    "price": 35.99,
+    "description": "Barely used, excellent condition",
+    "category": "books",
+    "condition": "like_new",
+    "contactInfo": "johndoe@harvard.edu",
+    "sold": true,
+    "wall": "CAMPUS",
+    "comments": 2,
+    "author": {
+        "id": "uuid",
+        "profileName": "John Doe",
+        "isAnonymous": false
+    },
+    "createdAt": "2026-02-18T...",
+    "updatedAt": "2026-02-18T..."
+}
+```
+
+**Partial Update Behavior:**
+- All fields are **optional** in the update request
+- Only provided fields will be updated
+- Fields not included in the request remain unchanged
+- Null-safe: setting a field to null will not update it
+
+**Updatable Fields:**
+- `title` (max 255 characters, cannot be empty/whitespace-only)
+- `price` (must be ≥ 0 if provided)
+- `description` (max 5000 characters)
+- `category`
+- `condition` (must be valid enum value)
+- `contactInfo`
+- `sold` (boolean - mark item as sold/unsold)
+
+**Ownership Validation:**
+- Users can only update their own items
+- Attempting to update another user's item returns: `403 Forbidden`
+
+**Error Responses:**
+```json
+// Attempting to update another user's item
+403 Forbidden
+{
+    "error": "You can only update your own items"
+}
+
+// Item not found
+404 Not Found
+{
+    "error": "Item not found"
+}
+
+// Negative price
+400 Bad Request
+{
+    "error": "Price must be greater than or equal to 0"
+}
+
+// Empty title
+400 Bad Request
+{
+    "error": "Title cannot be empty"
+}
+
+// Invalid condition
+400 Bad Request
+{
+    "error": "Invalid condition. Must be one of: new, like_new, good, fair, poor"
+}
+```
+
+**Update Examples:**
+```http
+// Mark item as sold
+PUT /api/v1/marketplace/{itemId}
+{
+    "sold": true
+}
+
+// Update only price
+PUT /api/v1/marketplace/{itemId}
+{
+    "price": 25.00
+}
+
+// Update multiple fields
+PUT /api/v1/marketplace/{itemId}
+{
+    "title": "Updated Title",
+    "price": 30.00,
+    "description": "Updated description",
+    "sold": false
+}
+```
+
+#### 5. Add Comment to Marketplace Item
+```http
+POST /api/v1/marketplace/{itemId}/comments
+Authorization: Bearer {jwt-token}
+Content-Type: application/json
+
+{
+    "text": "Is this still available?"
+}
+
+Response: 201 Created
+{
+    "id": "uuid",
+    "postId": "uuid",
+    "parentType": "MARKETPLACE",
+    "text": "Is this still available?",
+    "author": {
+        "id": "uuid",
+        "profileName": "Anonymous",
+        "isAnonymous": true
+    },
+    "createdAt": "2026-02-18T..."
+}
+```
+
+**Validation Rules:**
+- `text` is **required** (cannot be null, empty, or whitespace-only)
+- `text` maximum length: **5000 characters**
+- For campus items: only users from the same school can comment
+- For national items: all authenticated users can comment
+
+#### 6. Get Comments for Marketplace Item
+```http
+GET /api/v1/marketplace/{itemId}/comments?page=1&limit=20&sort=NEWEST
+Authorization: Bearer {jwt-token}
+
+Response: 200 OK
+{
+    "data": [
+        {
+            "id": "uuid",
+            "postId": "uuid",
+            "parentType": "MARKETPLACE",
+            "text": "Is this still available?",
+            "author": {
+                "id": "uuid",
+                "profileName": "Jane Smith",
+                "isAnonymous": true
+            },
+            "createdAt": "2026-02-18T..."
+        }
+    ],
+    "pagination": {
+        "page": 1,
+        "limit": 20,
+        "total": 3,
+        "totalPages": 1
+    }
+}
+```
+
+**Query Parameters:**
+- `page` (default: 1) - Page number (1-based)
+- `limit` (default: 20) - Comments per page (max: 100)
+- `sort` (default: "NEWEST") - Sort order: NEWEST, OLDEST
+
+#### 7. Hide Comment on Marketplace Item
+```http
+PATCH /api/v1/marketplace/{itemId}/comments/{commentId}/hide
+Authorization: Bearer {jwt-token}
+
+Response: 200 OK
+{
+    "message": "Comment hidden successfully"
+}
+```
+
+**Notes:**
+- Only the comment author can hide their own comment
+
+#### 8. Unhide Comment on Marketplace Item
+```http
+PATCH /api/v1/marketplace/{itemId}/comments/{commentId}/unhide
+Authorization: Bearer {jwt-token}
+
+Response: 200 OK
+{
+    "message": "Comment unhidden successfully"
+}
+```
+
+**Notes:**
+- Only the comment author can unhide their own comment
+
 ### User Endpoints
 
 #### 1. Get User's Own Comments
@@ -792,6 +1504,7 @@ Response: 200 OK
         {
             "id": "uuid",
             "postId": "uuid",
+            "parentType": "POST",
             "text": "Great post!",
             "author": {
                 "id": "uuid",
@@ -816,7 +1529,8 @@ Response: 200 OK
 - `sort` (default: "NEWEST") - Sort order: NEWEST, OLDEST
 
 **Notes:**
-- Returns all comments made by the authenticated user across all posts
+- Returns all comments made by the authenticated user across all entity types (posts, internships, marketplace items)
+- Each comment includes `parentType` ("POST", "INTERNSHIP", or "MARKETPLACE") to identify the parent entity
 - Hidden (soft-deleted) comments are automatically excluded
 - Uses optimized query with composite database index for efficient retrieval
 - Performance: O(log K) where K is the user's total comment count
@@ -892,11 +1606,11 @@ Response: 200 OK
 - Default profile name is "Anonymous"
 - Sending an empty string will reset the profile name to "Anonymous"
 - Profile name can be 1-255 characters
-- Profile name changes are **asynchronously propagated** to all user's posts and comments
+- Profile name changes are **asynchronously propagated** to all user's posts, comments, internships, and marketplace items
 - The API returns immediately after updating the user profile
-- Posts and comments are updated in the background for better performance
+- Posts, comments, internships, and marketplace items are updated in the background for better performance
 
-
+---
 
 ## Chat API Documentation
 
