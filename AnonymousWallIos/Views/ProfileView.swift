@@ -262,41 +262,20 @@ struct ProfileView: View {
                         } else {
                             LazyVStack(spacing: 12) {
                                 ForEach(viewModel.myComments) { comment in
-                                    let destination: ProfileCoordinator.Destination? = {
-                                        switch comment.parentType {
-                                        case "INTERNSHIP":
-                                            if let internship = viewModel.commentInternshipMap[comment.postId] {
-                                                return .internshipDetail(internship)
-                                            }
-                                        case "MARKETPLACE":
-                                            if let item = viewModel.commentMarketplaceMap[comment.postId] {
-                                                return .marketplaceDetail(item)
-                                            }
-                                        default:
-                                            if let post = viewModel.commentPostMap[comment.postId] {
-                                                return .postDetail(post)
+                                    Button {
+                                        Task {
+                                            if let destination = await viewModel.resolveDestination(for: comment, authState: authState) {
+                                                coordinator.navigate(to: destination)
                                             }
                                         }
-                                        return nil
-                                    }()
-
-                                    if let destination {
-                                        Button {
-                                            coordinator.navigate(to: destination)
-                                        } label: {
-                                            ProfileCommentRowView(comment: comment)
-                                        }
-                                        .buttonStyle(PlainButtonStyle())
-                                        .accessibilityLabel("View comment: \(comment.text)")
-                                        .accessibilityHint("Double tap to view the original post")
-                                        .onAppear {
-                                            viewModel.loadMoreCommentsIfNeeded(for: comment, authState: authState)
-                                        }
-                                    } else {
+                                    } label: {
                                         ProfileCommentRowView(comment: comment)
-                                            .onAppear {
-                                                viewModel.loadMoreCommentsIfNeeded(for: comment, authState: authState)
-                                            }
+                                    }
+                                    .buttonStyle(PlainButtonStyle())
+                                    .accessibilityLabel("View comment: \(comment.text)")
+                                    .accessibilityHint("Double tap to view the original post")
+                                    .onAppear {
+                                        viewModel.loadMoreCommentsIfNeeded(for: comment, authState: authState)
                                     }
                                 }
                                 

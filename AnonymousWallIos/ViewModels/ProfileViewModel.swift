@@ -199,6 +199,49 @@ class ProfileViewModel: ObservableObject {
         loadTask?.cancel()
     }
     
+    /// Returns the navigation destination for a comment if the parent entity is already cached.
+    func cachedDestination(for comment: Comment) -> ProfileCoordinator.Destination? {
+        switch comment.parentType {
+        case "INTERNSHIP":
+            if let internship = commentInternshipMap[comment.postId] { return .internshipDetail(internship) }
+        case "MARKETPLACE":
+            if let item = commentMarketplaceMap[comment.postId] { return .marketplaceDetail(item) }
+        default:
+            if let post = commentPostMap[comment.postId] { return .postDetail(post) }
+        }
+        return nil
+    }
+    
+    /// Fetches the parent entity on demand (if not already cached) and returns the navigation destination.
+    func resolveDestination(for comment: Comment, authState: AuthState) async -> ProfileCoordinator.Destination? {
+        if let cached = cachedDestination(for: comment) { return cached }
+        
+        guard let token = authState.authToken,
+              let userId = authState.currentUser?.id else { return nil }
+        
+        let parentId = comment.postId
+        switch comment.parentType {
+        case "INTERNSHIP":
+            do {
+                let internship = try await internshipService.getInternship(internshipId: parentId, token: token, userId: userId)
+                commentInternshipMap[parentId] = internship
+                return .internshipDetail(internship)
+            } catch { return nil }
+        case "MARKETPLACE":
+            do {
+                let item = try await marketplaceService.getItem(itemId: parentId, token: token, userId: userId)
+                commentMarketplaceMap[parentId] = item
+                return .marketplaceDetail(item)
+            } catch { return nil }
+        default:
+            do {
+                let post = try await postService.getPost(postId: parentId, token: token, userId: userId)
+                commentPostMap[parentId] = post
+                return .postDetail(post)
+            } catch { return nil }
+        }
+    }
+    
     // MARK: - Private Methods
     private func loadPosts(authState: AuthState) async {
         guard let token = authState.authToken,

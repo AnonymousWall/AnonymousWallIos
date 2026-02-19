@@ -359,6 +359,78 @@ struct ProfileViewModelTests {
         #expect(viewModel.commentMarketplaceMap["item-1"] != nil)
     }
     
+    // MARK: - resolveDestination Tests
+    
+    @Test func testResolveDestinationReturnsInternshipFromCache() async throws {
+        let viewModel = ProfileViewModel(
+            userService: MockUserService(),
+            postService: MockPostService(),
+            internshipService: MockInternshipService(),
+            marketplaceService: MockMarketplaceService()
+        )
+        let authState = createMockAuthState()
+        let internship = createMockInternship(id: "i1")
+        viewModel.commentInternshipMap["i1"] = internship
+        
+        let comment = Comment(
+            id: "c1", postId: "i1", parentType: "INTERNSHIP", text: "Hi",
+            author: Post.Author(id: "a", profileName: "A", isAnonymous: true),
+            createdAt: "2026-02-09T00:00:00Z"
+        )
+        
+        let destination = await viewModel.resolveDestination(for: comment, authState: authState)
+        if case .internshipDetail(let result) = destination {
+            #expect(result.id == "i1")
+        } else {
+            #expect(Bool(false), "Expected .internshipDetail destination")
+        }
+    }
+    
+    @Test func testResolveDestinationFetchesInternshipWhenNotCached() async throws {
+        let mockInternshipService = MockInternshipService()
+        let viewModel = ProfileViewModel(
+            userService: MockUserService(),
+            postService: MockPostService(),
+            internshipService: mockInternshipService,
+            marketplaceService: MockMarketplaceService()
+        )
+        let authState = createMockAuthState()
+        
+        let comment = Comment(
+            id: "c1", postId: "i1", parentType: "INTERNSHIP", text: "Hi",
+            author: Post.Author(id: "a", profileName: "A", isAnonymous: true),
+            createdAt: "2026-02-09T00:00:00Z"
+        )
+        
+        // Map is empty; resolveDestination should fetch on demand
+        let destination = await viewModel.resolveDestination(for: comment, authState: authState)
+        #expect(mockInternshipService.getInternshipCalled)
+        #expect(destination != nil)
+        #expect(viewModel.commentInternshipMap["i1"] != nil)
+    }
+    
+    @Test func testResolveDestinationFetchesMarketplaceWhenNotCached() async throws {
+        let mockMarketplaceService = MockMarketplaceService()
+        let viewModel = ProfileViewModel(
+            userService: MockUserService(),
+            postService: MockPostService(),
+            internshipService: MockInternshipService(),
+            marketplaceService: mockMarketplaceService
+        )
+        let authState = createMockAuthState()
+        
+        let comment = Comment(
+            id: "c1", postId: "m1", parentType: "MARKETPLACE", text: "Hi",
+            author: Post.Author(id: "a", profileName: "A", isAnonymous: true),
+            createdAt: "2026-02-09T00:00:00Z"
+        )
+        
+        let destination = await viewModel.resolveDestination(for: comment, authState: authState)
+        #expect(mockMarketplaceService.getItemCalled)
+        #expect(destination != nil)
+        #expect(viewModel.commentMarketplaceMap["m1"] != nil)
+    }
+    
     // MARK: - Helper Methods
     
     private func createMockAuthState() -> AuthState {
