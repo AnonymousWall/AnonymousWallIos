@@ -22,7 +22,7 @@ class InternshipService: InternshipServiceProtocol {
         wall: WallType = .campus,
         page: Int = 1,
         limit: Int = 20,
-        sortBy: FeedSortOrder = .newest
+        sortBy: SortOrder = .newest
     ) async throws -> InternshipListResponse {
         let queryItems = [
             URLQueryItem(name: "wall", value: wall.rawValue),

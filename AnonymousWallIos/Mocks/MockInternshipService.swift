@@ -60,7 +60,7 @@ class MockInternshipService: InternshipServiceProtocol {
         wall: WallType,
         page: Int,
         limit: Int,
-        sortBy: FeedSortOrder
+        sortBy: SortOrder
     ) async throws -> InternshipListResponse {
         fetchInternshipsCalled = true
         switch fetchInternshipsBehavior {

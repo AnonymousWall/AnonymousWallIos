@@ -16,7 +16,7 @@ protocol InternshipServiceProtocol {
         wall: WallType,
         page: Int,
         limit: Int,
-        sortBy: FeedSortOrder
+        sortBy: SortOrder
     ) async throws -> InternshipListResponse
 
     func getInternship(

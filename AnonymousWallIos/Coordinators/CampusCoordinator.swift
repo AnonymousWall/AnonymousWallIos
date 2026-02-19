@@ -47,7 +47,7 @@ class CampusCoordinator: Coordinator {
         // With the delay, we let ConversationsListView fully appear and finish
         // loading before pushing ChatView on top of it.
         
-        tabCoordinator?.selectTab(3) // Switch to Messages tab
+        tabCoordinator?.selectTab(5) // Switch to Messages tab
         
         Task { @MainActor in
             // Wait one runloop tick for the tab switch + ConversationsListView

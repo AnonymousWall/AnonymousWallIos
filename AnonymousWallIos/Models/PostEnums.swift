@@ -54,19 +54,6 @@ enum SortOrder: String, Codable, CaseIterable {
     }
 }
 
-/// Sort order for internship and general comment-only feeds
-enum FeedSortOrder: String, CaseIterable {
-    case newest = "newest"
-    case oldest = "oldest"
-    
-    var displayName: String {
-        switch self {
-        case .newest: return "Recent"
-        case .oldest: return "Oldest"
-        }
-    }
-}
-
 /// Sort order for marketplace items
 enum MarketplaceSortOrder: String, CaseIterable {
     case newest = "newest"

@@ -23,6 +23,26 @@ struct MarketplaceDetailView: View {
                 VStack(alignment: .leading, spacing: 16) {
                     // Item detail card
                     VStack(alignment: .leading, spacing: 14) {
+                        // Author line
+                        HStack {
+                            if item.author.id == authState.currentUser?.id {
+                                Text("Listed by Me")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                            } else {
+                                Button(action: { onTapAuthor?(item.author.id, item.author.profileName) }) {
+                                    Text("Listed by \(item.author.profileName)")
+                                        .font(.caption)
+                                        .fontWeight(.medium)
+                                        .foregroundColor(.blue)
+                                        .underline()
+                                }
+                                .accessibilityLabel("Listed by \(item.author.profileName)")
+                                .accessibilityHint("Double tap to message \(item.author.profileName)")
+                            }
+                            Spacer()
+                        }
+
                         // Title and price
                         HStack(alignment: .top) {
                             VStack(alignment: .leading, spacing: 4) {
@@ -155,8 +175,8 @@ struct MarketplaceDetailView: View {
 
                         if !viewModel.comments.isEmpty {
                             Picker("Sort", selection: $viewModel.selectedSortOrder) {
-                                Text("Newest").tag(SortOrder.newest)
-                                Text("Oldest").tag(SortOrder.oldest)
+                                Text(SortOrder.newest.displayName).tag(SortOrder.newest)
+                                Text(SortOrder.oldest.displayName).tag(SortOrder.oldest)
                             }
                             .pickerStyle(.menu)
                             .accessibilityLabel("Sort comments")

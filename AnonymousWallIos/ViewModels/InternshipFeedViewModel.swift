@@ -14,7 +14,7 @@ class InternshipFeedViewModel: ObservableObject {
     @Published var isLoading = false
     @Published var isLoadingMore = false
     @Published var errorMessage: String?
-    @Published var selectedSortOrder: FeedSortOrder = .newest
+    @Published var selectedSortOrder: SortOrder = .newest
 
     // MARK: - Private Properties
     private var pagination = Pagination()

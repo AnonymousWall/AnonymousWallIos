@@ -23,6 +23,26 @@ struct InternshipDetailView: View {
                 VStack(alignment: .leading, spacing: 16) {
                     // Internship detail card
                     VStack(alignment: .leading, spacing: 14) {
+                        // Author line
+                        HStack {
+                            if internship.author.id == authState.currentUser?.id {
+                                Text("Posted by Me")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                            } else {
+                                Button(action: { onTapAuthor?(internship.author.id, internship.author.profileName) }) {
+                                    Text("Posted by \(internship.author.profileName)")
+                                        .font(.caption)
+                                        .fontWeight(.medium)
+                                        .foregroundColor(.blue)
+                                        .underline()
+                                }
+                                .accessibilityLabel("Posted by \(internship.author.profileName)")
+                                .accessibilityHint("Double tap to message \(internship.author.profileName)")
+                            }
+                            Spacer()
+                        }
+
                         // Company and role
                         VStack(alignment: .leading, spacing: 4) {
                             Text(internship.company)
@@ -111,8 +131,8 @@ struct InternshipDetailView: View {
 
                         if !viewModel.comments.isEmpty {
                             Picker("Sort", selection: $viewModel.selectedSortOrder) {
-                                Text("Newest").tag(SortOrder.newest)
-                                Text("Oldest").tag(SortOrder.oldest)
+                                Text(SortOrder.newest.displayName).tag(SortOrder.newest)
+                                Text(SortOrder.oldest.displayName).tag(SortOrder.oldest)
                             }
                             .pickerStyle(.menu)
                             .accessibilityLabel("Sort comments")

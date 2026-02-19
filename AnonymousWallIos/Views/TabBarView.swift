@@ -35,14 +35,14 @@ struct TabBarView: View {
                 .tag(2)
             
             // Tab 4: Internship
-            InternshipView()
+            InternshipView(coordinator: coordinator.internshipCoordinator)
                 .tabItem {
                     Label("Internship", systemImage: coordinator.selectedTab == 3 ? "briefcase.fill" : "briefcase")
                 }
                 .tag(3)
             
             // Tab 5: Market
-            MarketView()
+            MarketView(coordinator: coordinator.marketplaceCoordinator)
                 .tabItem {
                     Label("Market", systemImage: coordinator.selectedTab == 4 ? "cart.fill" : "cart")
                 }
