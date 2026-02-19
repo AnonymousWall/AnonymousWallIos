@@ -108,6 +108,8 @@ struct CreatePostResponse: Codable {
 struct Comment: Codable, Identifiable {
     let id: String
     let postId: String
+    /// Parent entity type: "POST", "INTERNSHIP", or "MARKETPLACE"
+    let parentType: String?
     let text: String
     let author: Post.Author
     let createdAt: String

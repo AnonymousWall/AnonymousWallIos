@@ -269,6 +269,7 @@ class MockPostService: PostServiceProtocol {
             let newComment = Comment(
                 id: "new-comment-\(mockComments.count)",
                 postId: postId,
+                parentType: "POST",
                 text: text,
                 author: Post.Author(id: userId, profileName: "Mock User", isAnonymous: true),
                 createdAt: "2026-01-31T00:00:00Z"
@@ -281,6 +282,7 @@ class MockPostService: PostServiceProtocol {
             return Comment(
                 id: "",
                 postId: "",
+                parentType: nil,
                 text: "",
                 author: Post.Author(id: "", profileName: "", isAnonymous: false),
                 createdAt: ""

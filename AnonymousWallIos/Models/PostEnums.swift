@@ -53,3 +53,18 @@ enum SortOrder: String, Codable, CaseIterable {
         return [.newest, .mostLiked, .mostCommented, .oldest]
     }
 }
+
+/// Sort order for marketplace items
+enum MarketplaceSortOrder: String, CaseIterable {
+    case newest = "newest"
+    case priceAsc = "price-asc"
+    case priceDesc = "price-desc"
+    
+    var displayName: String {
+        switch self {
+        case .newest: return "Newest"
+        case .priceAsc: return "Price ↑"
+        case .priceDesc: return "Price ↓"
+        }
+    }
+}

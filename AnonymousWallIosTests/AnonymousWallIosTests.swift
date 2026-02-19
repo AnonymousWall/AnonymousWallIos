@@ -506,13 +506,13 @@ struct AnonymousWallIosTests {
     @Test func testProfileCommentSortingByNewest() async throws {
         // Test that comments can be sorted by newest
         let comments = [
-            Comment(id: "1", postId: "post1", text: "First comment",
+            Comment(id: "1", postId: "post1", parentType: "POST", text: "First comment",
                     author: Post.Author(id: "user1", profileName: "User", isAnonymous: true),
                     createdAt: "2026-01-01T10:00:00Z"),
-            Comment(id: "2", postId: "post1", text: "Second comment",
+            Comment(id: "2", postId: "post1", parentType: "POST", text: "Second comment",
                     author: Post.Author(id: "user1", profileName: "User", isAnonymous: true),
                     createdAt: "2026-01-02T10:00:00Z"),
-            Comment(id: "3", postId: "post1", text: "Third comment",
+            Comment(id: "3", postId: "post1", parentType: "POST", text: "Third comment",
                     author: Post.Author(id: "user1", profileName: "User", isAnonymous: true),
                     createdAt: "2026-01-01T15:00:00Z")
         ]
@@ -526,13 +526,13 @@ struct AnonymousWallIosTests {
     @Test func testProfileCommentSortingByOldest() async throws {
         // Test that comments can be sorted by oldest
         let comments = [
-            Comment(id: "1", postId: "post1", text: "First comment",
+            Comment(id: "1", postId: "post1", parentType: "POST", text: "First comment",
                     author: Post.Author(id: "user1", profileName: "User", isAnonymous: true),
                     createdAt: "2026-01-01T10:00:00Z"),
-            Comment(id: "2", postId: "post1", text: "Second comment",
+            Comment(id: "2", postId: "post1", parentType: "POST", text: "Second comment",
                     author: Post.Author(id: "user1", profileName: "User", isAnonymous: true),
                     createdAt: "2026-01-02T10:00:00Z"),
-            Comment(id: "3", postId: "post1", text: "Third comment",
+            Comment(id: "3", postId: "post1", parentType: "POST", text: "Third comment",
                     author: Post.Author(id: "user1", profileName: "User", isAnonymous: true),
                     createdAt: "2026-01-01T15:00:00Z")
         ]

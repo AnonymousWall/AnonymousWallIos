@@ -34,33 +34,33 @@ struct TabBarView: View {
                 }
                 .tag(2)
             
-            // Tab 4: Messages
-            MessagesView(coordinator: coordinator.chatCoordinator)
+            // Tab 4: Internship
+            InternshipView(coordinator: coordinator.internshipCoordinator)
                 .tabItem {
-                    Label("Messages", systemImage: coordinator.selectedTab == 3 ? "bubble.left.and.bubble.right.fill" : "bubble.left.and.bubble.right")
+                    Label("Internship", systemImage: coordinator.selectedTab == 3 ? "briefcase.fill" : "briefcase")
                 }
                 .tag(3)
             
-            // Tab 5: Profile
-            ProfileView(coordinator: coordinator.profileCoordinator)
+            // Tab 5: Market
+            MarketView(coordinator: coordinator.marketplaceCoordinator)
                 .tabItem {
-                    Label("Profile", systemImage: coordinator.selectedTab == 4 ? "person.fill" : "person")
+                    Label("Market", systemImage: coordinator.selectedTab == 4 ? "cart.fill" : "cart")
                 }
                 .tag(4)
             
-//            // Tab 6: Market (dummy)
-//            MarketView()
-//                .tabItem {
-//                    Label("Market", systemImage: coordinator.selectedTab == 5 ? "cart.fill" : "cart")
-//                }
-//                .tag(5)
-//            
-//            // Tab 7: Internship (dummy)
-//            InternshipView()
-//                .tabItem {
-//                    Label("Internship", systemImage: coordinator.selectedTab == 6 ? "briefcase.fill" : "briefcase")
-//                }
-//                .tag(6)
+            // Tab 6: Messages
+            MessagesView(coordinator: coordinator.chatCoordinator)
+                .tabItem {
+                    Label("Messages", systemImage: coordinator.selectedTab == 5 ? "bubble.left.and.bubble.right.fill" : "bubble.left.and.bubble.right")
+                }
+                .tag(5)
+            
+            // Tab 7: Profile
+            ProfileView(coordinator: coordinator.profileCoordinator)
+                .tabItem {
+                    Label("Profile", systemImage: coordinator.selectedTab == 6 ? "person.fill" : "person")
+                }
+                .tag(6)
         }
         .accentColor(.primaryPurple)
         .onChange(of: coordinator.selectedTab) { _, _ in
