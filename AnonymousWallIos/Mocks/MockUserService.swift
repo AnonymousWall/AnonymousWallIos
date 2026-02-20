@@ -46,18 +46,24 @@ class MockUserService: UserServiceProtocol {
     var updateProfileNameCalled = false
     var getUserCommentsCalled = false
     var getUserPostsCalled = false
+    var getUserInternshipsCalled = false
+    var getUserMarketplacesCalled = false
     
     // MARK: - Configurable Behavior
     
     var updateProfileNameBehavior: MockBehavior = .success
     var getUserCommentsBehavior: MockBehavior = .success
     var getUserPostsBehavior: MockBehavior = .success
+    var getUserInternshipsBehavior: MockBehavior = .success
+    var getUserMarketplacesBehavior: MockBehavior = .success
     
     // MARK: - Configurable Responses
     
     var mockUser: User?
     var mockComments: [Comment] = []
     var mockPosts: [Post] = []
+    var mockInternships: [Internship] = []
+    var mockMarketplaceItems: [MarketplaceItem] = []
     
     // MARK: - Initialization
     
@@ -164,6 +170,78 @@ class MockUserService: UserServiceProtocol {
         }
     }
     
+    func getUserInternships(
+        token: String,
+        userId: String,
+        page: Int,
+        limit: Int,
+        sort: SortOrder
+    ) async throws -> InternshipListResponse {
+        getUserInternshipsCalled = true
+        
+        switch getUserInternshipsBehavior {
+        case .success:
+            let totalPages = mockInternships.isEmpty ? 1 : (mockInternships.count + limit - 1) / limit
+            return InternshipListResponse(
+                data: mockInternships,
+                pagination: PostListResponse.Pagination(
+                    page: page,
+                    limit: limit,
+                    total: mockInternships.count,
+                    totalPages: totalPages
+                )
+            )
+        case .failure(let error):
+            throw error
+        case .emptyState:
+            return InternshipListResponse(
+                data: [],
+                pagination: PostListResponse.Pagination(
+                    page: 1,
+                    limit: limit,
+                    total: 0,
+                    totalPages: 1
+                )
+            )
+        }
+    }
+    
+    func getUserMarketplaces(
+        token: String,
+        userId: String,
+        page: Int,
+        limit: Int,
+        sort: SortOrder
+    ) async throws -> MarketplaceListResponse {
+        getUserMarketplacesCalled = true
+        
+        switch getUserMarketplacesBehavior {
+        case .success:
+            let totalPages = mockMarketplaceItems.isEmpty ? 1 : (mockMarketplaceItems.count + limit - 1) / limit
+            return MarketplaceListResponse(
+                data: mockMarketplaceItems,
+                pagination: PostListResponse.Pagination(
+                    page: page,
+                    limit: limit,
+                    total: mockMarketplaceItems.count,
+                    totalPages: totalPages
+                )
+            )
+        case .failure(let error):
+            throw error
+        case .emptyState:
+            return MarketplaceListResponse(
+                data: [],
+                pagination: PostListResponse.Pagination(
+                    page: 1,
+                    limit: limit,
+                    total: 0,
+                    totalPages: 1
+                )
+            )
+        }
+    }
+    
     // MARK: - Helper Methods
     
     /// Reset all call tracking flags
@@ -171,6 +249,8 @@ class MockUserService: UserServiceProtocol {
         updateProfileNameCalled = false
         getUserCommentsCalled = false
         getUserPostsCalled = false
+        getUserInternshipsCalled = false
+        getUserMarketplacesCalled = false
     }
     
     /// Reset all behaviors to success
@@ -178,6 +258,8 @@ class MockUserService: UserServiceProtocol {
         updateProfileNameBehavior = .success
         getUserCommentsBehavior = .success
         getUserPostsBehavior = .success
+        getUserInternshipsBehavior = .success
+        getUserMarketplacesBehavior = .success
     }
     
     /// Configure all methods to fail with specific error
@@ -185,6 +267,8 @@ class MockUserService: UserServiceProtocol {
         updateProfileNameBehavior = .failure(error)
         getUserCommentsBehavior = .failure(error)
         getUserPostsBehavior = .failure(error)
+        getUserInternshipsBehavior = .failure(error)
+        getUserMarketplacesBehavior = .failure(error)
     }
     
     /// Configure all methods to return empty state
@@ -192,6 +276,8 @@ class MockUserService: UserServiceProtocol {
         updateProfileNameBehavior = .emptyState
         getUserCommentsBehavior = .emptyState
         getUserPostsBehavior = .emptyState
+        getUserInternshipsBehavior = .emptyState
+        getUserMarketplacesBehavior = .emptyState
     }
     
     /// Clear all mock data
@@ -199,5 +285,7 @@ class MockUserService: UserServiceProtocol {
         mockUser = nil
         mockComments = []
         mockPosts = []
+        mockInternships = []
+        mockMarketplaceItems = []
     }
 }

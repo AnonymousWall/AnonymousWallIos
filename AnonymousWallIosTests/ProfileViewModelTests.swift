@@ -21,7 +21,7 @@ struct ProfileViewModelTests {
         #expect(viewModel.selectedSegment == 0)
         #expect(viewModel.myPosts.isEmpty)
         #expect(viewModel.myComments.isEmpty)
-        #expect(viewModel.commentPostMap.isEmpty)
+        #expect(viewModel.commentParentMap.isEmpty)
         #expect(viewModel.isLoading == false)
         #expect(viewModel.errorMessage == nil)
         #expect(viewModel.postSortOrder == .newest)
@@ -205,29 +205,29 @@ struct ProfileViewModelTests {
         #expect(viewModel.selectedSegment == 0)
     }
     
-    @Test func testCommentPostMapInitiallyEmpty() async throws {
+    @Test func testCommentParentMapInitiallyEmpty() async throws {
         let viewModel = ProfileViewModel()
         
-        #expect(viewModel.commentPostMap.isEmpty)
+        #expect(viewModel.commentParentMap.isEmpty)
     }
     
-    @Test func testCommentPostMapClearedOnSort() async throws {
+    @Test func testCommentParentMapClearedOnSort() async throws {
         let mockUserService = MockUserService()
         let mockPostService = MockPostService()
         let viewModel = ProfileViewModel(userService: mockUserService, postService: mockPostService)
         let authState = createMockAuthState()
         
-        // Add some data to commentPostMap
+        // Add some data to commentParentMap
         let mockPost = createMockPost(id: "post-1", title: "Test Post")
-        viewModel.commentPostMap["comment-1"] = mockPost
+        viewModel.commentParentMap["comment-1"] = .post(mockPost)
         
-        #expect(!viewModel.commentPostMap.isEmpty)
+        #expect(!viewModel.commentParentMap.isEmpty)
         
         viewModel.commentSortOrder = .oldest
         viewModel.commentSortChanged(authState: authState)
         
         // Should be cleared on sort change
-        #expect(viewModel.commentPostMap.isEmpty)
+        #expect(viewModel.commentParentMap.isEmpty)
     }
     
     // MARK: - Refresh Tests
