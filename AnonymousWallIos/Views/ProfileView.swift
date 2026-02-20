@@ -12,6 +12,24 @@ struct ProfileView: View {
     @StateObject private var viewModel = ProfileViewModel()
     @ObservedObject var coordinator: ProfileCoordinator
     
+    private var currentSortDisplayName: String {
+        switch viewModel.selectedSegment {
+        case 0: return viewModel.postSortOrder.displayName
+        case 1: return viewModel.commentSortOrder.displayName
+        case 2: return viewModel.internshipSortOrder.displayName
+        default: return viewModel.marketplaceSortOrder.displayName
+        }
+    }
+    
+    private var selectedSegmentName: String {
+        switch viewModel.selectedSegment {
+        case 0: return "Posts"
+        case 1: return "Comments"
+        case 2: return "Internships"
+        default: return "Marketplace"
+        }
+    }
+    
     var body: some View {
         NavigationStack(path: $coordinator.path) {
             VStack(spacing: 0) {
@@ -82,12 +100,14 @@ struct ProfileView: View {
                 Picker("Content Type", selection: $viewModel.selectedSegment) {
                     Text("Posts").tag(0)
                     Text("Comments").tag(1)
+                    Text("Internships").tag(2)
+                    Text("Marketplace").tag(3)
                 }
                 .pickerStyle(SegmentedPickerStyle())
                 .padding(.horizontal)
                 .padding(.bottom, 10)
                 .accessibilityLabel("Content type")
-                .accessibilityValue(viewModel.selectedSegment == 0 ? "Posts" : "Comments")
+                .accessibilityValue(selectedSegmentName)
                 .onChange(of: viewModel.selectedSegment) { _, _ in
                     viewModel.segmentChanged(authState: authState)
                 }
@@ -114,7 +134,7 @@ struct ProfileView: View {
                                     }
                                 }
                             }
-                        } else {
+                        } else if viewModel.selectedSegment == 1 {
                             // Comments sorting options - only newest/oldest supported
                             Button {
                                 viewModel.commentSortOrder = .newest
@@ -139,10 +159,60 @@ struct ProfileView: View {
                                     }
                                 }
                             }
+                        } else if viewModel.selectedSegment == 2 {
+                            // Internships sorting options - newest/oldest
+                            Button {
+                                viewModel.internshipSortOrder = .newest
+                                viewModel.internshipSortChanged(authState: authState)
+                            } label: {
+                                HStack {
+                                    Text(SortOrder.newest.displayName)
+                                    if viewModel.internshipSortOrder == .newest {
+                                        Image(systemName: "checkmark")
+                                    }
+                                }
+                            }
+                            
+                            Button {
+                                viewModel.internshipSortOrder = .oldest
+                                viewModel.internshipSortChanged(authState: authState)
+                            } label: {
+                                HStack {
+                                    Text(SortOrder.oldest.displayName)
+                                    if viewModel.internshipSortOrder == .oldest {
+                                        Image(systemName: "checkmark")
+                                    }
+                                }
+                            }
+                        } else {
+                            // Marketplace sorting options - newest/oldest
+                            Button {
+                                viewModel.marketplaceSortOrder = .newest
+                                viewModel.marketplaceSortChanged(authState: authState)
+                            } label: {
+                                HStack {
+                                    Text(SortOrder.newest.displayName)
+                                    if viewModel.marketplaceSortOrder == .newest {
+                                        Image(systemName: "checkmark")
+                                    }
+                                }
+                            }
+                            
+                            Button {
+                                viewModel.marketplaceSortOrder = .oldest
+                                viewModel.marketplaceSortChanged(authState: authState)
+                            } label: {
+                                HStack {
+                                    Text(SortOrder.oldest.displayName)
+                                    if viewModel.marketplaceSortOrder == .oldest {
+                                        Image(systemName: "checkmark")
+                                    }
+                                }
+                            }
                         }
                     } label: {
                         HStack {
-                            Text(viewModel.selectedSegment == 0 ? viewModel.postSortOrder.displayName : viewModel.commentSortOrder.displayName)
+                            Text(currentSortDisplayName)
                                 .foregroundColor(.blue)
                             Image(systemName: "chevron.down")
                                 .font(.caption)
@@ -154,7 +224,7 @@ struct ProfileView: View {
                         .cornerRadius(8)
                     }
                     .accessibilityLabel("Sort by")
-                    .accessibilityValue(viewModel.selectedSegment == 0 ? viewModel.postSortOrder.displayName : viewModel.commentSortOrder.displayName)
+                    .accessibilityValue(currentSortDisplayName)
                     
                     Spacer()
                 }
@@ -231,7 +301,7 @@ struct ProfileView: View {
                             }
                             .padding()
                         }
-                    } else {
+                    } else if viewModel.selectedSegment == 1 {
                         // Comments section
                         if viewModel.myComments.isEmpty {
                             VStack(spacing: 20) {
@@ -297,6 +367,126 @@ struct ProfileView: View {
                                 
                                 // Loading indicator at bottom
                                 if viewModel.isLoadingMoreComments {
+                                    HStack {
+                                        Spacer()
+                                        ProgressView()
+                                            .padding()
+                                        Spacer()
+                                    }
+                                }
+                            }
+                            .padding()
+                        }
+                    } else if viewModel.selectedSegment == 2 {
+                        // Internships section
+                        if viewModel.myInternships.isEmpty {
+                            VStack(spacing: 20) {
+                                ZStack {
+                                    Circle()
+                                        .fill(Color.tealPurpleGradient)
+                                        .frame(width: 100, height: 100)
+                                        .blur(radius: 30)
+                                    
+                                    Image(systemName: "briefcase.fill")
+                                        .font(.system(size: 60))
+                                        .foregroundStyle(Color.tealPurpleGradient)
+                                        .accessibilityHidden(true)
+                                }
+                                
+                                VStack(spacing: 8) {
+                                    Text("No internship postings yet")
+                                        .font(.title3.bold())
+                                        .foregroundColor(.primary)
+                                    Text("Post your first internship opportunity!")
+                                        .font(.body)
+                                        .foregroundColor(.secondary)
+                                }
+                                .accessibilityElement(children: .combine)
+                                .accessibilityLabel("No internship postings yet. Post your first internship opportunity!")
+                            }
+                            .frame(maxWidth: .infinity, minHeight: 300)
+                        } else {
+                            LazyVStack(spacing: 12) {
+                                ForEach(viewModel.myInternships) { internship in
+                                    Button {
+                                        coordinator.navigate(to: .internshipDetail(internship))
+                                    } label: {
+                                        InternshipRowView(
+                                            internship: internship,
+                                            isOwnPosting: true,
+                                            onDelete: { viewModel.deleteInternship(internship, authState: authState) }
+                                        )
+                                    }
+                                    .buttonStyle(PlainButtonStyle())
+                                    .accessibilityLabel("View your internship: \(internship.company) - \(internship.role)")
+                                    .accessibilityHint("Double tap to view internship details and comments")
+                                    .onAppear {
+                                        viewModel.loadMoreInternshipsIfNeeded(for: internship, authState: authState)
+                                    }
+                                }
+                                
+                                // Loading indicator at bottom
+                                if viewModel.isLoadingMoreInternships {
+                                    HStack {
+                                        Spacer()
+                                        ProgressView()
+                                            .padding()
+                                        Spacer()
+                                    }
+                                }
+                            }
+                            .padding()
+                        }
+                    } else {
+                        // Marketplace section
+                        if viewModel.myMarketplaceItems.isEmpty {
+                            VStack(spacing: 20) {
+                                ZStack {
+                                    Circle()
+                                        .fill(Color.orangePinkGradient)
+                                        .frame(width: 100, height: 100)
+                                        .blur(radius: 30)
+                                    
+                                    Image(systemName: "bag.fill")
+                                        .font(.system(size: 60))
+                                        .foregroundStyle(Color.orangePinkGradient)
+                                        .accessibilityHidden(true)
+                                }
+                                
+                                VStack(spacing: 8) {
+                                    Text("No marketplace listings yet")
+                                        .font(.title3.bold())
+                                        .foregroundColor(.primary)
+                                    Text("List your first item for sale!")
+                                        .font(.body)
+                                        .foregroundColor(.secondary)
+                                }
+                                .accessibilityElement(children: .combine)
+                                .accessibilityLabel("No marketplace listings yet. List your first item for sale!")
+                            }
+                            .frame(maxWidth: .infinity, minHeight: 300)
+                        } else {
+                            LazyVStack(spacing: 12) {
+                                ForEach(viewModel.myMarketplaceItems) { item in
+                                    Button {
+                                        coordinator.navigate(to: .marketplaceDetail(item))
+                                    } label: {
+                                        MarketplaceRowView(
+                                            item: item,
+                                            isOwnItem: true,
+                                            onDelete: { viewModel.deleteMarketplaceItem(item, authState: authState) }
+                                        )
+                                    }
+                                    .buttonStyle(PlainButtonStyle())
+                                    .accessibilityLabel("View your listing: \(item.title)")
+                                    .accessibilityHint("Double tap to view listing details and comments")
+                                    .onAppear {
+                                        viewModel.loadMoreMarketplaceItemsIfNeeded(for: item, authState: authState)
+                                    }
+                                }
+                                
+                                // Loading indicator at bottom
+                                if viewModel.isLoadingMoreMarketplaceItems {
                                     HStack {
                                         Spacer()
                                         ProgressView()

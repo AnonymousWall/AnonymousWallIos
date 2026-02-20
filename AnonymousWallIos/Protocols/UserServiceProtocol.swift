@@ -32,4 +32,22 @@ protocol UserServiceProtocol {
         limit: Int,
         sort: SortOrder
     ) async throws -> PostListResponse
+    
+    /// Get user's own internship postings
+    func getUserInternships(
+        token: String,
+        userId: String,
+        page: Int,
+        limit: Int,
+        sort: SortOrder
+    ) async throws -> InternshipListResponse
+    
+    /// Get user's own marketplace items
+    func getUserMarketplaces(
+        token: String,
+        userId: String,
+        page: Int,
+        limit: Int,
+        sort: SortOrder
+    ) async throws -> MarketplaceListResponse
 }

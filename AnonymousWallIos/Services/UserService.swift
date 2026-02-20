@@ -85,4 +85,54 @@ class UserService: UserServiceProtocol {
         
         return try await networkClient.performRequest(request)
     }
+    
+    /// Get user's own internship postings
+    func getUserInternships(
+        token: String,
+        userId: String,
+        page: Int = 1,
+        limit: Int = 20,
+        sort: SortOrder = .newest
+    ) async throws -> InternshipListResponse {
+        let queryItems = [
+            URLQueryItem(name: "page", value: "\(page)"),
+            URLQueryItem(name: "limit", value: "\(limit)"),
+            URLQueryItem(name: "sort", value: sort.rawValue)
+        ]
+        
+        let request = try APIRequestBuilder()
+            .setPath("/users/me/internships")
+            .setMethod(.GET)
+            .addQueryItems(queryItems)
+            .setToken(token)
+            .setUserId(userId)
+            .build()
+        
+        return try await networkClient.performRequest(request)
+    }
+    
+    /// Get user's own marketplace items
+    func getUserMarketplaces(
+        token: String,
+        userId: String,
+        page: Int = 1,
+        limit: Int = 20,
+        sort: SortOrder = .newest
+    ) async throws -> MarketplaceListResponse {
+        let queryItems = [
+            URLQueryItem(name: "page", value: "\(page)"),
+            URLQueryItem(name: "limit", value: "\(limit)"),
+            URLQueryItem(name: "sort", value: sort.rawValue)
+        ]
+        
+        let request = try APIRequestBuilder()
+            .setPath("/users/me/marketplaces")
+            .setMethod(.GET)
+            .addQueryItems(queryItems)
+            .setToken(token)
+            .setUserId(userId)
+            .build()
+        
+        return try await networkClient.performRequest(request)
+    }
 }
