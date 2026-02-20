@@ -25,7 +25,7 @@ class CreateMarketplaceViewModel: ObservableObject {
     // MARK: - Constants
     let maxTitleLength = 255
     let maxDescriptionLength = 5000
-    let validConditions = ["new", "like_new", "good", "fair", "poor"]
+    let validConditions = ["new", "like-new", "good", "fair", "poor"]
     let conditionDisplayNames = ["New", "Like New", "Good", "Fair", "Poor"]
 
     // MARK: - Initialization
