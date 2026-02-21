@@ -193,11 +193,10 @@ struct MarketplaceRowView: View {
     private func conditionDisplayName(_ condition: String) -> String {
         switch condition {
         case "new": return "New"
-        case "like_new": return "Like New"
+        case "like-new": return "Like New"
         case "good": return "Good"
         case "fair": return "Fair"
-        case "poor": return "Poor"
-        default: return condition.replacingOccurrences(of: "_", with: " ").capitalized
+        default: return condition.replacingOccurrences(of: "-", with: " ").capitalized
         }
     }
 }
