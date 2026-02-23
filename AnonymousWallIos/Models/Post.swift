@@ -16,6 +16,7 @@ struct Post: Codable, Identifiable, Hashable {
     let likes: Int
     let comments: Int
     let liked: Bool
+    let imageUrls: [String]
     let author: Author
     let createdAt: String
     let updatedAt: String
@@ -36,16 +37,49 @@ struct Post: Codable, Identifiable, Hashable {
     }
     
     enum CodingKeys: String, CodingKey {
-        case id
-        case title
-        case content
-        case wall
-        case likes
-        case comments
-        case liked
-        case author
-        case createdAt
-        case updatedAt
+        case id, title, content, wall, likes, comments, liked, author, createdAt, updatedAt
+        case imageUrls
+    }
+    
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(String.self, forKey: .id)
+        title = try container.decode(String.self, forKey: .title)
+        content = try container.decode(String.self, forKey: .content)
+        wall = try container.decode(String.self, forKey: .wall)
+        likes = try container.decode(Int.self, forKey: .likes)
+        comments = try container.decode(Int.self, forKey: .comments)
+        liked = try container.decode(Bool.self, forKey: .liked)
+        imageUrls = try container.decodeIfPresent([String].self, forKey: .imageUrls) ?? []
+        author = try container.decode(Author.self, forKey: .author)
+        createdAt = try container.decode(String.self, forKey: .createdAt)
+        updatedAt = try container.decode(String.self, forKey: .updatedAt)
+    }
+    
+    init(
+        id: String,
+        title: String,
+        content: String,
+        wall: String,
+        likes: Int,
+        comments: Int,
+        liked: Bool,
+        imageUrls: [String] = [],
+        author: Author,
+        createdAt: String,
+        updatedAt: String
+    ) {
+        self.id = id
+        self.title = title
+        self.content = content
+        self.wall = wall
+        self.likes = likes
+        self.comments = comments
+        self.liked = liked
+        self.imageUrls = imageUrls
+        self.author = author
+        self.createdAt = createdAt
+        self.updatedAt = updatedAt
     }
     
     /// Create a copy of this post with updated like status
@@ -58,6 +92,7 @@ struct Post: Codable, Identifiable, Hashable {
             likes: likes,
             comments: self.comments,
             liked: liked,
+            imageUrls: self.imageUrls,
             author: self.author,
             createdAt: self.createdAt,
             updatedAt: self.updatedAt
@@ -74,6 +109,7 @@ struct Post: Codable, Identifiable, Hashable {
             likes: self.likes,
             comments: comments,
             liked: self.liked,
+            imageUrls: self.imageUrls,
             author: self.author,
             createdAt: self.createdAt,
             updatedAt: self.updatedAt

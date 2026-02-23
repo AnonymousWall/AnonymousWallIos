@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import UIKit
 
 class PostService: PostServiceProtocol {
     static let shared: PostServiceProtocol = PostService()
@@ -54,13 +55,8 @@ class PostService: PostServiceProtocol {
             throw error
         }
     }
-    
-    /// Get a single post by ID
-    func getPost(
-        postId: String,
-        token: String,
-        userId: String
-    ) async throws -> Post {
+
+    func getPost(postId: String, token: String, userId: String) async throws -> Post {
         let request = try APIRequestBuilder()
             .setPath("/posts/\(postId)")
             .setMethod(.GET)
@@ -71,22 +67,79 @@ class PostService: PostServiceProtocol {
         return try await networkClient.performRequest(request)
     }
     
-    /// Create a new post
-    func createPost(title: String, content: String, wall: WallType = .campus, token: String, userId: String) async throws -> Post {
-        let body = CreatePostRequest(title: title, content: content, wall: wall.rawValue)
-        
-        let request = try APIRequestBuilder()
-            .setPath("/posts")
-            .setMethod(.POST)
-            .setBody(body)
-            .setToken(token)
-            .setUserId(userId)
-            .build()
-        
-        return try await networkClient.performRequest(request)
-    }
-    
-    /// Toggle like on a post
+    /// Create a new post (single multipart request, supports up to 5 images)
+        func createPost(
+            title: String,
+            content: String,
+            wall: WallType = .campus,
+            images: [UIImage] = [],
+            token: String,
+            userId: String
+        ) async throws -> Post {
+            guard let url = URL(string: config.fullAPIBaseURL + "/posts") else {
+                throw NetworkError.invalidURL
+            }
+
+            let boundary = UUID().uuidString
+            var urlRequest = URLRequest(url: url)
+            urlRequest.httpMethod = "POST"
+            urlRequest.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+            urlRequest.setValue(userId, forHTTPHeaderField: "X-User-Id")
+            urlRequest.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+            urlRequest.timeoutInterval = 60
+            urlRequest.assumesHTTP3Capable = false
+
+            var body = Data()
+            body.appendFormField(name: "title", value: title, boundary: boundary)
+            body.appendFormField(name: "content", value: content, boundary: boundary)
+            body.appendFormField(name: "wall", value: wall.rawValue, boundary: boundary)
+
+            // In createPost, replace the image processing:
+            for (index, image) in images.prefix(5).enumerated() {
+                let resized = resizeImage(image, maxDimension: 1024) // down from 1920
+                if let jpeg = resized.jpegData(compressionQuality: 0.6) { // down from 0.8
+                    body.appendFileField(
+                        name: "images",
+                        filename: "image\(index).jpg",
+                        mimeType: "image/jpeg",
+                        data: jpeg,
+                        boundary: boundary
+                    )
+                }
+            }
+
+            body.append("--\(boundary)--\r\n".data(using: .utf8)!)
+            urlRequest.httpBody = body
+
+            let sessionConfig = URLSessionConfiguration.ephemeral
+            sessionConfig.waitsForConnectivity = true
+            let session = URLSession(configuration: sessionConfig)
+
+            let (data, response) = try await session.data(for: urlRequest)
+
+            guard let httpResponse = response as? HTTPURLResponse else {
+                throw NetworkError.serverError("Invalid response")
+            }
+            guard (200...299).contains(httpResponse.statusCode) else {
+                if httpResponse.statusCode == 401 { throw NetworkError.unauthorized }
+                if httpResponse.statusCode == 403 { throw NetworkError.forbidden }
+                let message = String(data: data, encoding: .utf8) ?? "Server error"
+                throw NetworkError.serverError(message)
+            }
+
+            return try JSONDecoder().decode(Post.self, from: data)
+        }
+
+        private func resizeImage(_ image: UIImage, maxDimension: CGFloat = 1920) -> UIImage {
+            let size = image.size
+            guard size.width > maxDimension || size.height > maxDimension else { return image }
+            let ratio = min(maxDimension / size.width, maxDimension / size.height)
+            let newSize = CGSize(width: size.width * ratio, height: size.height * ratio)
+            return UIGraphicsImageRenderer(size: newSize).image { _ in
+                image.draw(in: CGRect(origin: .zero, size: newSize))
+            }
+        }
+
     func toggleLike(postId: String, token: String, userId: String) async throws -> LikeResponse {
         let request = try APIRequestBuilder()
             .setPath("/posts/\(postId)/likes")

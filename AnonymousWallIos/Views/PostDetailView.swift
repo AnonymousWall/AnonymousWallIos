@@ -43,6 +43,47 @@ struct PostDetailView: View {
                             .fixedSize(horizontal: false, vertical: true)
                             .accessibilityLabel("Post content: \(post.content)")
                         
+                        // Post images
+                        if !post.imageUrls.isEmpty {
+                            ScrollView(.horizontal, showsIndicators: false) {
+                                HStack(spacing: 8) {
+                                    ForEach(post.imageUrls.indices, id: \.self) { index in
+                                        AsyncImage(url: URL(string: post.imageUrls[index])) { phase in
+                                            switch phase {
+                                            case .success(let image):
+                                                image
+                                                    .resizable()
+                                                    .scaledToFill()
+                                                    .frame(
+                                                        width: post.imageUrls.count == 1 ? 300 : 200,
+                                                        height: 200
+                                                    )
+                                                    .clipped()
+                                                    .cornerRadius(8)
+                                            case .failure:
+                                                RoundedRectangle(cornerRadius: 8)
+                                                    .fill(Color.gray.opacity(0.2))
+                                                    .frame(width: 200, height: 200)
+                                                    .overlay(
+                                                        Image(systemName: "photo")
+                                                            .foregroundStyle(.gray)
+                                                    )
+                                            case .empty:
+                                                RoundedRectangle(cornerRadius: 8)
+                                                    .fill(Color.gray.opacity(0.1))
+                                                    .frame(width: 200, height: 200)
+                                                    .overlay(ProgressView())
+                                            @unknown default:
+                                                EmptyView()
+                                            }
+                                        }
+                                    }
+                                }
+                                .padding(.horizontal)
+                            }
+                            .accessibilityLabel("Post images, \(post.imageUrls.count) photo\(post.imageUrls.count == 1 ? "" : "s")")
+                        }
+                        
                         HStack(spacing: 16) {
                             HStack(spacing: 4) {
                                 Image(systemName: "clock")
