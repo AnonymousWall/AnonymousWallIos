@@ -452,23 +452,24 @@ Response: 200 OK
 ```http
 POST /api/v1/posts
 Authorization: Bearer {jwt-token}
-Content-Type: application/json
+Content-Type: multipart/form-data
 
-{
-    "title": "My First Post Title",    // NEW - REQUIRED (1-255 chars)
-    "content": "This is my first post!",
-    "wall": "campus"  // or "national", optional, defaults to "campus"
-}
+title=My First Post Title
+content=This is my first post!
+wall=campus
+images[]=<optional binary file 1>
+images[]=<optional binary file 2>
 
 Response: 201 Created
 {
     "id": "uuid",
-    "title": "My First Post Title",     // NEW
+    "title": "My First Post Title",
     "content": "This is my first post!",
     "wall": "CAMPUS",
     "likes": 0,
     "comments": 0,
     "liked": false,
+    "imageUrls": ["http://localhost:8080/media/posts/uuid1.jpg", "http://localhost:8080/media/posts/uuid2.jpg"],
     "author": {
         "id": "uuid",
         "profileName": "Anonymous",
@@ -485,6 +486,7 @@ Response: 201 Created
 - `content` is **required** (cannot be null, empty, or whitespace-only)
 - `content` maximum length: **5000 characters**
 - `wall` is optional (defaults to "campus"), must be "campus" or "national"
+- `images` is optional; up to **5 images** per post; each must be JPEG, PNG, or WEBP and max **5MB**
 
 **Error Responses:**
 ```json
@@ -1397,7 +1399,63 @@ PUT /api/v1/marketplace/{itemId}
 }
 ```
 
-#### 5. Add Comment to Marketplace Item
+#### 5. Hide Marketplace Item
+```http
+PATCH /api/v1/marketplace/{itemId}/hide
+Authorization: Bearer {jwt-token}
+
+Response: 200 OK
+{
+    "message": "Item hidden successfully"
+}
+```
+
+**Notes:**
+- Only the item author can hide their own item
+- Hidden items are excluded from marketplace listings
+- Attempting to hide another user's item returns `403 Forbidden`
+
+**Error Responses:**
+```json
+// Item not found
+404 Not Found
+
+// Attempting to hide another user's item
+403 Forbidden
+{
+    "error": "You can only hide your own items"
+}
+```
+
+#### 6. Unhide Marketplace Item
+```http
+PATCH /api/v1/marketplace/{itemId}/unhide
+Authorization: Bearer {jwt-token}
+
+Response: 200 OK
+{
+    "message": "Item unhidden successfully"
+}
+```
+
+**Notes:**
+- Only the item author can unhide their own item
+- Unhidden items become visible in marketplace listings again
+- Attempting to unhide another user's item returns `403 Forbidden`
+
+**Error Responses:**
+```json
+// Item not found
+404 Not Found
+
+// Attempting to unhide another user's item
+403 Forbidden
+{
+    "error": "You can only unhide your own items"
+}
+```
+
+#### 7. Add Comment to Marketplace Item
 ```http
 POST /api/v1/marketplace/{itemId}/comments
 Authorization: Bearer {jwt-token}
@@ -1428,7 +1486,7 @@ Response: 201 Created
 - For campus items: only users from the same school can comment
 - For national items: all authenticated users can comment
 
-#### 6. Get Comments for Marketplace Item
+#### 8. Get Comments for Marketplace Item
 ```http
 GET /api/v1/marketplace/{itemId}/comments?page=1&limit=20&sort=NEWEST
 Authorization: Bearer {jwt-token}
@@ -1463,7 +1521,7 @@ Response: 200 OK
 - `limit` (default: 20) - Comments per page (max: 100)
 - `sort` (default: "NEWEST") - Sort order: NEWEST, OLDEST
 
-#### 7. Hide Comment on Marketplace Item
+#### 9. Hide Comment on Marketplace Item
 ```http
 PATCH /api/v1/marketplace/{itemId}/comments/{commentId}/hide
 Authorization: Bearer {jwt-token}
@@ -1477,7 +1535,7 @@ Response: 200 OK
 **Notes:**
 - Only the comment author can hide their own comment
 
-#### 8. Unhide Comment on Marketplace Item
+#### 10. Unhide Comment on Marketplace Item
 ```http
 PATCH /api/v1/marketplace/{itemId}/comments/{commentId}/unhide
 Authorization: Bearer {jwt-token}
