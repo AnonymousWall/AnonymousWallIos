@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import UIKit
 
 protocol PostServiceProtocol {
     // MARK: - Post Operations
@@ -28,7 +29,14 @@ protocol PostServiceProtocol {
     ) async throws -> Post
     
     /// Create a new post
-    func createPost(title: String, content: String, wall: WallType, token: String, userId: String) async throws -> Post
+    func createPost(
+        title: String,
+        content: String,
+        wall: WallType,
+        images: [UIImage],
+        token: String,
+        userId: String
+    ) async throws -> Post
     
     /// Toggle like on a post
     func toggleLike(postId: String, token: String, userId: String) async throws -> LikeResponse
@@ -67,4 +75,13 @@ protocol PostServiceProtocol {
     
     /// Report a comment
     func reportComment(postId: String, commentId: String, reason: String?, token: String, userId: String) async throws -> ReportResponse
+}
+
+// MARK: - Default implementations
+
+extension PostServiceProtocol {
+    /// Convenience overload: create a post with no images
+    func createPost(title: String, content: String, wall: WallType, token: String, userId: String) async throws -> Post {
+        try await createPost(title: title, content: content, wall: wall, images: [], token: token, userId: userId)
+    }
 }

@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import UIKit
 
 /// Mock PostService for testing with configurable responses
 class MockPostService: PostServiceProtocol {
@@ -164,6 +165,7 @@ class MockPostService: PostServiceProtocol {
         title: String,
         content: String,
         wall: WallType,
+        images: [UIImage],
         token: String,
         userId: String
     ) async throws -> Post {

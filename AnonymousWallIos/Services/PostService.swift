@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import UIKit
 
 class PostService: PostServiceProtocol {
     static let shared: PostServiceProtocol = PostService()
@@ -72,18 +73,61 @@ class PostService: PostServiceProtocol {
     }
     
     /// Create a new post
-    func createPost(title: String, content: String, wall: WallType = .campus, token: String, userId: String) async throws -> Post {
-        let body = CreatePostRequest(title: title, content: content, wall: wall.rawValue)
-        
-        let request = try APIRequestBuilder()
-            .setPath("/posts")
-            .setMethod(.POST)
-            .setBody(body)
-            .setToken(token)
-            .setUserId(userId)
-            .build()
-        
-        return try await networkClient.performRequest(request)
+    func createPost(
+        title: String,
+        content: String,
+        wall: WallType = .campus,
+        images: [UIImage] = [],
+        token: String,
+        userId: String
+    ) async throws -> Post {
+        guard let url = URL(string: config.fullAPIBaseURL + "/posts") else {
+            throw NetworkError.invalidURL
+        }
+
+        let boundary = UUID().uuidString
+        var urlRequest = URLRequest(url: url)
+        urlRequest.httpMethod = "POST"
+        urlRequest.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        urlRequest.setValue(userId, forHTTPHeaderField: "X-User-Id")
+        urlRequest.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+
+        var body = Data()
+        body.appendFormField(name: "title", value: title, boundary: boundary)
+        body.appendFormField(name: "content", value: content, boundary: boundary)
+        body.appendFormField(name: "wall", value: wall.rawValue, boundary: boundary)
+
+        for (index, image) in images.prefix(5).enumerated() {
+            if let jpeg = image.jpegData(compressionQuality: 0.8) {
+                body.appendFileField(
+                    name: "images",
+                    filename: "image\(index).jpg",
+                    mimeType: "image/jpeg",
+                    data: jpeg,
+                    boundary: boundary
+                )
+            }
+        }
+
+        if let closingBoundary = "--\(boundary)--\r\n".data(using: .utf8) {
+            body.append(closingBoundary)
+        }
+        urlRequest.httpBody = body
+
+        let (data, response) = try await URLSession.shared.data(for: urlRequest)
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw NetworkError.serverError("Invalid response")
+        }
+
+        guard (200...299).contains(httpResponse.statusCode) else {
+            if httpResponse.statusCode == 401 { throw NetworkError.unauthorized }
+            if httpResponse.statusCode == 403 { throw NetworkError.forbidden }
+            throw NetworkError.serverError("Server error: \(httpResponse.statusCode)")
+        }
+
+        let decoder = JSONDecoder()
+        return try decoder.decode(Post.self, from: data)
     }
     
     /// Toggle like on a post
