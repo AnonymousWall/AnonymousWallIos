@@ -72,6 +72,9 @@ class PostService: PostServiceProtocol {
         return try await networkClient.performRequest(request)
     }
     
+    // Maximum number of images allowed per post (mirrors CreatePostViewModel.maxImages)
+    private let maxImagesPerPost = 5
+    
     /// Create a new post using multipart/form-data to support optional image attachments
     func createPost(
         title: String,
@@ -97,7 +100,7 @@ class PostService: PostServiceProtocol {
         body.appendFormField(name: "content", value: content, boundary: boundary)
         body.appendFormField(name: "wall", value: wall.rawValue, boundary: boundary)
 
-        for (index, image) in images.prefix(5).enumerated() {
+        for (index, image) in images.prefix(maxImagesPerPost).enumerated() {
             if let jpeg = image.jpegData(compressionQuality: 0.8) {
                 body.appendFileField(
                     name: "images",
@@ -109,7 +112,9 @@ class PostService: PostServiceProtocol {
             }
         }
 
-        body.append("--\(boundary)--\r\n".data(using: .utf8)!)
+        if let terminator = "--\(boundary)--\r\n".data(using: .utf8) {
+            body.append(terminator)
+        }
         urlRequest.httpBody = body
 
         let (data, response) = try await URLSession.shared.data(for: urlRequest)
