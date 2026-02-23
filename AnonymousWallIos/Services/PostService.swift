@@ -102,8 +102,9 @@ class PostService: PostServiceProtocol {
 
         for (index, image) in images.prefix(maxImagesPerPost).enumerated() {
             if let jpeg = image.jpegData(compressionQuality: 0.8) {
+                // API expects the field name "images[]" for array file uploads
                 body.appendFileField(
-                    name: "images",
+                    name: "images[]",
                     filename: "image\(index).jpg",
                     mimeType: "image/jpeg",
                     data: jpeg,

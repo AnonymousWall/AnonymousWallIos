@@ -100,11 +100,21 @@ struct CreatePostView: View {
                     .padding(.horizontal)
                     .onChange(of: photoPickerItems) { _, items in
                         Task {
+                            var failedCount = 0
                             for item in items {
-                                if let data = try? await item.loadTransferable(type: Data.self),
-                                   let image = UIImage(data: data) {
-                                    viewModel.addImage(image)
+                                do {
+                                    if let data = try await item.loadTransferable(type: Data.self),
+                                       let image = UIImage(data: data) {
+                                        viewModel.addImage(image)
+                                    } else {
+                                        failedCount += 1
+                                    }
+                                } catch {
+                                    failedCount += 1
                                 }
+                            }
+                            if failedCount > 0 {
+                                viewModel.errorMessage = "\(failedCount) image\(failedCount == 1 ? "" : "s") could not be loaded"
                             }
                             photoPickerItems = []
                         }
