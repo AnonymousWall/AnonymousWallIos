@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import UIKit
 
 protocol PostServiceProtocol {
     // MARK: - Post Operations
@@ -28,7 +29,14 @@ protocol PostServiceProtocol {
     ) async throws -> Post
     
     /// Create a new post
-    func createPost(title: String, content: String, wall: WallType, token: String, userId: String) async throws -> Post
+    func createPost(
+        title: String,
+        content: String,
+        wall: WallType,
+        images: [UIImage],
+        token: String,
+        userId: String
+    ) async throws -> Post
     
     /// Toggle like on a post
     func toggleLike(postId: String, token: String, userId: String) async throws -> LikeResponse

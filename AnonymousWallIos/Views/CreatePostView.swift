@@ -6,11 +6,14 @@
 //
 
 import SwiftUI
+import PhotosUI
 
 struct CreatePostView: View {
     @EnvironmentObject var authState: AuthState
     @Environment(\.dismiss) var dismiss
     @StateObject private var viewModel = CreatePostViewModel()
+    
+    @State private var photoPickerItems: [PhotosPickerItem] = []
     
     var onPostCreated: () -> Void
     
@@ -74,13 +77,70 @@ struct CreatePostView: View {
                     
                     // Text editor
                     TextEditor(text: $viewModel.postContent)
-                        .frame(minHeight: 200)
+                        .frame(minHeight: 150)
                         .padding(8)
                         .background(Color(.systemGray6))
                         .cornerRadius(10)
                         .padding(.horizontal)
                         .accessibilityLabel("Post content")
                         .accessibilityHint("Enter the content for your post")
+                }
+                
+                // Image picker button
+                if viewModel.canAddMoreImages {
+                    PhotosPicker(
+                        selection: $photoPickerItems,
+                        maxSelectionCount: viewModel.remainingImageSlots,
+                        matching: .images
+                    ) {
+                        Label("Add Photo (\(viewModel.imageCount)/5)", systemImage: "photo.badge.plus")
+                            .font(.subheadline)
+                            .foregroundColor(.primaryPurple)
+                    }
+                    .padding(.horizontal)
+                    .onChange(of: photoPickerItems) { _, items in
+                        Task {
+                            for item in items {
+                                if let data = try? await item.loadTransferable(type: Data.self),
+                                   let image = UIImage(data: data) {
+                                    viewModel.addImage(image)
+                                }
+                            }
+                            photoPickerItems = []
+                        }
+                    }
+                    .accessibilityLabel("Add photos to post")
+                    .accessibilityHint("Opens photo picker. \(viewModel.remainingImageSlots) slots remaining.")
+                }
+                
+                // Image preview strip
+                if !viewModel.selectedImages.isEmpty {
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 8) {
+                            ForEach(viewModel.selectedImages.indices, id: \.self) { index in
+                                ZStack(alignment: .topTrailing) {
+                                    Image(uiImage: viewModel.selectedImages[index])
+                                        .resizable()
+                                        .scaledToFill()
+                                        .frame(width: 80, height: 80)
+                                        .clipped()
+                                        .cornerRadius(8)
+                                    
+                                    Button {
+                                        viewModel.removeImage(at: index)
+                                    } label: {
+                                        Image(systemName: "xmark.circle.fill")
+                                            .foregroundStyle(.white, .black.opacity(0.6))
+                                    }
+                                    .padding(4)
+                                    .accessibilityLabel("Remove image \(index + 1)")
+                                    .accessibilityHint("Double tap to remove this image")
+                                }
+                            }
+                        }
+                        .padding(.horizontal)
+                    }
+                    .accessibilityLabel("Selected images: \(viewModel.imageCount)")
                 }
                 
                 // Error message

@@ -36,6 +36,7 @@ struct ServiceProtocolTests {
             title: "Test Title",
             content: "Test content",
             wall: .campus,
+            images: [],
             token: "mock-token",
             userId: "mock-user-id"
         )
@@ -84,6 +85,7 @@ struct ServiceProtocolTests {
             title: "New Post",
             content: "Content",
             wall: .campus,
+            images: [],
             token: "mock-token",
             userId: "mock-user-id"
         )
@@ -226,7 +228,7 @@ struct ServiceProtocolTests {
         mockPostService.createPostBehavior = .failure(MockPostService.MockError.unauthorized)
         
         do {
-            _ = try await mockPostService.createPost(title: "Test", content: "Content", wall: .campus, token: "token", userId: "user")
+            _ = try await mockPostService.createPost(title: "Test", content: "Content", wall: .campus, images: [], token: "token", userId: "user")
             Issue.record("Expected error to be thrown")
         } catch let error as MockPostService.MockError {
             #expect(error == .unauthorized)
@@ -354,7 +356,7 @@ struct ServiceProtocolTests {
         let mockPostService = MockPostService()
         
         // Add some data
-        _ = try await mockPostService.createPost(title: "Test", content: "Content", wall: .campus, token: "token", userId: "user")
+        _ = try await mockPostService.createPost(title: "Test", content: "Content", wall: .campus, images: [], token: "token", userId: "user")
         #expect(mockPostService.mockPosts.count == 1)
         #expect(mockPostService.createPostCalled == true)
         

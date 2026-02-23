@@ -19,11 +19,40 @@ struct Post: Codable, Identifiable, Hashable {
     let author: Author
     let createdAt: String
     let updatedAt: String
+    /// URLs for images attached to this post (empty if none)
+    let imageUrls: [String]
     
     struct Author: Codable, Hashable {
         let id: String
         let profileName: String
         let isAnonymous: Bool
+    }
+    
+    // Custom memberwise initializer with default for imageUrls so existing callers compile
+    init(
+        id: String,
+        title: String,
+        content: String,
+        wall: String,
+        likes: Int,
+        comments: Int,
+        liked: Bool,
+        author: Author,
+        createdAt: String,
+        updatedAt: String,
+        imageUrls: [String] = []
+    ) {
+        self.id = id
+        self.title = title
+        self.content = content
+        self.wall = wall
+        self.likes = likes
+        self.comments = comments
+        self.liked = liked
+        self.author = author
+        self.createdAt = createdAt
+        self.updatedAt = updatedAt
+        self.imageUrls = imageUrls
     }
     
     // Hashable conformance based on id
@@ -46,6 +75,22 @@ struct Post: Codable, Identifiable, Hashable {
         case author
         case createdAt
         case updatedAt
+        case imageUrls
+    }
+    
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(String.self, forKey: .id)
+        title = try container.decode(String.self, forKey: .title)
+        content = try container.decode(String.self, forKey: .content)
+        wall = try container.decode(String.self, forKey: .wall)
+        likes = try container.decode(Int.self, forKey: .likes)
+        comments = try container.decode(Int.self, forKey: .comments)
+        liked = try container.decode(Bool.self, forKey: .liked)
+        author = try container.decode(Author.self, forKey: .author)
+        createdAt = try container.decode(String.self, forKey: .createdAt)
+        updatedAt = try container.decode(String.self, forKey: .updatedAt)
+        imageUrls = try container.decodeIfPresent([String].self, forKey: .imageUrls) ?? []
     }
     
     /// Create a copy of this post with updated like status
@@ -60,7 +105,8 @@ struct Post: Codable, Identifiable, Hashable {
             liked: liked,
             author: self.author,
             createdAt: self.createdAt,
-            updatedAt: self.updatedAt
+            updatedAt: self.updatedAt,
+            imageUrls: self.imageUrls
         )
     }
     
@@ -76,7 +122,8 @@ struct Post: Codable, Identifiable, Hashable {
             liked: self.liked,
             author: self.author,
             createdAt: self.createdAt,
-            updatedAt: self.updatedAt
+            updatedAt: self.updatedAt,
+            imageUrls: self.imageUrls
         )
     }
 }

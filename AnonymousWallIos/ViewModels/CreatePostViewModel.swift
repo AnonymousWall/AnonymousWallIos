@@ -15,6 +15,7 @@ class CreatePostViewModel: ObservableObject {
     @Published var selectedWall: WallType = .campus
     @Published var isPosting = false
     @Published var errorMessage: String?
+    @Published var selectedImages: [UIImage] = []
     
     // MARK: - Dependencies
     private let postService: PostServiceProtocol
@@ -22,6 +23,7 @@ class CreatePostViewModel: ObservableObject {
     // MARK: - Constants
     private let maxTitleCharacters = 255
     private let maxContentCharacters = 5000
+    private let maxImages = 5
     
     // MARK: - Initialization
     init(postService: PostServiceProtocol = PostService.shared) {
@@ -61,6 +63,24 @@ class CreatePostViewModel: ObservableObject {
         maxContentCharacters
     }
     
+    var canAddMoreImages: Bool { selectedImages.count < maxImages }
+    var imageCount: Int { selectedImages.count }
+    var remainingImageSlots: Int { maxImages - selectedImages.count }
+    
+    // MARK: - Image Management
+    func addImage(_ image: UIImage) {
+        guard selectedImages.count < maxImages else {
+            errorMessage = "Maximum \(maxImages) images allowed"
+            return
+        }
+        selectedImages.append(image)
+    }
+    
+    func removeImage(at index: Int) {
+        guard index < selectedImages.count else { return }
+        selectedImages.remove(at: index)
+    }
+    
     // MARK: - Public Methods
     func createPost(authState: AuthState, onSuccess: @escaping () -> Void) {
         let trimmedTitle = postTitle.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -97,7 +117,14 @@ class CreatePostViewModel: ObservableObject {
         
         Task {
             do {
-                _ = try await postService.createPost(title: trimmedTitle, content: trimmedContent, wall: selectedWall, token: token, userId: userId)
+                _ = try await postService.createPost(
+                    title: trimmedTitle,
+                    content: trimmedContent,
+                    wall: selectedWall,
+                    images: selectedImages,
+                    token: token,
+                    userId: userId
+                )
                 HapticFeedback.success()
                 isPosting = false
                 onSuccess()
