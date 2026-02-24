@@ -17,9 +17,62 @@ struct MarketplaceItem: Codable, Identifiable, Hashable {
     let sold: Bool
     let wall: String
     let comments: Int
+    let imageUrls: [String]
     let author: Post.Author
     let createdAt: String
     let updatedAt: String
+
+    enum CodingKeys: String, CodingKey {
+        case id, title, price, description, category, condition, sold, wall, comments, author, createdAt, updatedAt
+        case imageUrls
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(String.self, forKey: .id)
+        title = try container.decode(String.self, forKey: .title)
+        price = try container.decode(Double.self, forKey: .price)
+        description = try container.decodeIfPresent(String.self, forKey: .description)
+        category = try container.decodeIfPresent(String.self, forKey: .category)
+        condition = try container.decodeIfPresent(String.self, forKey: .condition)
+        sold = try container.decode(Bool.self, forKey: .sold)
+        wall = try container.decode(String.self, forKey: .wall)
+        comments = try container.decode(Int.self, forKey: .comments)
+        imageUrls = try container.decodeIfPresent([String].self, forKey: .imageUrls) ?? []
+        author = try container.decode(Post.Author.self, forKey: .author)
+        createdAt = try container.decode(String.self, forKey: .createdAt)
+        updatedAt = try container.decode(String.self, forKey: .updatedAt)
+    }
+
+    init(
+        id: String,
+        title: String,
+        price: Double,
+        description: String?,
+        category: String?,
+        condition: String?,
+        sold: Bool,
+        wall: String,
+        comments: Int,
+        imageUrls: [String] = [],
+        author: Post.Author,
+        createdAt: String,
+        updatedAt: String
+    ) {
+        self.id = id
+        self.title = title
+        self.price = price
+        self.description = description
+        self.category = category
+        self.condition = condition
+        self.sold = sold
+        self.wall = wall
+        self.comments = comments
+        self.imageUrls = imageUrls
+        self.author = author
+        self.createdAt = createdAt
+        self.updatedAt = updatedAt
+    }
 
     // Hashable conformance based on id
     func hash(into hasher: inout Hasher) {
@@ -42,6 +95,7 @@ struct MarketplaceItem: Codable, Identifiable, Hashable {
             sold: self.sold,
             wall: self.wall,
             comments: comments,
+            imageUrls: self.imageUrls,
             author: self.author,
             createdAt: self.createdAt,
             updatedAt: self.updatedAt

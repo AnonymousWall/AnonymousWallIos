@@ -6,10 +6,12 @@
 //
 
 import Foundation
+import UIKit
 
 class MarketplaceService: MarketplaceServiceProtocol {
     static let shared: MarketplaceServiceProtocol = MarketplaceService()
 
+    private let config = AppConfiguration.shared
     private let networkClient = NetworkClient.shared
 
     private init() {}
@@ -69,27 +71,70 @@ class MarketplaceService: MarketplaceServiceProtocol {
         category: String?,
         condition: String?,
         wall: WallType = .campus,
+        images: [UIImage] = [],
         token: String,
         userId: String
     ) async throws -> MarketplaceItem {
-        let body = CreateMarketplaceRequest(
-            title: title,
-            price: price,
-            description: description,
-            category: category,
-            condition: condition,
-            wall: wall.rawValue
-        )
+        guard let url = URL(string: config.fullAPIBaseURL + "/marketplace") else {
+            throw NetworkError.invalidURL
+        }
 
-        let request = try APIRequestBuilder()
-            .setPath("/marketplace")
-            .setMethod(.POST)
-            .setBody(body)
-            .setToken(token)
-            .setUserId(userId)
-            .build()
+        let boundary = UUID().uuidString
+        var urlRequest = URLRequest(url: url)
+        urlRequest.httpMethod = "POST"
+        urlRequest.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        urlRequest.setValue(userId, forHTTPHeaderField: "X-User-Id")
+        urlRequest.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+        urlRequest.timeoutInterval = 60
+        urlRequest.assumesHTTP3Capable = false
 
-        return try await networkClient.performRequest(request)
+        var body = Data()
+        body.appendFormField(name: "title", value: title, boundary: boundary)
+        body.appendFormField(name: "price", value: String(price), boundary: boundary)
+        if let description, !description.isEmpty {
+            body.appendFormField(name: "description", value: description, boundary: boundary)
+        }
+        if let category, !category.isEmpty {
+            body.appendFormField(name: "category", value: category, boundary: boundary)
+        }
+        if let condition, !condition.isEmpty {
+            body.appendFormField(name: "condition", value: condition, boundary: boundary)
+        }
+        body.appendFormField(name: "wall", value: wall.rawValue, boundary: boundary)
+
+        for (index, image) in images.prefix(5).enumerated() {
+            let resized = image.resized(maxDimension: 1024)
+            if let jpeg = resized.jpegData(compressionQuality: 0.6) {
+                body.appendFileField(
+                    name: "images",
+                    filename: "image\(index).jpg",
+                    mimeType: "image/jpeg",
+                    data: jpeg,
+                    boundary: boundary
+                )
+            }
+        }
+
+        body.append("--\(boundary)--\r\n".data(using: .utf8)!)
+        urlRequest.httpBody = body
+
+        let sessionConfig = URLSessionConfiguration.ephemeral
+        sessionConfig.waitsForConnectivity = true
+        let session = URLSession(configuration: sessionConfig)
+
+        let (data, response) = try await session.data(for: urlRequest)
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw NetworkError.serverError("Invalid response")
+        }
+        guard (200...299).contains(httpResponse.statusCode) else {
+            if httpResponse.statusCode == 401 { throw NetworkError.unauthorized }
+            if httpResponse.statusCode == 403 { throw NetworkError.forbidden }
+            let message = String(data: data, encoding: .utf8) ?? "Server error"
+            throw NetworkError.serverError(message)
+        }
+
+        return try JSONDecoder().decode(MarketplaceItem.self, from: data)
     }
 
     func updateItem(

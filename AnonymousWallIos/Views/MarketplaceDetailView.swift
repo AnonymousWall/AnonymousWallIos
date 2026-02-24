@@ -14,6 +14,7 @@ struct MarketplaceDetailView: View {
     @Binding var item: MarketplaceItem
     @StateObject private var viewModel = MarketplaceDetailViewModel()
     @State private var showDeleteConfirmation = false
+    @State private var selectedImageViewer: ImageViewerItem?
 
     var onTapAuthor: ((String, String) -> Void)?
 
@@ -107,6 +108,11 @@ struct MarketplaceDetailView: View {
                                 .lineSpacing(2)
                                 .fixedSize(horizontal: false, vertical: true)
                                 .accessibilityLabel("Description: \(description)")
+                        }
+
+                        // Images
+                        if !item.imageUrls.isEmpty {
+                            PostImageGallery(imageUrls: item.imageUrls, selectedImageViewer: $selectedImageViewer, accessibilityContext: "Item images")
                         }
 
                         // Footer
@@ -276,6 +282,9 @@ struct MarketplaceDetailView: View {
             Button("Cancel", role: .cancel) { viewModel.commentToDelete = nil }
         } message: {
             Text("Are you sure you want to delete this comment?")
+        }
+        .fullScreenCover(item: $selectedImageViewer) { viewer in
+            FullScreenImageViewer(imageURLs: item.imageUrls, initialIndex: viewer.index)
         }
     }
 

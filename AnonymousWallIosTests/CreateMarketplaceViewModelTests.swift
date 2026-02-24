@@ -6,6 +6,7 @@
 //
 
 import Testing
+import UIKit
 @testable import AnonymousWallIos
 
 @MainActor
@@ -185,6 +186,99 @@ struct CreateMarketplaceViewModelTests {
         let mockService = MockMarketplaceService()
         let viewModel = CreateMarketplaceViewModel(service: mockService)
         #expect(viewModel.selectedWall == .campus)
+    }
+
+    // MARK: - Image Management Tests
+
+    @Test func testInitialImageState() async throws {
+        let mockService = MockMarketplaceService()
+        let viewModel = CreateMarketplaceViewModel(service: mockService)
+
+        #expect(viewModel.selectedImages.isEmpty)
+        #expect(viewModel.imageCount == 0)
+        #expect(viewModel.canAddMoreImages == true)
+        #expect(viewModel.remainingImageSlots == 5)
+    }
+
+    @Test func testAddImage() async throws {
+        let mockService = MockMarketplaceService()
+        let viewModel = CreateMarketplaceViewModel(service: mockService)
+        let image = UIGraphicsImageRenderer(size: CGSize(width: 1, height: 1)).image { _ in }
+
+        viewModel.addImage(image)
+
+        #expect(viewModel.imageCount == 1)
+        #expect(viewModel.remainingImageSlots == 4)
+        #expect(viewModel.canAddMoreImages == true)
+    }
+
+    @Test func testAddImagesUpToMax() async throws {
+        let mockService = MockMarketplaceService()
+        let viewModel = CreateMarketplaceViewModel(service: mockService)
+        let image = UIGraphicsImageRenderer(size: CGSize(width: 1, height: 1)).image { _ in }
+
+        for _ in 0..<5 {
+            viewModel.addImage(image)
+        }
+
+        #expect(viewModel.imageCount == 5)
+        #expect(viewModel.canAddMoreImages == false)
+        #expect(viewModel.remainingImageSlots == 0)
+    }
+
+    @Test func testAddImageBeyondMaxSetsError() async throws {
+        let mockService = MockMarketplaceService()
+        let viewModel = CreateMarketplaceViewModel(service: mockService)
+        let image = UIGraphicsImageRenderer(size: CGSize(width: 1, height: 1)).image { _ in }
+
+        for _ in 0..<5 {
+            viewModel.addImage(image)
+        }
+        viewModel.addImage(image)
+
+        #expect(viewModel.imageCount == 5)
+        #expect(viewModel.errorMessage != nil)
+    }
+
+    @Test func testRemoveImage() async throws {
+        let mockService = MockMarketplaceService()
+        let viewModel = CreateMarketplaceViewModel(service: mockService)
+        let image = UIGraphicsImageRenderer(size: CGSize(width: 1, height: 1)).image { _ in }
+
+        viewModel.addImage(image)
+        viewModel.addImage(image)
+        viewModel.removeImage(at: 0)
+
+        #expect(viewModel.imageCount == 1)
+    }
+
+    @Test func testRemoveImageOutOfBoundsIsIgnored() async throws {
+        let mockService = MockMarketplaceService()
+        let viewModel = CreateMarketplaceViewModel(service: mockService)
+        let image = UIGraphicsImageRenderer(size: CGSize(width: 1, height: 1)).image { _ in }
+
+        viewModel.addImage(image)
+        viewModel.removeImage(at: 5)
+
+        #expect(viewModel.imageCount == 1)
+    }
+
+    @Test func testCreateItemPassesImagesToService() async throws {
+        let mockService = MockMarketplaceService()
+        let viewModel = CreateMarketplaceViewModel(service: mockService)
+        let authState = createMockAuthState()
+        let image = UIGraphicsImageRenderer(size: CGSize(width: 1, height: 1)).image { _ in }
+
+        viewModel.title = "Textbook"
+        viewModel.priceText = "10.00"
+        viewModel.addImage(image)
+
+        viewModel.createItem(authState: authState) {}
+
+        try await Task.sleep(nanoseconds: 500_000_000)
+
+        #expect(mockService.createItemCalled == true)
+        #expect(mockService.capturedImages.count == 1)
     }
 
     // MARK: - Helper Methods

@@ -18,6 +18,7 @@ class CreateMarketplaceViewModel: ObservableObject {
     @Published var selectedWall: WallType = .campus
     @Published var isPosting = false
     @Published var errorMessage: String?
+    @Published var selectedImages: [UIImage] = []
 
     // MARK: - Dependencies
     private let service: MarketplaceServiceProtocol
@@ -27,6 +28,7 @@ class CreateMarketplaceViewModel: ObservableObject {
     let maxDescriptionLength = 5000
     let validConditions = ["new", "like-new", "good", "fair"]
     let conditionDisplayNames = ["New", "Like New", "Good", "Fair"]
+    private let maxImages = 5
 
     // MARK: - Initialization
     init(service: MarketplaceServiceProtocol = MarketplaceService.shared) {
@@ -52,6 +54,25 @@ class CreateMarketplaceViewModel: ObservableObject {
         !isPriceValid ||
         isTitleOverLimit || isDescriptionOverLimit ||
         isPosting
+    }
+
+    var canAddMoreImages: Bool { selectedImages.count < maxImages }
+    var imageCount: Int { selectedImages.count }
+    var remainingImageSlots: Int { maxImages - selectedImages.count }
+
+    // MARK: - Image Management
+
+    func addImage(_ image: UIImage) {
+        guard selectedImages.count < maxImages else {
+            errorMessage = "Maximum \(maxImages) images allowed"
+            return
+        }
+        selectedImages.append(image)
+    }
+
+    func removeImage(at index: Int) {
+        guard index < selectedImages.count else { return }
+        selectedImages.remove(at: index)
     }
 
     // MARK: - Public Methods
@@ -85,6 +106,7 @@ class CreateMarketplaceViewModel: ObservableObject {
         let trimmedDescription = description.trimmingCharacters(in: .whitespacesAndNewlines)
         let trimmedCategory = category.trimmingCharacters(in: .whitespacesAndNewlines)
         let conditionValue = selectedCondition.isEmpty ? nil : selectedCondition
+        let imagesToUpload = selectedImages
 
         Task {
             do {
@@ -95,6 +117,7 @@ class CreateMarketplaceViewModel: ObservableObject {
                     category: trimmedCategory.isEmpty ? nil : trimmedCategory,
                     condition: conditionValue,
                     wall: selectedWall,
+                    images: imagesToUpload,
                     token: token,
                     userId: userId
                 )

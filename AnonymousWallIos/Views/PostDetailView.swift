@@ -19,6 +19,7 @@ struct PostDetailView: View {
     @State private var reportReason = ""
     @State private var showReportSuccessAlert = false
     @State private var reportSuccessMessage = ""
+    @State private var selectedImageViewer: ImageViewerItem?
     
     var onTapAuthor: ((String, String) -> Void)?
     
@@ -45,43 +46,7 @@ struct PostDetailView: View {
                         
                         // Post images
                         if !post.imageUrls.isEmpty {
-                            ScrollView(.horizontal, showsIndicators: false) {
-                                HStack(spacing: 8) {
-                                    ForEach(post.imageUrls.indices, id: \.self) { index in
-                                        AsyncImage(url: URL(string: post.imageUrls[index])) { phase in
-                                            switch phase {
-                                            case .success(let image):
-                                                image
-                                                    .resizable()
-                                                    .scaledToFill()
-                                                    .frame(
-                                                        width: post.imageUrls.count == 1 ? 300 : 200,
-                                                        height: 200
-                                                    )
-                                                    .clipped()
-                                                    .cornerRadius(8)
-                                            case .failure:
-                                                RoundedRectangle(cornerRadius: 8)
-                                                    .fill(Color.gray.opacity(0.2))
-                                                    .frame(width: 200, height: 200)
-                                                    .overlay(
-                                                        Image(systemName: "photo")
-                                                            .foregroundStyle(.gray)
-                                                    )
-                                            case .empty:
-                                                RoundedRectangle(cornerRadius: 8)
-                                                    .fill(Color.gray.opacity(0.1))
-                                                    .frame(width: 200, height: 200)
-                                                    .overlay(ProgressView())
-                                            @unknown default:
-                                                EmptyView()
-                                            }
-                                        }
-                                    }
-                                }
-                                .padding(.horizontal)
-                            }
-                            .accessibilityLabel("Post images, \(post.imageUrls.count) photo\(post.imageUrls.count == 1 ? "" : "s")")
+                            PostImageGallery(imageUrls: post.imageUrls, selectedImageViewer: $selectedImageViewer, accessibilityContext: "Post images")
                         }
                         
                         HStack(spacing: 16) {
@@ -360,6 +325,9 @@ struct PostDetailView: View {
             Button("OK", role: .cancel) {}
         } message: {
             Text(reportSuccessMessage)
+        }
+        .fullScreenCover(item: $selectedImageViewer) { item in
+            FullScreenImageViewer(imageURLs: post.imageUrls, initialIndex: item.index)
         }
     }
 }
