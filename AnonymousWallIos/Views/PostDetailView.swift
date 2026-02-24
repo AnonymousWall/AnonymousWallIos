@@ -19,6 +19,7 @@ struct PostDetailView: View {
     @State private var reportReason = ""
     @State private var showReportSuccessAlert = false
     @State private var reportSuccessMessage = ""
+    @State private var selectedImageItem: ImageURLItem?
     
     var onTapAuthor: ((String, String) -> Void)?
     
@@ -60,6 +61,11 @@ struct PostDetailView: View {
                                                     )
                                                     .clipped()
                                                     .cornerRadius(8)
+                                                    .onTapGesture {
+                                                        selectedImageItem = ImageURLItem(url: post.imageUrls[index])
+                                                    }
+                                                    .accessibilityLabel("Image \(index + 1) of \(post.imageUrls.count)")
+                                                    .accessibilityHint("Double tap to view full screen")
                                             case .failure:
                                                 RoundedRectangle(cornerRadius: 8)
                                                     .fill(Color.gray.opacity(0.2))
@@ -360,6 +366,9 @@ struct PostDetailView: View {
             Button("OK", role: .cancel) {}
         } message: {
             Text(reportSuccessMessage)
+        }
+        .fullScreenCover(item: $selectedImageItem) { item in
+            FullScreenImageViewer(imageURL: item.url)
         }
     }
 }

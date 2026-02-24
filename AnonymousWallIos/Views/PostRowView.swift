@@ -15,6 +15,7 @@ struct PostRowView: View {
     var onTapAuthor: (() -> Void)?
     
     @State private var showDeleteConfirmation = false
+    @State private var selectedImageItem: ImageURLItem?
     
     private var isCampusPost: Bool {
         post.wall.uppercased() == WallType.campus.rawValue.uppercased()
@@ -104,6 +105,11 @@ struct PostRowView: View {
                                         )
                                         .clipped()
                                         .cornerRadius(8)
+                                        .onTapGesture {
+                                            selectedImageItem = ImageURLItem(url: post.imageUrls[index])
+                                        }
+                                        .accessibilityLabel("Image \(index + 1) of \(post.imageUrls.count)")
+                                        .accessibilityHint("Double tap to view full screen")
                                 case .failure:
                                     RoundedRectangle(cornerRadius: 8)
                                         .fill(Color.gray.opacity(0.2))
@@ -226,6 +232,9 @@ struct PostRowView: View {
             RoundedRectangle(cornerRadius: 16)
                 .stroke(Color(.systemGray5), lineWidth: 0.5)
         )
+        .fullScreenCover(item: $selectedImageItem) { item in
+            FullScreenImageViewer(imageURL: item.url)
+        }
     }
 }
 

@@ -14,6 +14,7 @@ struct MarketplaceDetailView: View {
     @Binding var item: MarketplaceItem
     @StateObject private var viewModel = MarketplaceDetailViewModel()
     @State private var showDeleteConfirmation = false
+    @State private var selectedImageItem: ImageURLItem?
 
     var onTapAuthor: ((String, String) -> Void)?
 
@@ -126,6 +127,11 @@ struct MarketplaceDetailView: View {
                                                     )
                                                     .clipped()
                                                     .cornerRadius(8)
+                                                    .onTapGesture {
+                                                        selectedImageItem = ImageURLItem(url: item.imageUrls[index])
+                                                    }
+                                                    .accessibilityLabel("Image \(index + 1) of \(item.imageUrls.count)")
+                                                    .accessibilityHint("Double tap to view full screen")
                                             case .failure:
                                                 RoundedRectangle(cornerRadius: 8)
                                                     .fill(Color.gray.opacity(0.2))
@@ -317,6 +323,9 @@ struct MarketplaceDetailView: View {
             Button("Cancel", role: .cancel) { viewModel.commentToDelete = nil }
         } message: {
             Text("Are you sure you want to delete this comment?")
+        }
+        .fullScreenCover(item: $selectedImageItem) { item in
+            FullScreenImageViewer(imageURL: item.url)
         }
     }
 
