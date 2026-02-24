@@ -1110,17 +1110,16 @@ Response: 200 OK
 ```http
 POST /api/v1/marketplace
 Authorization: Bearer {jwt-token}
-Content-Type: application/json
+Content-Type: multipart/form-data
 
-{
-    "title": "Used Calculus Textbook",
-    "price": 45.99,
-    "description": "Barely used, excellent condition",
-    "category": "books",
-    "condition": "like_new",
-    "contactInfo": "johndoe@harvard.edu",
-    "wall": "campus"
-}
+title=Used Calculus Textbook
+price=45.99
+description=Barely used, excellent condition
+category=books
+condition=like-new
+wall=campus
+images[]=<optional binary file 1>
+images[]=<optional binary file 2>
 
 Response: 201 Created
 {
@@ -1129,11 +1128,11 @@ Response: 201 Created
     "price": 45.99,
     "description": "Barely used, excellent condition",
     "category": "books",
-    "condition": "like_new",
-    "contactInfo": "johndoe@harvard.edu",
+    "condition": "like-new",
     "sold": false,
     "wall": "CAMPUS",
     "comments": 0,
+    "imageUrls": ["http://localhost:8080/media/marketplace/uuid1.jpg"],
     "author": {
         "id": "uuid",
         "profileName": "John Doe",
@@ -1149,11 +1148,11 @@ Response: 201 Created
 - `title` maximum length: **255 characters**
 - `price` is **required** and must be **≥ 0**
 - `price` maximum value: **99,999,999.99** (DECIMAL(10,2))
-- `description` is optional (max length: 5000 characters)
+- `description` is optional
 - `category` is optional
-- `condition` is optional, valid values: "new", "like_new", "good", "fair", "poor"
-- `contactInfo` is optional
+- `condition` is optional, valid values: "new", "like-new", "good", "fair"
 - `wall` is optional (defaults to "campus"), must be "campus" or "national"
+- `images` is optional; up to **5 images** per item; each must be JPEG, PNG, or WEBP and max **5MB**
 
 **Wall Rules:**
 - **Campus wall**: Only users from the same school can see the item
