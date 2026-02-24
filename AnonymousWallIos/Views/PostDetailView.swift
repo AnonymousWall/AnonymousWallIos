@@ -19,7 +19,7 @@ struct PostDetailView: View {
     @State private var reportReason = ""
     @State private var showReportSuccessAlert = false
     @State private var reportSuccessMessage = ""
-    @State private var selectedImageItem: ImageURLItem?
+    @State private var selectedImageViewer: ImageViewerItem?
     
     var onTapAuthor: ((String, String) -> Void)?
     
@@ -46,7 +46,7 @@ struct PostDetailView: View {
                         
                         // Post images
                         if !post.imageUrls.isEmpty {
-                            PostImageGallery(imageUrls: post.imageUrls, selectedImageItem: $selectedImageItem, accessibilityContext: "Post images")
+                            PostImageGallery(imageUrls: post.imageUrls, selectedImageViewer: $selectedImageViewer, accessibilityContext: "Post images")
                         }
                         
                         HStack(spacing: 16) {
@@ -326,8 +326,8 @@ struct PostDetailView: View {
         } message: {
             Text(reportSuccessMessage)
         }
-        .fullScreenCover(item: $selectedImageItem) { item in
-            FullScreenImageViewer(imageURL: item.url)
+        .fullScreenCover(item: $selectedImageViewer) { item in
+            FullScreenImageViewer(imageURLs: post.imageUrls, initialIndex: item.index)
         }
     }
 }

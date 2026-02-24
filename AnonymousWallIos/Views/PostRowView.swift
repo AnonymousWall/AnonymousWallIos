@@ -15,7 +15,7 @@ struct PostRowView: View {
     var onTapAuthor: (() -> Void)?
     
     @State private var showDeleteConfirmation = false
-    @State private var selectedImageItem: ImageURLItem?
+    @State private var selectedImageViewer: ImageViewerItem?
     
     private var isCampusPost: Bool {
         post.wall.uppercased() == WallType.campus.rawValue.uppercased()
@@ -90,7 +90,7 @@ struct PostRowView: View {
             
             // Post images
             if !post.imageUrls.isEmpty {
-                PostImageGallery(imageUrls: post.imageUrls, selectedImageItem: $selectedImageItem, accessibilityContext: "Post images")
+                PostImageGallery(imageUrls: post.imageUrls, selectedImageViewer: $selectedImageViewer, accessibilityContext: "Post images")
             }
             
             // Footer with time and actions
@@ -191,8 +191,8 @@ struct PostRowView: View {
             RoundedRectangle(cornerRadius: 16)
                 .stroke(Color(.systemGray5), lineWidth: 0.5)
         )
-        .fullScreenCover(item: $selectedImageItem) { item in
-            FullScreenImageViewer(imageURL: item.url)
+        .fullScreenCover(item: $selectedImageViewer) { item in
+            FullScreenImageViewer(imageURLs: post.imageUrls, initialIndex: item.index)
         }
     }
 }

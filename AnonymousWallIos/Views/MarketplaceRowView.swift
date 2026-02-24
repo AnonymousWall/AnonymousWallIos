@@ -14,7 +14,7 @@ struct MarketplaceRowView: View {
     var onTapAuthor: (() -> Void)?
 
     @State private var showDeleteConfirmation = false
-    @State private var selectedImageItem: ImageURLItem?
+    @State private var selectedImageViewer: ImageViewerItem?
 
     private var isCampus: Bool {
         item.wall.uppercased() == WallType.campus.rawValue.uppercased()
@@ -119,7 +119,7 @@ struct MarketplaceRowView: View {
 
             // Item images
             if !item.imageUrls.isEmpty {
-                PostImageGallery(imageUrls: item.imageUrls, selectedImageItem: $selectedImageItem, accessibilityContext: "Item images")
+                PostImageGallery(imageUrls: item.imageUrls, selectedImageViewer: $selectedImageViewer, accessibilityContext: "Item images")
             }
 
             // Footer
@@ -193,8 +193,8 @@ struct MarketplaceRowView: View {
             RoundedRectangle(cornerRadius: 16)
                 .stroke(Color(.systemGray5), lineWidth: 0.5)
         )
-        .fullScreenCover(item: $selectedImageItem) { item in
-            FullScreenImageViewer(imageURL: item.url)
+        .fullScreenCover(item: $selectedImageViewer) { viewer in
+            FullScreenImageViewer(imageURLs: item.imageUrls, initialIndex: viewer.index)
         }
     }
 

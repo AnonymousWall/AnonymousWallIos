@@ -14,7 +14,7 @@ struct MarketplaceDetailView: View {
     @Binding var item: MarketplaceItem
     @StateObject private var viewModel = MarketplaceDetailViewModel()
     @State private var showDeleteConfirmation = false
-    @State private var selectedImageItem: ImageURLItem?
+    @State private var selectedImageViewer: ImageViewerItem?
 
     var onTapAuthor: ((String, String) -> Void)?
 
@@ -112,7 +112,7 @@ struct MarketplaceDetailView: View {
 
                         // Images
                         if !item.imageUrls.isEmpty {
-                            PostImageGallery(imageUrls: item.imageUrls, selectedImageItem: $selectedImageItem, accessibilityContext: "Item images")
+                            PostImageGallery(imageUrls: item.imageUrls, selectedImageViewer: $selectedImageViewer, accessibilityContext: "Item images")
                         }
 
                         // Footer
@@ -283,8 +283,8 @@ struct MarketplaceDetailView: View {
         } message: {
             Text("Are you sure you want to delete this comment?")
         }
-        .fullScreenCover(item: $selectedImageItem) { item in
-            FullScreenImageViewer(imageURL: item.url)
+        .fullScreenCover(item: $selectedImageViewer) { viewer in
+            FullScreenImageViewer(imageURLs: item.imageUrls, initialIndex: viewer.index)
         }
     }
 

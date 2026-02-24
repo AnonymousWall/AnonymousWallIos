@@ -12,7 +12,7 @@ import SwiftUI
 
 struct PostImageGallery: View {
     let imageUrls: [String]
-    @Binding var selectedImageItem: ImageURLItem?
+    @Binding var selectedImageViewer: ImageViewerItem?
     var accessibilityContext: String = "Images"
 
     var body: some View {
@@ -32,7 +32,7 @@ struct PostImageGallery: View {
                                 .clipped()
                                 .cornerRadius(8)
                                 .onTapGesture {
-                                    selectedImageItem = ImageURLItem(url: imageUrls[index])
+                                    selectedImageViewer = ImageViewerItem(index: index)
                                 }
                                 .accessibilityLabel("Image \(index + 1) of \(imageUrls.count)")
                                 .accessibilityHint("Double tap to view full screen")
