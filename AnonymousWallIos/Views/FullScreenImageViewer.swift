@@ -30,6 +30,9 @@ struct FullScreenImageViewer: View {
         ZStack(alignment: .topTrailing) {
             Color.black.ignoresSafeArea()
 
+            // NOTE: AsyncImage does not cache responses. If frequent re-downloads become
+            // noticeable, consider replacing with SDWebImageSwiftUI or Kingfisher which
+            // provide in-memory and disk caching out of the box.
             AsyncImage(url: URL(string: imageURL)) { phase in
                 switch phase {
                 case .success(let image):
@@ -48,7 +51,7 @@ struct FullScreenImageViewer: View {
                                 .onEnded { _ in
                                     lastScale = 1.0
                                     if scale < minScale {
-                                        withAnimation { scale = minScale; offset = .zero }
+                                        withAnimation { scale = minScale; offset = .zero; lastOffset = .zero }
                                     }
                                 }
                                 .simultaneously(with:
