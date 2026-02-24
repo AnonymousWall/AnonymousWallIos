@@ -109,6 +109,47 @@ struct MarketplaceDetailView: View {
                                 .accessibilityLabel("Description: \(description)")
                         }
 
+                        // Images
+                        if !item.imageUrls.isEmpty {
+                            ScrollView(.horizontal, showsIndicators: false) {
+                                HStack(spacing: 8) {
+                                    ForEach(item.imageUrls.indices, id: \.self) { index in
+                                        AsyncImage(url: URL(string: item.imageUrls[index])) { phase in
+                                            switch phase {
+                                            case .success(let image):
+                                                image
+                                                    .resizable()
+                                                    .scaledToFill()
+                                                    .frame(
+                                                        width: item.imageUrls.count == 1 ? 300 : 200,
+                                                        height: 200
+                                                    )
+                                                    .clipped()
+                                                    .cornerRadius(8)
+                                            case .failure:
+                                                RoundedRectangle(cornerRadius: 8)
+                                                    .fill(Color.gray.opacity(0.2))
+                                                    .frame(width: 200, height: 200)
+                                                    .overlay(
+                                                        Image(systemName: "photo")
+                                                            .foregroundStyle(.gray)
+                                                    )
+                                            case .empty:
+                                                RoundedRectangle(cornerRadius: 8)
+                                                    .fill(Color.gray.opacity(0.1))
+                                                    .frame(width: 200, height: 200)
+                                                    .overlay(ProgressView())
+                                            @unknown default:
+                                                EmptyView()
+                                            }
+                                        }
+                                    }
+                                }
+                                .padding(.horizontal)
+                            }
+                            .accessibilityLabel("Item images, \(item.imageUrls.count) photo\(item.imageUrls.count == 1 ? "" : "s")")
+                        }
+
                         // Footer
                         HStack {
                             HStack(spacing: 4) {

@@ -94,10 +94,9 @@ class PostService: PostServiceProtocol {
             body.appendFormField(name: "content", value: content, boundary: boundary)
             body.appendFormField(name: "wall", value: wall.rawValue, boundary: boundary)
 
-            // In createPost, replace the image processing:
             for (index, image) in images.prefix(5).enumerated() {
-                let resized = resizeImage(image, maxDimension: 1024) // down from 1920
-                if let jpeg = resized.jpegData(compressionQuality: 0.6) { // down from 0.8
+                let resized = image.resized(maxDimension: 1024)
+                if let jpeg = resized.jpegData(compressionQuality: 0.6) {
                     body.appendFileField(
                         name: "images",
                         filename: "image\(index).jpg",
@@ -128,16 +127,6 @@ class PostService: PostServiceProtocol {
             }
 
             return try JSONDecoder().decode(Post.self, from: data)
-        }
-
-        private func resizeImage(_ image: UIImage, maxDimension: CGFloat = 1920) -> UIImage {
-            let size = image.size
-            guard size.width > maxDimension || size.height > maxDimension else { return image }
-            let ratio = min(maxDimension / size.width, maxDimension / size.height)
-            let newSize = CGSize(width: size.width * ratio, height: size.height * ratio)
-            return UIGraphicsImageRenderer(size: newSize).image { _ in
-                image.draw(in: CGRect(origin: .zero, size: newSize))
-            }
         }
 
     func toggleLike(postId: String, token: String, userId: String) async throws -> LikeResponse {

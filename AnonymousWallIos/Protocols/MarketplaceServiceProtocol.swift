@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import UIKit
 
 protocol MarketplaceServiceProtocol {
     // MARK: - Marketplace Operations
@@ -33,6 +34,7 @@ protocol MarketplaceServiceProtocol {
         category: String?,
         condition: String?,
         wall: WallType,
+        images: [UIImage],
         token: String,
         userId: String
     ) async throws -> MarketplaceItem

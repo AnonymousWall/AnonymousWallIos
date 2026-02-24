@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import UIKit
 
 class MockMarketplaceService: MarketplaceServiceProtocol {
 
@@ -53,6 +54,10 @@ class MockMarketplaceService: MarketplaceServiceProtocol {
     // MARK: - Initialization
 
     init() {}
+
+    // MARK: - Captured Parameters
+
+    var capturedImages: [UIImage] = []
 
     // MARK: - Marketplace Operations
 
@@ -125,10 +130,12 @@ class MockMarketplaceService: MarketplaceServiceProtocol {
         category: String?,
         condition: String?,
         wall: WallType,
+        images: [UIImage],
         token: String,
         userId: String
     ) async throws -> MarketplaceItem {
         createItemCalled = true
+        capturedImages = images
         switch createItemBehavior {
         case .success:
             let item = MarketplaceItem(
@@ -282,5 +289,6 @@ class MockMarketplaceService: MarketplaceServiceProtocol {
         getCommentsCalled = false
         hideCommentCalled = false
         unhideCommentCalled = false
+        capturedImages = []
     }
 }
