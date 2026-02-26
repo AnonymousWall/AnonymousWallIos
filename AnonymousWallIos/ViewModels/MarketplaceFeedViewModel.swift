@@ -15,7 +15,6 @@ class MarketplaceFeedViewModel: ObservableObject {
     @Published var isLoadingMore = false
     @Published var errorMessage: String?
     @Published var selectedSortOrder: MarketplaceSortOrder = .newest
-    @Published var soldFilter: Bool? = nil  // nil = show all
 
     // MARK: - Private Properties
     private var pagination = Pagination()
@@ -121,8 +120,7 @@ class MarketplaceFeedViewModel: ObservableObject {
                 wall: wallType,
                 page: pagination.currentPage,
                 limit: 20,
-                sortBy: selectedSortOrder,
-                sold: soldFilter
+                sortBy: selectedSortOrder
             )
             items = response.data
             pagination.update(totalPages: response.pagination.totalPages)
@@ -153,8 +151,7 @@ class MarketplaceFeedViewModel: ObservableObject {
                 wall: wallType,
                 page: nextPage,
                 limit: 20,
-                sortBy: selectedSortOrder,
-                sold: soldFilter
+                sortBy: selectedSortOrder
             )
             items.append(contentsOf: response.data)
             pagination.update(totalPages: response.pagination.totalPages)

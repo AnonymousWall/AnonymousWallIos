@@ -46,25 +46,11 @@ struct MarketplaceDetailView: View {
 
                         // Title and price
                         HStack(alignment: .top) {
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text(item.title)
-                                    .font(.title2.bold())
-                                    .foregroundColor(.primary)
-                                    .fixedSize(horizontal: false, vertical: true)
-                                    .accessibilityLabel("Item: \(item.title)")
-
-                                if item.sold {
-                                    Text("SOLD")
-                                        .font(.caption)
-                                        .fontWeight(.bold)
-                                        .foregroundColor(.white)
-                                        .padding(.horizontal, 10)
-                                        .padding(.vertical, 4)
-                                        .background(Color.red)
-                                        .cornerRadius(8)
-                                        .accessibilityLabel("Item sold")
-                                }
-                            }
+                            Text(item.title)
+                                .font(.title2.bold())
+                                .foregroundColor(.primary)
+                                .fixedSize(horizontal: false, vertical: true)
+                                .accessibilityLabel("Item: \(item.title)")
 
                             Spacer()
 
@@ -364,7 +350,6 @@ struct MarketplaceDetailView: View {
             description: "Barely used, excellent condition. Includes all problem sets.",
             category: "books",
             condition: "like_new",
-            sold: false,
             wall: "CAMPUS",
             comments: 2,
             author: Post.Author(id: "user1", profileName: "John Doe", isAnonymous: false),

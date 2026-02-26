@@ -14,7 +14,6 @@ struct MarketplaceItem: Codable, Identifiable, Hashable {
     let description: String?
     let category: String?
     let condition: String?
-    let sold: Bool
     let wall: String
     let comments: Int
     let imageUrls: [String]
@@ -23,7 +22,7 @@ struct MarketplaceItem: Codable, Identifiable, Hashable {
     let updatedAt: String
 
     enum CodingKeys: String, CodingKey {
-        case id, title, price, description, category, condition, sold, wall, comments, author, createdAt, updatedAt
+        case id, title, price, description, category, condition, wall, comments, author, createdAt, updatedAt
         case imageUrls
     }
 
@@ -35,7 +34,6 @@ struct MarketplaceItem: Codable, Identifiable, Hashable {
         description = try container.decodeIfPresent(String.self, forKey: .description)
         category = try container.decodeIfPresent(String.self, forKey: .category)
         condition = try container.decodeIfPresent(String.self, forKey: .condition)
-        sold = try container.decode(Bool.self, forKey: .sold)
         wall = try container.decode(String.self, forKey: .wall)
         comments = try container.decode(Int.self, forKey: .comments)
         imageUrls = try container.decodeIfPresent([String].self, forKey: .imageUrls) ?? []
@@ -51,7 +49,6 @@ struct MarketplaceItem: Codable, Identifiable, Hashable {
         description: String?,
         category: String?,
         condition: String?,
-        sold: Bool,
         wall: String,
         comments: Int,
         imageUrls: [String] = [],
@@ -65,7 +62,6 @@ struct MarketplaceItem: Codable, Identifiable, Hashable {
         self.description = description
         self.category = category
         self.condition = condition
-        self.sold = sold
         self.wall = wall
         self.comments = comments
         self.imageUrls = imageUrls
@@ -92,7 +88,6 @@ struct MarketplaceItem: Codable, Identifiable, Hashable {
             description: self.description,
             category: self.category,
             condition: self.condition,
-            sold: self.sold,
             wall: self.wall,
             comments: comments,
             imageUrls: self.imageUrls,
@@ -128,5 +123,4 @@ struct UpdateMarketplaceRequest: Codable {
     let description: String?
     let category: String?
     let condition: String?
-    let sold: Bool?
 }

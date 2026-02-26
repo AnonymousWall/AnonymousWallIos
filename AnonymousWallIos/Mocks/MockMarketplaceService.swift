@@ -67,16 +67,12 @@ class MockMarketplaceService: MarketplaceServiceProtocol {
         wall: WallType,
         page: Int,
         limit: Int,
-        sortBy: MarketplaceSortOrder,
-        sold: Bool?
+        sortBy: MarketplaceSortOrder
     ) async throws -> MarketplaceListResponse {
         fetchItemsCalled = true
         switch fetchItemsBehavior {
         case .success:
-            var items = mockItems
-            if let sold {
-                items = items.filter { $0.sold == sold }
-            }
+            let items = mockItems
             return MarketplaceListResponse(
                 data: items,
                 pagination: PostListResponse.Pagination(
@@ -105,7 +101,6 @@ class MockMarketplaceService: MarketplaceServiceProtocol {
                 description: nil,
                 category: nil,
                 condition: nil,
-                sold: false,
                 wall: "CAMPUS",
                 comments: 0,
                 author: Post.Author(id: userId, profileName: "Mock User", isAnonymous: false),
@@ -116,7 +111,7 @@ class MockMarketplaceService: MarketplaceServiceProtocol {
         case .emptyState:
             return MarketplaceItem(
                 id: "", title: "", price: 0, description: nil, category: nil, condition: nil,
-                sold: false, wall: "", comments: 0,
+                wall: "", comments: 0,
                 author: Post.Author(id: "", profileName: "", isAnonymous: false),
                 createdAt: "", updatedAt: ""
             )
@@ -145,7 +140,6 @@ class MockMarketplaceService: MarketplaceServiceProtocol {
                 description: description,
                 category: category,
                 condition: condition,
-                sold: false,
                 wall: wall.rawValue,
                 comments: 0,
                 author: Post.Author(id: userId, profileName: "Mock User", isAnonymous: false),
@@ -158,7 +152,7 @@ class MockMarketplaceService: MarketplaceServiceProtocol {
         case .emptyState:
             return MarketplaceItem(
                 id: "", title: "", price: 0, description: nil, category: nil, condition: nil,
-                sold: false, wall: "", comments: 0,
+                wall: "", comments: 0,
                 author: Post.Author(id: "", profileName: "", isAnonymous: false),
                 createdAt: "", updatedAt: ""
             )
@@ -178,7 +172,7 @@ class MockMarketplaceService: MarketplaceServiceProtocol {
                 id: itemId, title: request.title ?? "Updated", price: request.price ?? 0,
                 description: request.description, category: request.category,
                 condition: request.condition,
-                sold: request.sold ?? false, wall: "CAMPUS", comments: 0,
+                wall: "CAMPUS", comments: 0,
                 author: Post.Author(id: userId, profileName: "Mock User", isAnonymous: false),
                 createdAt: "2026-02-19T00:00:00Z", updatedAt: "2026-02-19T00:00:00Z"
             )
@@ -186,7 +180,7 @@ class MockMarketplaceService: MarketplaceServiceProtocol {
         case .emptyState:
             return MarketplaceItem(
                 id: "", title: "", price: 0, description: nil, category: nil, condition: nil,
-                sold: false, wall: "", comments: 0,
+                wall: "", comments: 0,
                 author: Post.Author(id: "", profileName: "", isAnonymous: false),
                 createdAt: "", updatedAt: ""
             )
