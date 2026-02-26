@@ -68,3 +68,53 @@ enum MarketplaceSortOrder: String, CaseIterable {
         }
     }
 }
+
+/// Category for marketplace items
+enum MarketplaceCategory: String, CaseIterable, Codable {
+    case textbooks   = "textbooks"
+    case electronics = "electronics"
+    case furniture   = "furniture"
+    case clothing    = "clothing"
+    case stationery  = "stationery"
+    case sports      = "sports"
+    case transport   = "transport"
+    case food        = "food"
+    case services    = "services"
+    case housing     = "housing"
+    case tickets     = "tickets"
+    case other       = "other"
+
+    var displayName: String {
+        switch self {
+        case .textbooks:   return "Textbooks"
+        case .electronics: return "Electronics"
+        case .furniture:   return "Furniture"
+        case .clothing:    return "Clothing"
+        case .stationery:  return "Stationery"
+        case .sports:      return "Sports & Fitness"
+        case .transport:   return "Transport"
+        case .food:        return "Food & Drinks"
+        case .services:    return "Services"
+        case .housing:     return "Housing"
+        case .tickets:     return "Tickets"
+        case .other:       return "Other"
+        }
+    }
+
+    var icon: String {
+        switch self {
+        case .textbooks:   return "books.vertical"
+        case .electronics: return "laptopcomputer"
+        case .furniture:   return "sofa"
+        case .clothing:    return "tshirt"
+        case .stationery:  return "pencil.and.ruler"
+        case .sports:      return "figure.run"
+        case .transport:   return "bicycle"
+        case .food:        return "cup.and.saucer"
+        case .services:    return "wrench.and.screwdriver"
+        case .housing:     return "house"
+        case .tickets:     return "ticket"
+        case .other:       return "square.grid.2x2"
+        }
+    }
+}

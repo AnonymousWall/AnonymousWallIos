@@ -245,10 +245,14 @@ struct CreateMarketplaceView: View {
                 Text("Category")
                     .font(.subheadline).fontWeight(.medium)
                     .padding(.horizontal)
-                TextField("e.g. books, electronics, clothing", text: $viewModel.category)
-                    .textFieldStyle(RoundedBorderTextFieldStyle())
-                    .padding(.horizontal)
-                    .accessibilityLabel("Category")
+                Picker("Category", selection: $viewModel.selectedCategory) {
+                    ForEach(MarketplaceCategory.allCases, id: \.self) { cat in
+                        Label(cat.displayName, systemImage: cat.icon).tag(cat)
+                    }
+                }
+                .pickerStyle(.menu)
+                .padding(.horizontal)
+                .accessibilityLabel("Item category")
             }
 
             // Description

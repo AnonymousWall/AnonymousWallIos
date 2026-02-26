@@ -13,7 +13,7 @@ class CreateMarketplaceViewModel: ObservableObject {
     @Published var title = ""
     @Published var priceText = ""
     @Published var description = ""
-    @Published var category = ""
+    @Published var selectedCategory: MarketplaceCategory = .other
     @Published var selectedCondition: String = ""
     @Published var selectedWall: WallType = .campus
     @Published var isPosting = false
@@ -104,7 +104,7 @@ class CreateMarketplaceViewModel: ObservableObject {
         errorMessage = nil
 
         let trimmedDescription = description.trimmingCharacters(in: .whitespacesAndNewlines)
-        let trimmedCategory = category.trimmingCharacters(in: .whitespacesAndNewlines)
+        let categoryValue = selectedCategory.rawValue
         let conditionValue = selectedCondition.isEmpty ? nil : selectedCondition
         let imagesToUpload = selectedImages
 
@@ -114,7 +114,7 @@ class CreateMarketplaceViewModel: ObservableObject {
                     title: trimmedTitle,
                     price: price,
                     description: trimmedDescription.isEmpty ? nil : trimmedDescription,
-                    category: trimmedCategory.isEmpty ? nil : trimmedCategory,
+                    category: categoryValue,
                     condition: conditionValue,
                     wall: selectedWall,
                     images: imagesToUpload,
