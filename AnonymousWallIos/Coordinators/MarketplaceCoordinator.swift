@@ -18,6 +18,26 @@ class MarketplaceCoordinator: Coordinator {
 
     weak var tabCoordinator: TabCoordinator?
 
+    private var resetNavigationObserver: NSObjectProtocol?
+
+    init() {
+        resetNavigationObserver = NotificationCenter.default.addObserver(
+            forName: .resetNavigation,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor [weak self] in
+                self?.path = NavigationPath()
+            }
+        }
+    }
+
+    deinit {
+        if let observer = resetNavigationObserver {
+            NotificationCenter.default.removeObserver(observer)
+        }
+    }
+
     func navigate(to destination: Destination) {
         path.append(destination)
     }

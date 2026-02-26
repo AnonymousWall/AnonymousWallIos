@@ -27,6 +27,29 @@ class ProfileCoordinator: Coordinator {
     @Published var selectedInternship: Internship?  // ✅ Added
     @Published var selectedMarketplaceItem: MarketplaceItem?  // ✅ Added
     
+    private var resetNavigationObserver: NSObjectProtocol?
+    
+    init() {
+        resetNavigationObserver = NotificationCenter.default.addObserver(
+            forName: .resetNavigation,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor [weak self] in
+                self?.path = NavigationPath()
+                self?.selectedPost = nil
+                self?.selectedInternship = nil
+                self?.selectedMarketplaceItem = nil
+            }
+        }
+    }
+    
+    deinit {
+        if let observer = resetNavigationObserver {
+            NotificationCenter.default.removeObserver(observer)
+        }
+    }
+    
     func navigate(to destination: Destination) {
         switch destination {
         case .postDetail(let post):
