@@ -44,6 +44,8 @@ class MockChatService: ChatServiceProtocol {
     // MARK: - State Tracking
     
     var sendMessageCalled = false
+    var sendImageMessageCalled = false
+    var uploadChatImageCalled = false
     var getMessageHistoryCalled = false
     var getConversationsCalled = false
     var markMessageAsReadCalled = false
@@ -52,6 +54,8 @@ class MockChatService: ChatServiceProtocol {
     // MARK: - Configurable Behavior
     
     var sendMessageBehavior: MockBehavior = .success
+    var sendImageMessageBehavior: MockBehavior = .success
+    var uploadChatImageBehavior: MockBehavior = .success
     var getMessageHistoryBehavior: MockBehavior = .success
     var getConversationsBehavior: MockBehavior = .success
     var markMessageAsReadBehavior: MockBehavior = .success
@@ -61,6 +65,7 @@ class MockChatService: ChatServiceProtocol {
     
     var mockMessages: [Message] = []
     var mockConversations: [Conversation] = []
+    var mockImageUrl: String = "https://example.com/mock-image.jpg"
     
     // MARK: - ChatServiceProtocol
     
@@ -79,6 +84,46 @@ class MockChatService: ChatServiceProtocol {
             )
             mockMessages.append(message)
             return message
+            
+        case .failure(let error):
+            throw error
+            
+        case .emptyState:
+            throw MockError.serverError
+        }
+    }
+    
+    func sendImageMessage(receiverId: String, imageUrl: String, token: String, userId: String) async throws -> Message {
+        sendImageMessageCalled = true
+        
+        switch sendImageMessageBehavior {
+        case .success:
+            let message = Message(
+                id: UUID().uuidString,
+                senderId: "mockUserId",
+                receiverId: receiverId,
+                content: "",
+                imageUrl: imageUrl,
+                readStatus: false,
+                createdAt: ISO8601DateFormatter().string(from: Date())
+            )
+            mockMessages.append(message)
+            return message
+            
+        case .failure(let error):
+            throw error
+            
+        case .emptyState:
+            throw MockError.serverError
+        }
+    }
+    
+    func uploadChatImage(_ jpeg: Data, token: String, userId: String) async throws -> String {
+        uploadChatImageCalled = true
+        
+        switch uploadChatImageBehavior {
+        case .success:
+            return mockImageUrl
             
         case .failure(let error):
             throw error

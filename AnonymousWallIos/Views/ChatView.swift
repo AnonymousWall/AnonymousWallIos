@@ -2,10 +2,12 @@
 //  ChatView.swift
 //  AnonymousWallIos
 //
-//  Chat conversation view with real-time messaging
+//  Chat conversation view with real-time messaging and image support
 //
 
 import SwiftUI
+import PhotosUI
+import Kingfisher
 
 struct ChatView: View {
     @EnvironmentObject var authState: AuthState
@@ -13,6 +15,11 @@ struct ChatView: View {
     @StateObject var viewModel: ChatViewModel
     
     @FocusState private var isInputFocused: Bool
+    @State private var selectedPhotoItem: PhotosPickerItem? = nil
+    @State private var pendingImage: UIImage? = nil
+    @State private var showImageConfirmation = false
+    @State private var selectedImageURL: String? = nil
+    @State private var selectedImageItem: ImageViewerItem? = nil
     
     var body: some View {
         VStack(spacing: 0) {
@@ -23,6 +30,21 @@ struct ChatView: View {
                 connectionStatusBar(text: "Reconnecting...", color: .orange)
             } else if case .failed = viewModel.connectionState {
                 connectionStatusBar(text: "Connection failed", color: .red)
+            }
+            
+            // Image upload progress
+            if viewModel.isUploadingImage {
+                HStack(spacing: 8) {
+                    ProgressView()
+                        .tint(.white)
+                        .scaleEffect(0.7)
+                    Text("Uploading image...")
+                        .font(.caption)
+                        .foregroundColor(.white)
+                }
+                .padding(.vertical, 8)
+                .frame(maxWidth: .infinity)
+                .background(Color.accentColor)
             }
             
             // Messages list
@@ -38,7 +60,11 @@ struct ChatView: View {
                             ForEach(viewModel.messages) { message in
                                 MessageBubbleView(
                                     message: message,
-                                    isCurrentUser: message.senderId == authState.currentUser?.id
+                                    isCurrentUser: message.senderId == authState.currentUser?.id,
+                                    onTapImage: { url in
+                                        selectedImageURL = url
+                                        selectedImageItem = ImageViewerItem(index: 0)
+                                    }
                                 )
                                 .id(message.id)
                             }
@@ -51,8 +77,7 @@ struct ChatView: View {
                     }
                     .padding()
                 }
-                .onChange(of: viewModel.messages.count) { _ in
-                    // Auto-scroll to bottom when new message arrives
+                .onChange(of: viewModel.messages.count) { _, _ in
                     if let lastMessage = viewModel.messages.last {
                         withAnimation {
                             proxy.scrollTo(lastMessage.id, anchor: .bottom)
@@ -65,17 +90,48 @@ struct ChatView: View {
             
             // Input bar
             HStack(spacing: 12) {
+                let isUploading = viewModel.isUploadingImage
+                // Image picker button
+                PhotosPicker(
+                    selection: $selectedPhotoItem,
+                    matching: .images,
+                    photoLibrary: .shared()
+                ) {
+                    Image(systemName: "photo")
+                        .font(.system(size: 22))
+                        .foregroundColor(isUploading ? .gray : .accentColor)
+                }
+                .disabled(viewModel.isUploadingImage)
+                .onChange(of: selectedPhotoItem) { _, item in
+                    guard let item else { return }
+                    Task {
+                        do {
+                            if let data = try await item.loadTransferable(type: Data.self),
+                               let image = UIImage(data: data) {
+                                pendingImage = image
+                                showImageConfirmation = true
+                            }
+                        } catch {
+                            viewModel.errorMessage = "Failed to load image: \(error.localizedDescription)"
+                        }
+                        selectedPhotoItem = nil
+                    }
+                }
+                .accessibilityLabel("Send image")
+                
+                // Text input
                 TextField("Type a message...", text: $viewModel.messageText, axis: .vertical)
                     .textFieldStyle(.plain)
                     .padding(10)
                     .background(Color(.systemGray6))
                     .cornerRadius(20)
                     .focused($isInputFocused)
-                    .onChange(of: viewModel.messageText) { _ in
+                    .onChange(of: viewModel.messageText) { _, _ in
                         viewModel.onTextChanged()
                     }
                     .accessibilityLabel("Message input")
                 
+                // Send button
                 Button(action: {
                     HapticFeedback.medium()
                     viewModel.sendMessage(authState: authState)
@@ -94,26 +150,28 @@ struct ChatView: View {
         .onAppear {
             viewModel.loadMessages(authState: authState)
             viewModel.viewDidAppear()
-            // Mark conversation as read when view appears
             Task {
-                // Small delay to ensure messages are loaded first
-                try? await Task.sleep(nanoseconds: 500_000_000) // 0.5 seconds
+                try? await Task.sleep(nanoseconds: 500_000_000)
                 viewModel.markConversationAsRead(authState: authState)
             }
         }
         .onDisappear {
             viewModel.disconnect()
-            // Note: disconnect() no longer calls repository.disconnect()
-            // It only sets isViewActive = false
-            // WebSocket lifecycle is managed at MessagesView (tab) level
+        }
+        .fullScreenCover(item: $selectedImageItem) { _ in
+            FullScreenImageViewer(imageURLs: [selectedImageURL ?? ""], initialIndex: 0)
+        }
+        .sheet(isPresented: $showImageConfirmation, onDismiss: { pendingImage = nil }) {
+            if let image = pendingImage {
+                ImageSendConfirmationSheet(image: image) {
+                    viewModel.sendImage(image, authState: authState)
+                }
+                .presentationDetents([.medium])
+            }
         }
         .alert("Error", isPresented: .constant(viewModel.errorMessage != nil)) {
-            Button("Retry") {
-                viewModel.retry(authState: authState)
-            }
-            Button("Cancel", role: .cancel) {
-                viewModel.errorMessage = nil
-            }
+            Button("Retry") { viewModel.retry(authState: authState) }
+            Button("Cancel", role: .cancel) { viewModel.errorMessage = nil }
         } message: {
             if let error = viewModel.errorMessage {
                 Text(error)
@@ -128,11 +186,9 @@ struct ChatView: View {
             Image(systemName: "bubble.left.and.bubble.right")
                 .font(.system(size: 60))
                 .foregroundColor(.secondary)
-            
             Text("No messages yet")
                 .font(.headline)
                 .foregroundColor(.secondary)
-            
             Text("Start a conversation by sending a message")
                 .font(.subheadline)
                 .foregroundColor(.secondary)
@@ -148,12 +204,10 @@ struct ChatView: View {
                     .fill(Color.secondary)
                     .frame(width: 6, height: 6)
                     .animation(Animation.easeInOut(duration: 0.6).repeatForever(), value: viewModel.isTyping)
-                
                 Circle()
                     .fill(Color.secondary)
                     .frame(width: 6, height: 6)
                     .animation(Animation.easeInOut(duration: 0.6).repeatForever().delay(0.2), value: viewModel.isTyping)
-                
                 Circle()
                     .fill(Color.secondary)
                     .frame(width: 6, height: 6)
@@ -173,7 +227,6 @@ struct ChatView: View {
             ProgressView()
                 .tint(.white)
                 .scaleEffect(0.7)
-            
             Text(text)
                 .font(.caption)
                 .foregroundColor(.white)
@@ -189,38 +242,57 @@ struct ChatView: View {
 struct MessageBubbleView: View {
     let message: Message
     let isCurrentUser: Bool
+    var onTapImage: ((String) -> Void)?
     
     var body: some View {
         HStack {
-            if isCurrentUser {
-                Spacer()
-            }
+            if isCurrentUser { Spacer() }
             
             VStack(alignment: isCurrentUser ? .trailing : .leading, spacing: 4) {
-                Text(message.content)
-                    .font(.body)
-                    .foregroundColor(isCurrentUser ? .white : .primary)
-                    .padding(12)
-                    .background(isCurrentUser ? Color.accentColor : Color(.systemGray6))
-                    .cornerRadius(16)
-                    .accessibilityLabel("Message: \(message.content)")
+                // Image bubble
+                if let imageUrl = message.imageUrl {
+                    KFImage(URL(string: imageUrl))
+                        .placeholder {
+                            RoundedRectangle(cornerRadius: 12)
+                                .fill(Color.gray.opacity(0.1))
+                                .frame(width: 200, height: 200)
+                                .overlay(ProgressView())
+                        }
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: 200, height: 200)
+                        .clipped()
+                        .cornerRadius(12)
+                        .onTapGesture { onTapImage?(imageUrl) }
+                        .accessibilityLabel("Image message")
+                        .accessibilityHint("Double tap to view full screen")
+                }
                 
+                // Text bubble (only if non-empty)
+                if !message.content.isEmpty {
+                    Text(message.content)
+                        .font(.body)
+                        .foregroundColor(isCurrentUser ? .white : .primary)
+                        .padding(12)
+                        .background(isCurrentUser ? Color.accentColor : Color(.systemGray6))
+                        .cornerRadius(16)
+                        .accessibilityLabel("Message: \(message.content)")
+                }
+                
+                // Timestamp + status
                 HStack(spacing: 4) {
                     Text(DateFormatting.formatRelativeTime(message.createdAt))
                         .font(.caption2)
                         .foregroundColor(.secondary)
                     
                     if isCurrentUser {
-                        // Status indicator
                         statusIcon
                     }
                 }
             }
             .frame(maxWidth: 280, alignment: isCurrentUser ? .trailing : .leading)
             
-            if !isCurrentUser {
-                Spacer()
-            }
+            if !isCurrentUser { Spacer() }
         }
     }
     

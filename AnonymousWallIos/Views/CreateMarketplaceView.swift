@@ -43,12 +43,16 @@ struct CreateMarketplaceView: View {
 
                     // Image picker
                     if viewModel.canAddMoreImages {
+                        // Capture before entering Sendable PhotosPicker closure (Swift 6)
+                        let imageCount = viewModel.imageCount
+                        let remainingSlots = viewModel.remainingImageSlots
+
                         PhotosPicker(
                             selection: $photoPickerItems,
-                            maxSelectionCount: viewModel.remainingImageSlots,
+                            maxSelectionCount: remainingSlots,
                             matching: .images
                         ) {
-                            Label("Add Photo (\(viewModel.imageCount)/5)", systemImage: "photo.badge.plus")
+                            Label("Add Photo (\(imageCount)/5)", systemImage: "photo.badge.plus")
                         }
                         .padding(.horizontal)
                         .onChange(of: photoPickerItems) { _, items in
@@ -69,7 +73,7 @@ struct CreateMarketplaceView: View {
                             }
                         }
                         .accessibilityLabel("Add photo")
-                        .accessibilityHint("Double tap to select up to \(viewModel.remainingImageSlots) photos")
+                        .accessibilityHint("Double tap to select up to \(remainingSlots) photos")
                     }
 
                     // Image preview strip

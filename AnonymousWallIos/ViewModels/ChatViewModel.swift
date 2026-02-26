@@ -16,6 +16,7 @@ class ChatViewModel: ObservableObject {
     @Published var isLoadingMessages = false
     @Published var isLoadingMore = false
     @Published var isSendingMessage = false
+    @Published var isUploadingImage = false
     @Published var errorMessage: String?
     @Published var messageText: String = ""
     @Published var connectionState: WebSocketConnectionState = .disconnected
@@ -31,7 +32,6 @@ class ChatViewModel: ObservableObject {
     private var isViewActive = false
     private var currentAuthState: AuthState?
     
-    /// The other user's ID (conversation partner)
     let otherUserId: String
     let otherUserName: String
     
@@ -58,7 +58,6 @@ class ChatViewModel: ObservableObject {
     
     // MARK: - Public Methods
     
-    /// Load messages and connect to WebSocket
     func loadMessages(authState: AuthState) {
         guard let token = authState.authToken,
               let userId = authState.currentUser?.id else {
@@ -66,7 +65,6 @@ class ChatViewModel: ObservableObject {
             return
         }
         
-        // Store auth state for auto-marking messages as read
         currentAuthState = authState
         
         loadTask?.cancel()
@@ -77,7 +75,6 @@ class ChatViewModel: ObservableObject {
             errorMessage = nil
             
             do {
-                // Atomically load messages and connect WebSocket to avoid race condition
                 let loadedMessages = try await repository.loadMessagesAndConnect(
                     otherUserId: otherUserId,
                     token: token,
@@ -85,10 +82,7 @@ class ChatViewModel: ObservableObject {
                     page: 1,
                     limit: 50
                 )
-                
-                // Update UI
                 messages = loadedMessages
-                
             } catch {
                 errorMessage = "Failed to load messages: \(error.localizedDescription)"
                 Logger.chat.error("Failed to load messages: \(error)")
@@ -98,11 +92,9 @@ class ChatViewModel: ObservableObject {
         }
     }
     
-    /// Send a message
+    /// Send a text message
     func sendMessage(authState: AuthState) {
-        guard !messageText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
-            return
-        }
+        guard !messageText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
         
         guard let token = authState.authToken,
               let userId = authState.currentUser?.id else {
@@ -111,48 +103,60 @@ class ChatViewModel: ObservableObject {
         }
         
         let content = messageText
-        messageText = "" // Clear input immediately
+        messageText = ""
         
         Task { [weak self] in
             guard let self = self else { return }
-            
             isSendingMessage = true
-            
             do {
-                // Send message with optimistic UI
-                let tempId = try await repository.sendMessage(
+                let _ = try await repository.sendMessage(
                     receiverId: otherUserId,
                     content: content,
                     token: token,
                     userId: userId
                 )
-                
-                // Refresh messages from store
                 await refreshMessagesFromStore()
-                
             } catch {
                 errorMessage = "Failed to send message: \(error.localizedDescription)"
                 Logger.chat.error("Failed to send message: \(error)")
             }
-            
             isSendingMessage = false
         }
     }
     
-    /// Mark message as read
-    /// - Parameters:
-    ///   - messageId: Message ID
-    ///   - authState: Auth state
-    ///   - refreshStore: Whether to refresh messages from store after (default: true)
-    func markAsRead(messageId: String, authState: AuthState, refreshStore: Bool = true) {
+    /// Send an image message
+    func sendImage(_ image: UIImage, authState: AuthState) {
         guard let token = authState.authToken,
               let userId = authState.currentUser?.id else {
+            errorMessage = "Authentication required"
             return
         }
         
         Task { [weak self] in
             guard let self = self else { return }
-            
+            isUploadingImage = true
+            do {
+                try await repository.sendImageMessage(
+                    image: image,
+                    receiverId: otherUserId,
+                    token: token,
+                    userId: userId
+                )
+                await refreshMessagesFromStore()
+            } catch {
+                errorMessage = "Failed to send image: \(error.localizedDescription)"
+                Logger.chat.error("Failed to send image: \(error)")
+            }
+            isUploadingImage = false
+        }
+    }
+    
+    func markAsRead(messageId: String, authState: AuthState, refreshStore: Bool = true) {
+        guard let token = authState.authToken,
+              let userId = authState.currentUser?.id else { return }
+        
+        Task { [weak self] in
+            guard let self = self else { return }
             do {
                 try await repository.markAsRead(
                     messageId: messageId,
@@ -160,76 +164,52 @@ class ChatViewModel: ObservableObject {
                     token: token,
                     userId: userId
                 )
-                
-                // Conditionally refresh messages from store
                 if refreshStore {
                     await refreshMessagesFromStore()
                 }
-                
             } catch {
                 Logger.chat.error("Failed to mark message as read: \(error)")
             }
         }
     }
     
-    /// Mark entire conversation as read
     func markConversationAsRead(authState: AuthState) {
         guard let token = authState.authToken,
-              let userId = authState.currentUser?.id else {
-            return
-        }
+              let userId = authState.currentUser?.id else { return }
         
         Task { [weak self] in
             guard let self = self else { return }
-            
             do {
                 try await repository.markConversationAsRead(
                     otherUserId: otherUserId,
                     token: token,
                     userId: userId
                 )
-                
-                // Refresh messages from store
                 await refreshMessagesFromStore()
-                
             } catch {
                 Logger.chat.error("Failed to mark conversation as read: \(error)")
             }
         }
     }
     
-    /// Send typing indicator
     func sendTypingIndicator() {
         repository.sendTypingIndicator(receiverId: otherUserId)
     }
     
-    /// Handle text input change
     func onTextChanged() {
-        // Send typing indicator (throttled)
         typingTimer?.invalidate()
         sendTypingIndicator()
-        
-        // Stop indicating after 2 seconds of no typing
-        typingTimer = Timer.scheduledTimer(withTimeInterval: 2.0, repeats: false) { [weak self] _ in
-            // Typing stopped
-        }
+        typingTimer = Timer.scheduledTimer(withTimeInterval: 2.0, repeats: false) { _ in }
     }
     
-    /// Called when view appears
     func viewDidAppear() {
         isViewActive = true
     }
     
-    /// Called when view disappears (does NOT disconnect WebSocket)
     func disconnect() {
         isViewActive = false
-        // Note: WebSocket is NOT disconnected here intentionally.
-        // The WebSocket lifecycle is managed at the MessagesView (tab) level.
-        // Disconnecting here would kill the connection during normal navigation
-        // between ConversationsListView and ChatView, causing "request cancelled" errors.
     }
     
-    /// Retry loading messages
     func retry(authState: AuthState) {
         loadMessages(authState: authState)
     }
@@ -237,7 +217,6 @@ class ChatViewModel: ObservableObject {
     // MARK: - Private Methods
     
     private func setupObservers() {
-        // Observe connection state
         repository.$connectionState
             .receive(on: DispatchQueue.main)
             .sink { [weak self] state in
@@ -245,21 +224,17 @@ class ChatViewModel: ObservableObject {
             }
             .store(in: &cancellables)
         
-        // Observe incoming messages
         repository.messagePublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] (message, conversationUserId) in
                 guard let self = self else { return }
                 
-                // Only handle messages for this conversation
                 if conversationUserId == self.otherUserId {
                     Task {
                         await self.refreshMessagesFromStore()
                         
-                        // Auto-mark as read if view is active and message is from other user
                         if self.isViewActive && message.senderId == self.otherUserId && !message.readStatus,
                            let authState = self.currentAuthState {
-                            // Mark as read without refreshing again (we just refreshed above)
                             self.markAsRead(messageId: message.id, authState: authState, refreshStore: false)
                         }
                     }
@@ -267,33 +242,25 @@ class ChatViewModel: ObservableObject {
             }
             .store(in: &cancellables)
         
-        // Observe typing indicators
         repository.typingPublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] senderId in
                 guard let self = self else { return }
-                
-                // Only show typing for this conversation
                 if senderId == self.otherUserId {
                     self.isTyping = true
-                    
-                    // Hide typing indicator after 3 seconds
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
-                        self.isTyping = false
+                    Task { [weak self] in
+                        try? await Task.sleep(nanoseconds: 3_000_000_000)
+                        self?.isTyping = false
                     }
                 }
             }
             .store(in: &cancellables)
         
-        // Observe read receipts
         repository.readReceiptPublisher
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] messageId in
+            .sink { [weak self] _ in
                 guard let self = self else { return }
-                
-                Task {
-                    await self.refreshMessagesFromStore()
-                }
+                Task { await self.refreshMessagesFromStore() }
             }
             .store(in: &cancellables)
     }
@@ -301,7 +268,6 @@ class ChatViewModel: ObservableObject {
     private func refreshMessagesFromStore() async {
         let storedMessages = await messageStore.getMessages(for: otherUserId)
         
-        // Validate ordering in debug mode
         #if DEBUG
         validateMessageOrdering(storedMessages)
         #endif
@@ -310,21 +276,15 @@ class ChatViewModel: ObservableObject {
     }
     
     #if DEBUG
-    /// Validate that messages are properly ordered
     private func validateMessageOrdering(_ messages: [Message]) {
         guard messages.count > 1 else { return }
-        
         for i in 0..<(messages.count - 1) {
             let current = messages[i]
             let next = messages[i + 1]
-            
             guard let currentTime = current.timestamp,
-                  let nextTime = next.timestamp else {
-                continue
-            }
-            
+                  let nextTime = next.timestamp else { continue }
             if currentTime > nextTime {
-                Logger.chat.error("Message ordering violation detected: \(current.id) > \(next.id)")
+                Logger.chat.error("Message ordering violation: \(current.id) > \(next.id)")
             }
         }
     }

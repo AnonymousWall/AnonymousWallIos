@@ -15,6 +15,7 @@ struct Message: Codable, Identifiable, Hashable {
     let senderId: String
     let receiverId: String
     let content: String
+    let imageUrl: String?
     let readStatus: Bool
     let createdAt: String
     
@@ -26,6 +27,7 @@ struct Message: Codable, Identifiable, Hashable {
         case senderId
         case receiverId
         case content
+        case imageUrl
         case readStatus
         case createdAt
     }
@@ -36,7 +38,8 @@ struct Message: Codable, Identifiable, Hashable {
         id = try container.decode(String.self, forKey: .id)
         senderId = try container.decode(String.self, forKey: .senderId)
         receiverId = try container.decode(String.self, forKey: .receiverId)
-        content = try container.decode(String.self, forKey: .content)
+        content = try container.decodeIfPresent(String.self, forKey: .content) ?? ""
+        imageUrl = try container.decodeIfPresent(String.self, forKey: .imageUrl)
         readStatus = try container.decode(Bool.self, forKey: .readStatus)
         createdAt = try container.decode(String.self, forKey: .createdAt)
         
@@ -45,11 +48,12 @@ struct Message: Codable, Identifiable, Hashable {
     }
     
     // Manual init for creating messages programmatically
-    init(id: String, senderId: String, receiverId: String, content: String, readStatus: Bool, createdAt: String) {
+    init(id: String, senderId: String, receiverId: String, content: String, imageUrl: String? = nil, readStatus: Bool, createdAt: String) {
         self.id = id
         self.senderId = senderId
         self.receiverId = receiverId
         self.content = content
+        self.imageUrl = imageUrl
         self.readStatus = readStatus
         self.createdAt = createdAt
         self.localStatus = readStatus ? .read : .sent
@@ -60,7 +64,7 @@ struct Message: Codable, Identifiable, Hashable {
         hasher.combine(id)
     }
     
-    // ✅ FIX: Include localStatus in equality check so SwiftUI detects changes!
+    // Include localStatus in equality check so SwiftUI detects changes
     static func == (lhs: Message, rhs: Message) -> Bool {
         lhs.id == rhs.id &&
         lhs.readStatus == rhs.readStatus &&
@@ -74,6 +78,7 @@ struct Message: Codable, Identifiable, Hashable {
             senderId: self.senderId,
             receiverId: self.receiverId,
             content: self.content,
+            imageUrl: self.imageUrl,
             readStatus: read,
             createdAt: self.createdAt
         )
@@ -124,6 +129,13 @@ struct Conversation: Codable, Identifiable {
 struct SendMessageRequest: Codable {
     let receiverId: String
     let content: String
+    let imageUrl: String?
+    
+    init(receiverId: String, content: String, imageUrl: String? = nil) {
+        self.receiverId = receiverId
+        self.content = content
+        self.imageUrl = imageUrl
+    }
 }
 
 struct MessageHistoryResponse: Codable {

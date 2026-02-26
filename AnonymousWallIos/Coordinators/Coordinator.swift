@@ -8,6 +8,7 @@
 import SwiftUI
 
 /// Protocol defining the basic coordinator contract
+@MainActor
 protocol Coordinator: AnyObject, ObservableObject {
     associatedtype Destination: Hashable
     

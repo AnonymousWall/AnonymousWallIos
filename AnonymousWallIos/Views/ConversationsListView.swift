@@ -33,22 +33,12 @@ struct ConversationsListView: View {
         .onAppear {
             viewModel.loadConversations(authState: authState)
         }
-        // ✅ REMOVED: .onDisappear { viewModel.disconnect() }
-        // Disconnecting here caused "request cancelled" errors because:
-        // 1. User taps a conversation → ConversationsListView disappears
-        // 2. onDisappear fires → disconnect() kills the WebSocket
-        // 3. Any in-flight network request gets cancelled
-        // WebSocket lifecycle is now managed at MessagesView (tab) level
         .refreshable {
             await viewModel.refreshConversations(authState: authState)
         }
         .alert("Error", isPresented: .constant(viewModel.errorMessage != nil)) {
-            Button("Retry") {
-                viewModel.retry(authState: authState)
-            }
-            Button("Cancel", role: .cancel) {
-                viewModel.errorMessage = nil
-            }
+            Button("Retry") { viewModel.retry(authState: authState) }
+            Button("Cancel", role: .cancel) { viewModel.errorMessage = nil }
         } message: {
             if let error = viewModel.errorMessage {
                 Text(error)
@@ -77,11 +67,9 @@ struct ConversationsListView: View {
             Image(systemName: "bubble.left.and.bubble.right")
                 .font(.system(size: 60))
                 .foregroundColor(.secondary)
-            
             Text("No conversations yet")
                 .font(.headline)
                 .foregroundColor(.secondary)
-            
             Text("Your messages will appear here")
                 .font(.subheadline)
                 .foregroundColor(.secondary)
@@ -125,7 +113,15 @@ struct ConversationRowView: View {
                 
                 HStack {
                     if let lastMessage = conversation.lastMessage {
-                        Text(lastMessage.content)
+                        // Show image preview text if image message
+                        let preview: String = {
+                            if lastMessage.imageUrl != nil && lastMessage.content.isEmpty {
+                                return "📷 Photo"
+                            }
+                            return lastMessage.content
+                        }()
+                        
+                        Text(preview)
                             .font(.subheadline)
                             .foregroundColor(.secondary)
                             .lineLimit(1)

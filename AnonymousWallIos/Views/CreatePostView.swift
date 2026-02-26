@@ -95,12 +95,13 @@ struct CreatePostView: View {
                 
                 // Image picker button
                 if viewModel.canAddMoreImages {
+                    let imageCount = viewModel.imageCount
                     PhotosPicker(
                         selection: $photoPickerItems,
                         maxSelectionCount: viewModel.remainingImageSlots,
                         matching: .images
                     ) {
-                        Label("Add Photo (\(viewModel.imageCount)/5)", systemImage: "photo.badge.plus")
+                        Label("Add Photo (\(imageCount)/5)", systemImage: "photo.badge.plus")
                     }
                     .padding(.horizontal)
                     .onChange(of: photoPickerItems) { _, items in
