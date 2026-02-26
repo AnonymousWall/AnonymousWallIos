@@ -15,7 +15,9 @@ actor PreferencesStore {
     
     static let shared = PreferencesStore()
     
-    private let userDefaults: UserDefaults
+    // UserDefaults is not formally Sendable in Swift 6, but is safe to use
+    // from a single actor context. nonisolated(unsafe) suppresses the warning.
+    nonisolated(unsafe) private let userDefaults: UserDefaults
     
     private init(userDefaults: UserDefaults = .standard) {
         self.userDefaults = userDefaults

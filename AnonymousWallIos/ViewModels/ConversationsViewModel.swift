@@ -1,5 +1,5 @@
 //
-//  ConversationsViewModel.swift (with debug logging)
+//  ConversationsViewModel.swift
 //  AnonymousWallIos
 //
 //  ViewModel for conversations list screen
@@ -69,7 +69,6 @@ class ConversationsViewModel: ObservableObject {
                 repository.connect(token: token, userId: userId)
                 
             } catch {
-                // Don't show error for cancellation (e.g. when navigating away)
                 if (error as? URLError)?.code == .cancelled ||
                    error is CancellationError {
                     Logger.chat.debug("loadConversations cancelled (navigating away)")
@@ -99,9 +98,7 @@ class ConversationsViewModel: ObservableObject {
                     token: token,
                     userId: userId
                 )
-                
                 conversations = loadedConversations
-                
             } catch {
                 if (error as? URLError)?.code == .cancelled ||
                    error is CancellationError {
@@ -140,8 +137,6 @@ class ConversationsViewModel: ObservableObject {
                 Logger.chat.info("📊 Current unreadCount before update: \(self.unreadCount)")
                 self.unreadCount = count
                 Logger.chat.info("📊 Current unreadCount after update: \(self.unreadCount)")
-                
-                // Force objectWillChange to fire (shouldn't be necessary but worth trying)
                 self.objectWillChange.send()
             }
             .store(in: &cancellables)
@@ -156,23 +151,19 @@ class ConversationsViewModel: ObservableObject {
                 
                 Logger.chat.debug("📨 ViewModel received message for conversation: \(conversationUserId)")
                 
-                // Update the corresponding conversation
                 if let index = self.conversations.firstIndex(where: { $0.userId == conversationUserId }) {
-                    var updatedConversation = self.conversations[index]
+                    let existing = self.conversations[index]  // ← was `var`, never mutated so now `let`
                     
-                    // Create updated conversation with new last message
                     let updatedConv = Conversation(
-                        userId: updatedConversation.userId,
-                        profileName: updatedConversation.profileName,
+                        userId: existing.userId,
+                        profileName: existing.profileName,
                         lastMessage: message,
-                        unreadCount: message.readStatus ? updatedConversation.unreadCount : updatedConversation.unreadCount + 1
+                        unreadCount: message.readStatus ? existing.unreadCount : existing.unreadCount + 1
                     )
                     
-                    // Remove old and insert at top (most recent)
                     self.conversations.remove(at: index)
                     self.conversations.insert(updatedConv, at: 0)
                 } else {
-                    // New conversation - fetch full list to get profile name
                     Logger.chat.info("New conversation detected: \(conversationUserId)")
                 }
             }
@@ -186,14 +177,13 @@ class ConversationsViewModel: ObservableObject {
                 
                 Logger.chat.debug("📖 ViewModel received conversationRead event for: \(conversationUserId)")
                 
-                // Find and update the conversation to reset unread count
                 if let index = self.conversations.firstIndex(where: { $0.userId == conversationUserId }) {
                     let conversation = self.conversations[index]
                     let updatedConv = Conversation(
                         userId: conversation.userId,
                         profileName: conversation.profileName,
                         lastMessage: conversation.lastMessage,
-                        unreadCount: 0  // Reset to 0
+                        unreadCount: 0
                     )
                     self.conversations[index] = updatedConv
                     Logger.chat.debug("📖 Updated conversation unreadCount to 0 for: \(conversationUserId)")

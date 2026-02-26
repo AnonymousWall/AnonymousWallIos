@@ -9,6 +9,7 @@ import Foundation
 import Combine
 
 /// Protocol for WebSocket manager to enable testing
+@MainActor
 protocol ChatWebSocketManagerProtocol {
     var connectionState: WebSocketConnectionState { get }
     var connectionStatePublisher: AnyPublisher<WebSocketConnectionState, Never> { get }
@@ -230,7 +231,7 @@ class ChatWebSocketManager: ChatWebSocketManagerProtocol {
                     await self.handleReceivedMessage(message)
                 } catch {
                     Logger.chat.error("WebSocket receive error: \(error)")
-                    await self.handleConnectionFailure(error: error)
+                    self.handleConnectionFailure(error: error)
                     break
                 }
             }
@@ -330,7 +331,7 @@ class ChatWebSocketManager: ChatWebSocketManagerProtocol {
                 try? await Task.sleep(nanoseconds: 30_000_000_000) // 30 seconds
                 
                 guard let self = self,
-                      let webSocketTask = await self.webSocketTask else {
+                      let webSocketTask = self.webSocketTask else {
                     break
                 }
                 
@@ -339,7 +340,7 @@ class ChatWebSocketManager: ChatWebSocketManagerProtocol {
                     try await webSocketTask.sendPing()
                 } catch {
                     Logger.chat.warning("Heartbeat ping failed: \(error)")
-                    await self.handleConnectionFailure(error: error)
+                    self.handleConnectionFailure(error: error)
                     break
                 }
             }
@@ -359,7 +360,7 @@ class ChatWebSocketManager: ChatWebSocketManagerProtocol {
             
             Task { [weak self] in
                 try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
-                await self?.establishConnection()
+                self?.establishConnection()
             }
         } else {
             Logger.chat.error("Max reconnection attempts reached")
