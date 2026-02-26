@@ -24,19 +24,14 @@ class MarketplaceService: MarketplaceServiceProtocol {
         wall: WallType = .campus,
         page: Int = 1,
         limit: Int = 20,
-        sortBy: MarketplaceSortOrder = .newest,
-        sold: Bool? = nil
+        sortBy: MarketplaceSortOrder = .newest
     ) async throws -> MarketplaceListResponse {
-        var queryItems = [
+        let queryItems = [
             URLQueryItem(name: "wall", value: wall.rawValue),
             URLQueryItem(name: "page", value: "\(page)"),
             URLQueryItem(name: "limit", value: "\(limit)"),
             URLQueryItem(name: "sortBy", value: sortBy.rawValue)
         ]
-
-        if let sold {
-            queryItems.append(URLQueryItem(name: "sold", value: sold ? "true" : "false"))
-        }
 
         let request = try APIRequestBuilder()
             .setPath("/marketplace")

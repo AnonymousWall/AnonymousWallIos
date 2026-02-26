@@ -40,35 +40,8 @@ struct MarketView: View {
                     activeViewModel.loadItems(authState: authState)
                 }
 
-                // Sort and filter controls
+                // Sort controls
                 HStack {
-                    // Sold filter
-                    Menu {
-                        Button("All Items") {
-                            activeViewModel.soldFilter = nil
-                            activeViewModel.sortOrderChanged(authState: authState)
-                        }
-                        Button("Available") {
-                            activeViewModel.soldFilter = false
-                            activeViewModel.sortOrderChanged(authState: authState)
-                        }
-                        Button("Sold") {
-                            activeViewModel.soldFilter = true
-                            activeViewModel.sortOrderChanged(authState: authState)
-                        }
-                    } label: {
-                        HStack(spacing: 4) {
-                            Image(systemName: "line.3.horizontal.decrease.circle")
-                                .font(.subheadline)
-                            Text(soldFilterLabel)
-                                .font(.subheadline)
-                        }
-                        .foregroundColor(.primary)
-                    }
-                    .accessibilityLabel("Filter by sold status: \(soldFilterLabel)")
-
-                    Spacer()
-
                     Picker("Sort", selection: Binding(
                         get: { activeViewModel.selectedSortOrder },
                         set: { newValue in
@@ -227,13 +200,6 @@ struct MarketView: View {
         }
     }
 
-    private var soldFilterLabel: String {
-        switch activeViewModel.soldFilter {
-        case .none: return "All"
-        case .some(false): return "Available"
-        case .some(true): return "Sold"
-        }
-    }
 }
 
 #Preview {

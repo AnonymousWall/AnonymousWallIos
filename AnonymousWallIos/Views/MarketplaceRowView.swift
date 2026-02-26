@@ -30,7 +30,7 @@ struct MarketplaceRowView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            // Wall badge, sold badge, and author
+            // Wall badge and author
             HStack(spacing: 8) {
                 Text(wallDisplayName)
                     .font(.caption)
@@ -41,18 +41,6 @@ struct MarketplaceRowView: View {
                     .background(wallGradient)
                     .cornerRadius(12)
                     .accessibilityLabel("Posted on \(wallDisplayName) wall")
-
-                if item.sold {
-                    Text("SOLD")
-                        .font(.caption)
-                        .fontWeight(.bold)
-                        .foregroundColor(.white)
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 6)
-                        .background(Color.red)
-                        .cornerRadius(12)
-                        .accessibilityLabel("Item sold")
-                }
 
                 Spacer()
 
@@ -219,7 +207,6 @@ struct MarketplaceRowView: View {
             description: "Barely used, excellent condition",
             category: "books",
             condition: "like_new",
-            sold: false,
             wall: "CAMPUS",
             comments: 2,
             author: Post.Author(id: "user1", profileName: "John Doe", isAnonymous: false),
