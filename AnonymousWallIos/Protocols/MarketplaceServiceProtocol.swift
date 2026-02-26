@@ -17,7 +17,8 @@ protocol MarketplaceServiceProtocol {
         wall: WallType,
         page: Int,
         limit: Int,
-        sortBy: MarketplaceSortOrder
+        sortBy: MarketplaceSortOrder,
+        category: MarketplaceCategory?
     ) async throws -> MarketplaceListResponse
 
     func getItem(

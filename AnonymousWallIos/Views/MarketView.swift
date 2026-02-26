@@ -40,7 +40,7 @@ struct MarketView: View {
                     activeViewModel.loadItems(authState: authState)
                 }
 
-                // Sort controls
+                // Sort and category controls
                 HStack {
                     Picker("Sort", selection: Binding(
                         get: { activeViewModel.selectedSortOrder },
@@ -55,6 +55,24 @@ struct MarketView: View {
                     }
                     .pickerStyle(.menu)
                     .accessibilityLabel("Sort items")
+
+                    Spacer()
+
+                    Picker("Category", selection: Binding(
+                        get: { activeViewModel.selectedCategory },
+                        set: { newValue in
+                            activeViewModel.selectedCategory = newValue
+                            activeViewModel.categoryChanged(authState: authState)
+                        }
+                    )) {
+                        Text("All Categories").tag(MarketplaceCategory?.none)
+                        ForEach(MarketplaceCategory.allCases, id: \.self) { cat in
+                            Label(cat.displayName, systemImage: cat.icon).tag(Optional(cat))
+                        }
+                    }
+                    .pickerStyle(.menu)
+                    .accessibilityLabel("Filter by category")
+                    .accessibilityValue(activeViewModel.selectedCategory?.displayName ?? "All Categories")
                 }
                 .padding(.horizontal)
                 .padding(.bottom, 4)

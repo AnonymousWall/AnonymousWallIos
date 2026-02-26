@@ -15,6 +15,7 @@ class MarketplaceFeedViewModel: ObservableObject {
     @Published var isLoadingMore = false
     @Published var errorMessage: String?
     @Published var selectedSortOrder: MarketplaceSortOrder = .newest
+    @Published var selectedCategory: MarketplaceCategory?
 
     // MARK: - Private Properties
     private var pagination = Pagination()
@@ -58,12 +59,12 @@ class MarketplaceFeedViewModel: ObservableObject {
 
     func sortOrderChanged(authState: AuthState) {
         HapticFeedback.selection()
-        loadTask?.cancel()
-        items = []
-        pagination.reset()
-        loadTask = Task {
-            await performLoad(authState: authState)
-        }
+        reloadWithFilter(authState: authState)
+    }
+
+    func categoryChanged(authState: AuthState) {
+        HapticFeedback.selection()
+        reloadWithFilter(authState: authState)
     }
 
     func deleteItem(_ item: MarketplaceItem, authState: AuthState) {
@@ -104,6 +105,16 @@ class MarketplaceFeedViewModel: ObservableObject {
     }
 
     // MARK: - Private Methods
+
+    private func reloadWithFilter(authState: AuthState) {
+        loadTask?.cancel()
+        items = []
+        pagination.reset()
+        loadTask = Task {
+            await performLoad(authState: authState)
+        }
+    }
+
     private func performLoad(authState: AuthState) async {
         guard let token = authState.authToken,
               let userId = authState.currentUser?.id else { return }
@@ -120,7 +131,8 @@ class MarketplaceFeedViewModel: ObservableObject {
                 wall: wallType,
                 page: pagination.currentPage,
                 limit: 20,
-                sortBy: selectedSortOrder
+                sortBy: selectedSortOrder,
+                category: selectedCategory
             )
             items = response.data
             pagination.update(totalPages: response.pagination.totalPages)
@@ -151,7 +163,8 @@ class MarketplaceFeedViewModel: ObservableObject {
                 wall: wallType,
                 page: nextPage,
                 limit: 20,
-                sortBy: selectedSortOrder
+                sortBy: selectedSortOrder,
+                category: selectedCategory
             )
             items.append(contentsOf: response.data)
             pagination.update(totalPages: response.pagination.totalPages)
