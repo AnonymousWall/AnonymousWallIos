@@ -49,6 +49,23 @@ struct FullScreenImageViewer: View {
         return max(0, 1.0 - Double(progress) * 0.6)
     }
 
+    /// Maximum pan translation (per axis) before the image would move off-screen at the given scale.
+    private func maxPanOffset(for scale: CGFloat, in viewSize: CGSize) -> CGSize {
+        CGSize(
+            width: max(0, (scale - 1) * viewSize.width / 2),
+            height: max(0, (scale - 1) * viewSize.height / 2)
+        )
+    }
+
+    /// Clamps `offset` so the image stays within the visible area at `scale`.
+    private func clampedOffset(_ offset: CGSize, scale: CGFloat, in viewSize: CGSize) -> CGSize {
+        let limit = maxPanOffset(for: scale, in: viewSize)
+        return CGSize(
+            width: max(-limit.width, min(limit.width, offset.width)),
+            height: max(-limit.height, min(limit.height, offset.height))
+        )
+    }
+
     var body: some View {
         GeometryReader { geometry in
             ZStack(alignment: .top) {
@@ -76,10 +93,11 @@ struct FullScreenImageViewer: View {
                                     .gesture(scale > minScale ?
                                         DragGesture()
                                             .onChanged { value in
-                                                offset = CGSize(
+                                                let raw = CGSize(
                                                     width: lastOffset.width + value.translation.width,
                                                     height: lastOffset.height + value.translation.height
                                                 )
+                                                offset = clampedOffset(raw, scale: scale, in: geometry.size)
                                             }
                                             .onEnded { _ in
                                                 lastOffset = offset
@@ -98,16 +116,23 @@ struct FullScreenImageViewer: View {
                                                 let delta = value / lastScale
                                                 lastScale = value
                                                 scale = min(max(scale * delta, minScale), maxScale)
+                                                // Keep the pan within bounds as the scale changes.
+                                                offset = clampedOffset(offset, scale: scale, in: geometry.size)
                                             }
                                             .onEnded { _ in
                                                 lastScale = 1.0
-                                                // Re-center whenever the user pinches back to 1× (or below,
-                                                // which can't happen due to clamping but is kept for safety).
                                                 if scale <= minScale {
+                                                    // Pinched back to 1× — re-center completely.
                                                     withAnimation {
                                                         scale = minScale
                                                         offset = .zero
                                                         lastOffset = .zero
+                                                    }
+                                                } else {
+                                                    // Partial zoom-out: clamp any residual out-of-bounds offset.
+                                                    withAnimation {
+                                                        offset = clampedOffset(offset, scale: scale, in: geometry.size)
+                                                        lastOffset = offset
                                                     }
                                                 }
                                             }
