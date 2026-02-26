@@ -18,6 +18,18 @@ class InternshipCoordinator: Coordinator {
 
     weak var tabCoordinator: TabCoordinator?
 
+    private var resetNavigationObserver: NSObjectProtocol?
+
+    init() {
+        resetNavigationObserver = makeNavigationResetObserver()
+    }
+
+    deinit {
+        if let observer = resetNavigationObserver {
+            NotificationCenter.default.removeObserver(observer)
+        }
+    }
+
     func navigate(to destination: Destination) {
         path.append(destination)
     }

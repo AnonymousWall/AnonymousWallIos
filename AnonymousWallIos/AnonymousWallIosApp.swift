@@ -41,6 +41,14 @@ struct AnonymousWallIosApp: App {
             } message: {
                 Text("Your account has been blocked. Please contact support.")
             }
+            .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) { _ in
+                // Reset all navigation stacks to root when the app becomes active
+                // without a valid session, preventing a stale/frozen navigation state
+                // (e.g. ChatView stuck while backend is down).
+                if !authState.isAuthenticated {
+                    NotificationCenter.default.post(name: .resetNavigation, object: nil)
+                }
+            }
         }
     }
 }

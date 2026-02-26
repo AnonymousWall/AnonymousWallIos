@@ -21,6 +21,20 @@ class HomeCoordinator: Coordinator {
     
     weak var tabCoordinator: TabCoordinator?
     
+    private var resetNavigationObserver: NSObjectProtocol?
+    
+    init() {
+        resetNavigationObserver = makeNavigationResetObserver { [weak self] in
+            self?.selectedPost = nil
+        }
+    }
+    
+    deinit {
+        if let observer = resetNavigationObserver {
+            NotificationCenter.default.removeObserver(observer)
+        }
+    }
+    
     func navigate(to destination: Destination) {
         switch destination {
         case .postDetail(let post):
