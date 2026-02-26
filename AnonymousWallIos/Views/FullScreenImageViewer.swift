@@ -143,13 +143,16 @@ struct FullScreenImageViewer: View {
                 .tabViewStyle(.page(indexDisplayMode: .always))
                 // Translate the entire paged view down while the user is swiping to dismiss
                 .offset(y: dismissDragOffset)
-                // Swipe-down-to-dismiss gesture (only active when not zoomed in)
-                .gesture(
+                // Use simultaneousGesture so this drag runs alongside the TabView's own
+                // page-swipe gesture instead of competing with it. This is what makes the
+                // image visually follow the finger on a downward drag.
+                .simultaneousGesture(
                     scale <= minScale ?
-                    DragGesture(minimumDistance: 20, coordinateSpace: .local)
+                    DragGesture(minimumDistance: 10, coordinateSpace: .local)
                         .onChanged { value in
-                            // Only track downward drags
-                            guard value.translation.height > 0 else { return }
+                            // Only track downward drags; horizontal swipes are for page turning
+                            guard value.translation.height > 0,
+                                  abs(value.translation.height) > abs(value.translation.width) else { return }
                             dismissDragOffset = value.translation.height
                         }
                         .onEnded { value in
