@@ -170,9 +170,9 @@ class ChatRepository {
     /// Send image message — upload first, then send via REST
     /// No optimistic UI since we must wait for upload to get URL
     func sendImageMessage(image: UIImage, receiverId: String, token: String, userId: String) async throws {
-        // Step 1: Compress image
+        // Step 1: Compress image (ChatRepository is @MainActor; jpegData is safe to call directly)
         let resized = image.resized(maxDimension: 1024)
-        guard let jpeg = await MainActor.run(body: { resized.jpegData(compressionQuality: 0.6) }) else {
+        guard let jpeg = resized.jpegData(compressionQuality: 0.6) else {
             throw NetworkError.serverError("Failed to compress image")
         }
         
