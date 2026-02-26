@@ -372,9 +372,23 @@ class ChatWebSocketManager: ChatWebSocketManagerProtocol {
 // MARK: - URLSessionWebSocketTask Extension
 
 extension URLSessionWebSocketTask {
+    /// Sends a ping and awaits the pong, throwing if the connection fails.
+    ///
+    /// Guards against the OS invoking the pong handler more than once on an
+    /// abrupt connection drop (e.g. NSPOSIXErrorDomain Code=53 "Software caused
+    /// connection abort"), which would otherwise cause a fatal
+    /// "continuation resumed more than once" crash.
     func sendPing() async throws {
+        let lock = NSLock()
+        var resumed = false
         try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
             self.sendPing { error in
+                lock.lock()
+                let shouldResume = !resumed
+                if shouldResume { resumed = true }
+                lock.unlock()
+
+                guard shouldResume else { return }
                 if let error = error {
                     continuation.resume(throwing: error)
                 } else {
