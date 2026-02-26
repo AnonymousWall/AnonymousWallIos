@@ -36,6 +36,9 @@ struct FullScreenImageViewer: View {
     private let dismissThreshold: CGFloat = 120
     /// Duration (seconds) of the slide-out animation; also used as the Task sleep before calling dismiss().
     private let dismissAnimationDuration: TimeInterval = 0.2
+    /// How far past the horizontal edge (in points) the user must over-swipe before the drag
+    /// is treated as a page-turn intent rather than a regular pan.
+    private let pageTurnEdgeBuffer: CGFloat = 20
 
     init(imageURLs: [String], initialIndex: Int = 0) {
         self.imageURLs = imageURLs
@@ -99,12 +102,40 @@ struct FullScreenImageViewer: View {
                                                 )
                                                 offset = clampedOffset(raw, scale: scale, in: geometry.size)
                                             }
-                                            .onEnded { _ in
+                                            .onEnded { value in
+                                                let startOffset = lastOffset
                                                 lastOffset = offset
                                                 if scale <= minScale {
                                                     withAnimation {
                                                         offset = .zero
                                                         lastOffset = .zero
+                                                    }
+                                                } else {
+                                                    // When panning hits a horizontal edge, treat a continued
+                                                    // over-swipe as a page-turn gesture. The raw (unclamped)
+                                                    // end position and predicted end must both exceed the edge
+                                                    // limit by a small buffer to avoid accidental triggers.
+                                                    let limit = maxPanOffset(for: scale, in: geometry.size)
+                                                    let rawEndX = startOffset.width + value.translation.width
+                                                    let predictedEndX = startOffset.width + value.predictedEndTranslation.width
+                                                    if rawEndX < -(limit.width + pageTurnEdgeBuffer),
+                                                       predictedEndX < -(limit.width + pageTurnEdgeBuffer),
+                                                       currentIndex < imageURLs.count - 1 {
+                                                        withAnimation {
+                                                            currentIndex += 1
+                                                            scale = minScale
+                                                            offset = .zero
+                                                            lastOffset = .zero
+                                                        }
+                                                    } else if rawEndX > (limit.width + pageTurnEdgeBuffer),
+                                                              predictedEndX > (limit.width + pageTurnEdgeBuffer),
+                                                              currentIndex > 0 {
+                                                        withAnimation {
+                                                            currentIndex -= 1
+                                                            scale = minScale
+                                                            offset = .zero
+                                                            lastOffset = .zero
+                                                        }
                                                     }
                                                 }
                                             }
