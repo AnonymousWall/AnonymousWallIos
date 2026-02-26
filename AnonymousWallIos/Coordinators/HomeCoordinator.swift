@@ -24,15 +24,8 @@ class HomeCoordinator: Coordinator {
     private var resetNavigationObserver: NSObjectProtocol?
     
     init() {
-        resetNavigationObserver = NotificationCenter.default.addObserver(
-            forName: .resetNavigation,
-            object: nil,
-            queue: .main
-        ) { [weak self] _ in
-            Task { @MainActor [weak self] in
-                self?.path = NavigationPath()
-                self?.selectedPost = nil
-            }
+        resetNavigationObserver = makeNavigationResetObserver { [weak self] in
+            self?.selectedPost = nil
         }
     }
     

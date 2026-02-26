@@ -30,17 +30,10 @@ class ProfileCoordinator: Coordinator {
     private var resetNavigationObserver: NSObjectProtocol?
     
     init() {
-        resetNavigationObserver = NotificationCenter.default.addObserver(
-            forName: .resetNavigation,
-            object: nil,
-            queue: .main
-        ) { [weak self] _ in
-            Task { @MainActor [weak self] in
-                self?.path = NavigationPath()
-                self?.selectedPost = nil
-                self?.selectedInternship = nil
-                self?.selectedMarketplaceItem = nil
-            }
+        resetNavigationObserver = makeNavigationResetObserver { [weak self] in
+            self?.selectedPost = nil
+            self?.selectedInternship = nil
+            self?.selectedMarketplaceItem = nil
         }
     }
     
