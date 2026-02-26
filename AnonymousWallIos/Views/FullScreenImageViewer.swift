@@ -101,7 +101,9 @@ struct FullScreenImageViewer: View {
                                             }
                                             .onEnded { _ in
                                                 lastScale = 1.0
-                                                if scale < minScale {
+                                                // Re-center whenever the user pinches back to 1× (or below,
+                                                // which can't happen due to clamping but is kept for safety).
+                                                if scale <= minScale {
                                                     withAnimation {
                                                         scale = minScale
                                                         offset = .zero
