@@ -246,9 +246,8 @@ struct CreateMarketplaceView: View {
                     .font(.subheadline).fontWeight(.medium)
                     .padding(.horizontal)
                 Picker("Category", selection: $viewModel.selectedCategory) {
-                    Text("Not specified").tag(MarketplaceCategory?.none)
                     ForEach(MarketplaceCategory.allCases, id: \.self) { cat in
-                        Label(cat.displayName, systemImage: cat.icon).tag(Optional(cat))
+                        Label(cat.displayName, systemImage: cat.icon).tag(cat)
                     }
                 }
                 .pickerStyle(.menu)
