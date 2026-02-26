@@ -194,7 +194,13 @@ struct CreateFormSubmitButton: View {
             .frame(maxWidth: .infinity)
             .frame(height: 56)
         }
-        .background(isDisabled ? AnyShapeStyle(Color.gray) : AnyShapeStyle(gradient))
+        .background {
+            if isDisabled {
+                Color.gray
+            } else {
+                gradient
+            }
+        }
         .foregroundColor(.white)
         .cornerRadius(16)
         .shadow(color: isDisabled ? .clear : Color.primaryPurple.opacity(0.3), radius: 8, x: 0, y: 4)
@@ -234,6 +240,8 @@ struct ImageThumbnailStrip: View {
     let images: [UIImage]
     let onRemove: (Int) -> Void
 
+    private static let removeButtonBackgroundOpacity: Double = 0.5
+
     var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 10) {
@@ -254,7 +262,7 @@ struct ImageThumbnailStrip: View {
                         } label: {
                             Image(systemName: "xmark.circle.fill")
                                 .font(.title3)
-                                .foregroundStyle(.white, Color.black.opacity(0.5))
+                                .foregroundStyle(.white, Color.black.opacity(Self.removeButtonBackgroundOpacity))
                         }
                         .padding(4)
                         .accessibilityLabel("Remove image \(index + 1)")
