@@ -16,6 +16,8 @@ struct ChatView: View {
     
     @FocusState private var isInputFocused: Bool
     @State private var selectedPhotoItem: PhotosPickerItem? = nil
+    @State private var pendingImage: UIImage? = nil
+    @State private var showImageConfirmation = false
     @State private var selectedImageURL: String? = nil
     @State private var selectedImageItem: ImageViewerItem? = nil
     
@@ -106,7 +108,8 @@ struct ChatView: View {
                         do {
                             if let data = try await item.loadTransferable(type: Data.self),
                                let image = UIImage(data: data) {
-                                viewModel.sendImage(image, authState: authState)
+                                pendingImage = image
+                                showImageConfirmation = true
                             }
                         } catch {
                             viewModel.errorMessage = "Failed to load image: \(error.localizedDescription)"
@@ -157,6 +160,14 @@ struct ChatView: View {
         }
         .fullScreenCover(item: $selectedImageItem) { _ in
             FullScreenImageViewer(imageURLs: [selectedImageURL ?? ""], initialIndex: 0)
+        }
+        .sheet(isPresented: $showImageConfirmation, onDismiss: { pendingImage = nil }) {
+            if let image = pendingImage {
+                ImageSendConfirmationSheet(image: image) {
+                    viewModel.sendImage(image, authState: authState)
+                }
+                .presentationDetents([.medium])
+            }
         }
         .alert("Error", isPresented: .constant(viewModel.errorMessage != nil)) {
             Button("Retry") { viewModel.retry(authState: authState) }
