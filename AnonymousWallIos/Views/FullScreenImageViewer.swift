@@ -148,16 +148,34 @@ struct FullScreenImageViewer: View {
                 // image visually follow the finger on a downward drag.
                 .simultaneousGesture(
                     scale <= minScale ?
-                    DragGesture(minimumDistance: 10, coordinateSpace: .local)
+                    DragGesture(minimumDistance: 20, coordinateSpace: .local)
                         .onChanged { value in
-                            // Only track downward drags; horizontal swipes are for page turning
-                            guard value.translation.height > 0,
-                                  abs(value.translation.height) > abs(value.translation.width) else { return }
-                            dismissDragOffset = value.translation.height
+                            let h = value.translation.height
+                            let w = value.translation.width
+                            // Require a strongly downward gesture: vertical must be > 0 and at
+                            // least 2× the horizontal component (~63° from horizontal). This
+                            // prevents accidental dismissal during left/right page-turn swipes.
+                            guard h > 0, abs(h) > abs(w) * 2 else {
+                                // If the gesture turns out to be mostly horizontal, spring back
+                                // any offset that may have been set before the direction was clear.
+                                if dismissDragOffset != 0 {
+                                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                        dismissDragOffset = 0
+                                    }
+                                }
+                                return
+                            }
+                            dismissDragOffset = h
                         }
                         .onEnded { value in
-                            let shouldDismiss = value.translation.height > dismissThreshold
-                                || value.predictedEndTranslation.height > dismissThreshold
+                            let h = value.translation.height
+                            let w = value.translation.width
+                            // Apply the same directional guard on release so a fast diagonal
+                            // swipe can never trigger a dismiss.
+                            let isDownwardGesture = h > 0 && abs(h) > abs(w) * 2
+                            let shouldDismiss = isDownwardGesture && (
+                                h > dismissThreshold || value.predictedEndTranslation.height > dismissThreshold
+                            )
                             if shouldDismiss {
                                 isDismissing = true
                                 withAnimation(.easeOut(duration: dismissAnimationDuration)) {
