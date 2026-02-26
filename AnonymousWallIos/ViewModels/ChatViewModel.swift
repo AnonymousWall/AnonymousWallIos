@@ -248,8 +248,9 @@ class ChatViewModel: ObservableObject {
                 guard let self = self else { return }
                 if senderId == self.otherUserId {
                     self.isTyping = true
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
-                        self.isTyping = false
+                    Task { [weak self] in
+                        try? await Task.sleep(nanoseconds: 3_000_000_000)
+                        self?.isTyping = false
                     }
                 }
             }

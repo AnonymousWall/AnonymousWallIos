@@ -103,9 +103,13 @@ struct ChatView: View {
                 .onChange(of: selectedPhotoItem) { _, item in
                     guard let item else { return }
                     Task {
-                        if let data = try? await item.loadTransferable(type: Data.self),
-                           let image = UIImage(data: data) {
-                            viewModel.sendImage(image, authState: authState)
+                        do {
+                            if let data = try await item.loadTransferable(type: Data.self),
+                               let image = UIImage(data: data) {
+                                viewModel.sendImage(image, authState: authState)
+                            }
+                        } catch {
+                            viewModel.errorMessage = "Failed to load image: \(error.localizedDescription)"
                         }
                         selectedPhotoItem = nil
                     }

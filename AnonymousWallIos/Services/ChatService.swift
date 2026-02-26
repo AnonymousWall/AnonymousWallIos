@@ -72,7 +72,10 @@ class ChatService: ChatServiceProtocol {
             data: jpeg,
             boundary: boundary
         )
-        body.append("--\(boundary)--\r\n".data(using: .utf8)!)
+        guard let closingBoundary = "--\(boundary)--\r\n".data(using: .utf8) else {
+            throw NetworkError.serverError("Failed to build multipart body")
+        }
+        body.append(closingBoundary)
         urlRequest.httpBody = body
         
         let sessionConfig = URLSessionConfiguration.ephemeral
