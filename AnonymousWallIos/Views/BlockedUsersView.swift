@@ -44,14 +44,14 @@ struct BlockedUsersView: View {
             blockViewModel.loadBlockList(authState: authState)
         }
         .confirmationDialog(
-            "Unblock User",
+            userToUnblock.map { "Unblock \($0.profileName)" } ?? "Unblock User",
             isPresented: $showUnblockConfirmation,
             titleVisibility: .visible
         ) {
             Button("Unblock") {
                 if let user = userToUnblock {
                     blockViewModel.unblockUser(targetUserId: user.blockedUserId, authState: authState) {
-                        successMessage = "User unblocked successfully"
+                        successMessage = "\(user.profileName) has been unblocked"
                         showSuccessAlert = true
                     }
                 }
@@ -108,9 +108,9 @@ private struct BlockedUserRow: View {
     var body: some View {
         HStack {
             VStack(alignment: .leading, spacing: 4) {
-                Text(user.blockedUserId)
+                Text(user.profileName)
                     .font(.body)
-                    .accessibilityLabel("Blocked user ID: \(user.blockedUserId)")
+                    .accessibilityLabel("Blocked user: \(user.profileName)")
                 Text("Blocked \(DateFormatting.formatRelativeTime(user.createdAt))")
                     .font(.caption)
                     .foregroundColor(.secondary)
@@ -127,7 +127,7 @@ private struct BlockedUserRow: View {
             }
             .buttonStyle(.bordered)
             .tint(.red)
-            .accessibilityLabel("Unblock user \(user.blockedUserId)")
+            .accessibilityLabel("Unblock \(user.profileName)")
             .accessibilityHint("Double tap to unblock this user")
         }
         .padding(.vertical, 4)

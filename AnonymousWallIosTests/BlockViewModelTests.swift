@@ -18,8 +18,8 @@ struct BlockViewModelTests {
         let authState = createMockAuthState()
 
         mockService.mockBlockedUsers = [
-            BlockedUser(blockedUserId: "user-a", createdAt: "2026-01-01T00:00:00Z"),
-            BlockedUser(blockedUserId: "user-b", createdAt: "2026-01-02T00:00:00Z")
+            BlockedUser(blockedUserId: "user-a", profileName: "User A", createdAt: "2026-01-01T00:00:00Z"),
+            BlockedUser(blockedUserId: "user-b", profileName: "User B", createdAt: "2026-01-02T00:00:00Z")
         ]
 
         viewModel.loadBlockList(authState: authState)
@@ -102,8 +102,8 @@ struct BlockViewModelTests {
         let authState = createMockAuthState()
 
         viewModel.blockedUsers = [
-            BlockedUser(blockedUserId: "user-a", createdAt: "2026-01-01T00:00:00Z"),
-            BlockedUser(blockedUserId: "user-b", createdAt: "2026-01-02T00:00:00Z")
+            BlockedUser(blockedUserId: "user-a", profileName: "User A", createdAt: "2026-01-01T00:00:00Z"),
+            BlockedUser(blockedUserId: "user-b", profileName: "User B", createdAt: "2026-01-02T00:00:00Z")
         ]
 
         var onSuccessCalled = false
@@ -125,7 +125,7 @@ struct BlockViewModelTests {
         let authState = createMockAuthState()
 
         viewModel.blockedUsers = [
-            BlockedUser(blockedUserId: "user-a", createdAt: "2026-01-01T00:00:00Z")
+            BlockedUser(blockedUserId: "user-a", profileName: "User A", createdAt: "2026-01-01T00:00:00Z")
         ]
 
         mockService.unblockUserBehavior = .failure(MockBlockService.MockError.networkError)

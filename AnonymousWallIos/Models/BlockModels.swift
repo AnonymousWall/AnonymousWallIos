@@ -9,6 +9,7 @@ import Foundation
 
 struct BlockedUser: Codable, Identifiable {
     let blockedUserId: String
+    let profileName: String
     let createdAt: String
     var id: String { blockedUserId }
 }
