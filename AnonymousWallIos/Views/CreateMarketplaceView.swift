@@ -21,19 +21,9 @@ struct CreateMarketplaceView: View {
             ScrollView {
                 VStack(spacing: 20) {
                     // Wall selection
-                    Picker("Wall", selection: $viewModel.selectedWall) {
-                        ForEach(WallType.allCases, id: \.self) { wallType in
-                            Text(wallType.displayName).tag(wallType)
-                        }
-                    }
-                    .pickerStyle(SegmentedPickerStyle())
-                    .padding(.horizontal)
-                    .padding(.top, 10)
-                    .accessibilityLabel("Select wall type")
-                    .accessibilityValue(viewModel.selectedWall.displayName)
-                    .onChange(of: viewModel.selectedWall) { _, _ in
-                        HapticFeedback.selection()
-                    }
+                    WallPickerSection(selectedWall: $viewModel.selectedWall)
+                        .padding(.horizontal)
+                        .padding(.top, 10)
 
                     // Required fields
                     requiredFieldsSection
@@ -41,116 +31,86 @@ struct CreateMarketplaceView: View {
                     // Optional fields
                     optionalFieldsSection
 
-                    // Image picker
-                    if viewModel.canAddMoreImages {
-                        // Capture before entering Sendable PhotosPicker closure (Swift 6)
-                        let imageCount = viewModel.imageCount
-                        let remainingSlots = viewModel.remainingImageSlots
+                    // Photos card
+                    FormSectionCard(title: "Photos", systemIcon: "photo.on.rectangle.angled") {
+                        if viewModel.canAddMoreImages {
+                            let imageCount = viewModel.imageCount
+                            let remainingSlots = viewModel.remainingImageSlots
 
-                        PhotosPicker(
-                            selection: $photoPickerItems,
-                            maxSelectionCount: remainingSlots,
-                            matching: .images
-                        ) {
-                            Label("Add Photo (\(imageCount)/5)", systemImage: "photo.badge.plus")
-                        }
-                        .padding(.horizontal)
-                        .onChange(of: photoPickerItems) { _, items in
-                            Task {
-                                var loadFailed = false
-                                for item in items {
-                                    if let data = try? await item.loadTransferable(type: Data.self),
-                                       let image = UIImage(data: data) {
-                                        viewModel.addImage(image)
-                                    } else {
-                                        loadFailed = true
-                                    }
+                            PhotosPicker(
+                                selection: $photoPickerItems,
+                                maxSelectionCount: remainingSlots,
+                                matching: .images
+                            ) {
+                                HStack {
+                                    Image(systemName: "plus.circle.fill")
+                                        .foregroundColor(.primaryPurple)
+                                    Text("Add Photo (\(imageCount)/5)")
+                                        .foregroundColor(.primaryPurple)
+                                        .fontWeight(.medium)
+                                    Spacer()
                                 }
-                                photoPickerItems = []
-                                if loadFailed {
-                                    viewModel.errorMessage = "One or more photos could not be loaded"
-                                }
+                                .padding(.vertical, 4)
                             }
-                        }
-                        .accessibilityLabel("Add photo")
-                        .accessibilityHint("Double tap to select up to \(remainingSlots) photos")
-                    }
-
-                    // Image preview strip
-                    if !viewModel.selectedImages.isEmpty {
-                        ScrollView(.horizontal, showsIndicators: false) {
-                            HStack(spacing: 8) {
-                                ForEach(viewModel.selectedImages.indices, id: \.self) { index in
-                                    ZStack(alignment: .topTrailing) {
-                                        Image(uiImage: viewModel.selectedImages[index])
-                                            .resizable()
-                                            .scaledToFill()
-                                            .frame(width: 80, height: 80)
-                                            .clipped()
-                                            .cornerRadius(8)
-
-                                        Button {
-                                            viewModel.removeImage(at: index)
-                                        } label: {
-                                            Image(systemName: "xmark.circle.fill")
-                                                .foregroundStyle(.white, .black.opacity(0.6))
+                            .onChange(of: photoPickerItems) { _, items in
+                                Task {
+                                    var loadFailed = false
+                                    for item in items {
+                                        if let data = try? await item.loadTransferable(type: Data.self),
+                                           let image = UIImage(data: data) {
+                                            viewModel.addImage(image)
+                                        } else {
+                                            loadFailed = true
                                         }
-                                        .padding(4)
-                                        .accessibilityLabel("Remove image \(index + 1)")
+                                    }
+                                    photoPickerItems = []
+                                    if loadFailed {
+                                        viewModel.errorMessage = "One or more photos could not be loaded"
                                     }
                                 }
                             }
-                            .padding(.horizontal)
+                            .accessibilityLabel("Add photo")
+                            .accessibilityHint("Double tap to select up to \(remainingSlots) photos")
                         }
-                        .accessibilityLabel("Selected images, \(viewModel.imageCount) of 5")
+
+                        if !viewModel.selectedImages.isEmpty {
+                            ImageThumbnailStrip(images: viewModel.selectedImages) { index in
+                                viewModel.removeImage(at: index)
+                            }
+                        }
                     }
+                    .padding(.horizontal)
 
                     // Error message
                     if let errorMessage = viewModel.errorMessage {
-                        Text(errorMessage)
-                            .foregroundColor(.red)
-                            .font(.caption)
+                        FormErrorMessage(message: errorMessage)
                             .padding(.horizontal)
                     }
 
-                    Spacer(minLength: 0)
-
                     // Submit button
-                    Button(action: {
-                        HapticFeedback.light()
-                        viewModel.createItem(authState: authState) {
-                            onCreated()
-                            dismiss()
-                        }
-                    }) {
-                        if viewModel.isPosting {
-                            ProgressView()
-                                .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                                .frame(maxWidth: .infinity)
-                        } else {
-                            HStack(spacing: 10) {
-                                Image(systemName: "tag.fill").font(.body)
-                                Text("List Item").fontWeight(.bold).font(.body)
+                    CreateFormSubmitButton(
+                        icon: "tag.fill",
+                        label: "List Item",
+                        isLoading: viewModel.isPosting,
+                        isDisabled: viewModel.isSubmitDisabled,
+                        gradient: Color.orangePinkGradient,
+                        action: {
+                            HapticFeedback.light()
+                            viewModel.createItem(authState: authState) {
+                                onCreated()
+                                dismiss()
                             }
-                            .frame(maxWidth: .infinity)
                         }
-                    }
-                    .frame(height: 56)
-                    .background(
-                        viewModel.isSubmitDisabled
-                        ? AnyShapeStyle(Color.gray)
-                        : AnyShapeStyle(Color.purplePinkGradient)
                     )
-                    .foregroundColor(.white)
-                    .cornerRadius(16)
-                    .shadow(color: viewModel.isSubmitDisabled ? Color.clear : Color.primaryPurple.opacity(0.3), radius: 8, x: 0, y: 4)
                     .padding(.horizontal)
                     .padding(.bottom, 20)
-                    .disabled(viewModel.isSubmitDisabled)
                     .accessibilityLabel("Submit listing")
-                    .accessibilityHint(viewModel.isSubmitDisabled ? "Complete required fields to list" : "Double tap to list your item")
+                    .accessibilityHint(viewModel.isSubmitDisabled
+                        ? "Complete required fields to list"
+                        : "Double tap to list your item")
                 }
             }
+            .background(Color(.systemGroupedBackground))
             .navigationTitle("New Listing")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -165,70 +125,67 @@ struct CreateMarketplaceView: View {
 
     @ViewBuilder
     private var requiredFieldsSection: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Text("Required")
-                .font(.headline)
-                .padding(.horizontal)
-                .accessibilityAddTraits(.isHeader)
+        FormSectionCard(title: "Required", systemIcon: "asterisk.circle.fill") {
+            StyledTextField(
+                icon: "tag",
+                label: "Title",
+                placeholder: "e.g. Used Calculus Textbook",
+                text: $viewModel.title,
+                characterLimit: viewModel.maxTitleLength,
+                accessibilityLabel: "Item title",
+                accessibilityHint: "Required. Enter the item title"
+            )
 
-            // Title
             VStack(alignment: .leading, spacing: 6) {
-                Text("Title")
-                    .font(.subheadline).fontWeight(.medium)
-                    .padding(.horizontal)
-                TextField("e.g. Used Calculus Textbook", text: $viewModel.title)
-                    .textFieldStyle(RoundedBorderTextFieldStyle())
-                    .padding(.horizontal)
-                    .accessibilityLabel("Item title")
-                    .accessibilityHint("Required. Enter the item title")
-                HStack {
-                    Spacer()
-                    Text("\(viewModel.title.count)/\(viewModel.maxTitleLength)")
+                HStack(spacing: 4) {
+                    Image(systemName: "dollarsign.circle")
                         .font(.caption)
-                        .foregroundColor(viewModel.isTitleOverLimit ? .red : .gray)
+                        .foregroundColor(.primaryPurple)
+                        .accessibilityHidden(true)
+                    Text("Price ($)")
+                        .font(.subheadline)
+                        .fontWeight(.medium)
                 }
-                .padding(.horizontal)
-            }
-
-            // Price
-            VStack(alignment: .leading, spacing: 6) {
-                Text("Price ($)")
-                    .font(.subheadline).fontWeight(.medium)
-                    .padding(.horizontal)
                 TextField("e.g. 45.99", text: $viewModel.priceText)
-                    .textFieldStyle(RoundedBorderTextFieldStyle())
                     .keyboardType(.decimalPad)
-                    .padding(.horizontal)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 10)
+                    .background(Color(.secondarySystemGroupedBackground))
+                    .cornerRadius(10)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 10)
+                            .stroke(
+                                (!viewModel.priceText.isEmpty && !viewModel.isPriceValid)
+                                    ? Color.red : Color(.separator),
+                                lineWidth: 0.5
+                            )
+                    )
                     .accessibilityLabel("Price in dollars")
                     .accessibilityHint("Required. Enter the item price")
                 if !viewModel.priceText.isEmpty && !viewModel.isPriceValid {
                     Text("Please enter a valid price (0 or greater)")
                         .font(.caption)
                         .foregroundColor(.red)
-                        .padding(.horizontal)
                 }
             }
         }
-        .padding(.vertical, 12)
-        .background(Color(.systemBackground))
-        .cornerRadius(12)
-        .shadow(color: Color.black.opacity(0.04), radius: 4, x: 0, y: 2)
         .padding(.horizontal)
     }
 
     @ViewBuilder
     private var optionalFieldsSection: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Text("Optional")
-                .font(.headline)
-                .padding(.horizontal)
-                .accessibilityAddTraits(.isHeader)
-
+        FormSectionCard(title: "Optional Details", systemIcon: "list.bullet.rectangle") {
             // Condition picker
             VStack(alignment: .leading, spacing: 6) {
-                Text("Condition")
-                    .font(.subheadline).fontWeight(.medium)
-                    .padding(.horizontal)
+                HStack(spacing: 4) {
+                    Image(systemName: "sparkles")
+                        .font(.caption)
+                        .foregroundColor(.primaryPurple)
+                        .accessibilityHidden(true)
+                    Text("Condition")
+                        .font(.subheadline)
+                        .fontWeight(.medium)
+                }
                 Picker("Condition", selection: $viewModel.selectedCondition) {
                     Text("Not specified").tag("")
                     ForEach(Array(zip(viewModel.validConditions, viewModel.conditionDisplayNames)), id: \.0) { value, display in
@@ -236,50 +193,39 @@ struct CreateMarketplaceView: View {
                     }
                 }
                 .pickerStyle(.menu)
-                .padding(.horizontal)
                 .accessibilityLabel("Item condition")
             }
 
-            // Category
+            // Category picker
             VStack(alignment: .leading, spacing: 6) {
-                Text("Category")
-                    .font(.subheadline).fontWeight(.medium)
-                    .padding(.horizontal)
+                HStack(spacing: 4) {
+                    Image(systemName: "square.grid.2x2")
+                        .font(.caption)
+                        .foregroundColor(.primaryPurple)
+                        .accessibilityHidden(true)
+                    Text("Category")
+                        .font(.subheadline)
+                        .fontWeight(.medium)
+                }
                 Picker("Category", selection: $viewModel.selectedCategory) {
                     ForEach(MarketplaceCategory.allCases, id: \.self) { cat in
                         Label(cat.displayName, systemImage: cat.icon).tag(cat)
                     }
                 }
                 .pickerStyle(.menu)
-                .padding(.horizontal)
                 .accessibilityLabel("Item category")
             }
 
-            // Description
-            VStack(alignment: .leading, spacing: 6) {
-                Text("Description")
-                    .font(.subheadline).fontWeight(.medium)
-                    .padding(.horizontal)
-                HStack {
-                    Spacer()
-                    Text("\(viewModel.description.count)/\(viewModel.maxDescriptionLength)")
-                        .font(.caption)
-                        .foregroundColor(viewModel.isDescriptionOverLimit ? .red : .gray)
-                }
-                .padding(.horizontal)
-                TextEditor(text: $viewModel.description)
-                    .frame(minHeight: 100)
-                    .padding(8)
-                    .background(Color(.systemGray6))
-                    .cornerRadius(10)
-                    .padding(.horizontal)
-                    .accessibilityLabel("Description")
-            }
+            StyledTextEditorField(
+                icon: "text.alignleft",
+                label: "Description",
+                placeholder: "Describe your item…",
+                text: $viewModel.description,
+                characterLimit: viewModel.maxDescriptionLength,
+                minHeight: 100,
+                accessibilityLabel: "Description"
+            )
         }
-        .padding(.vertical, 12)
-        .background(Color(.systemBackground))
-        .cornerRadius(12)
-        .shadow(color: Color.black.opacity(0.04), radius: 4, x: 0, y: 2)
         .padding(.horizontal)
     }
 }
