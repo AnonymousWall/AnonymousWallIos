@@ -9,6 +9,7 @@ import SwiftUI
 
 struct CampusView: View {
     @EnvironmentObject var authState: AuthState
+    @EnvironmentObject var blockViewModel: BlockViewModel
     @StateObject private var viewModel = CampusViewModel()
     @ObservedObject var coordinator: CampusCoordinator
     
@@ -192,10 +193,14 @@ struct CampusView: View {
             // Cancel any ongoing load task when view disappears
             viewModel.cleanup()
         }
+        .onReceive(blockViewModel.userBlockedPublisher) { blockedUserId in
+            viewModel.removePostsFromUser(blockedUserId)
+        }
     }
 }
 
 #Preview {
     CampusView(coordinator: CampusCoordinator())
         .environmentObject(AuthState())
+        .environmentObject(BlockViewModel())
 }

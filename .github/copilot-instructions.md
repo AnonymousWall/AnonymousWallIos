@@ -1798,6 +1798,7 @@ Response: 200 OK
     "data": [
         {
             "blockedUserId": "uuid",
+            "profileName": "a user name",
             "createdAt": "2026-01-28T..."
         }
     ]

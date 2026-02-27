@@ -9,6 +9,7 @@ import SwiftUI
 
 struct HomeView: View {
     @EnvironmentObject var authState: AuthState
+    @EnvironmentObject var blockViewModel: BlockViewModel
     @StateObject private var viewModel = HomeViewModel()
     @ObservedObject var coordinator: HomeCoordinator
     
@@ -192,10 +193,14 @@ struct HomeView: View {
             // Cancel any ongoing load task when view disappears
             viewModel.cleanup()
         }
+        .onReceive(blockViewModel.userBlockedPublisher) { blockedUserId in
+            viewModel.removePostsFromUser(blockedUserId)
+        }
     }
 }
 
 #Preview {
     HomeView(coordinator: HomeCoordinator())
         .environmentObject(AuthState())
+        .environmentObject(BlockViewModel())
 }

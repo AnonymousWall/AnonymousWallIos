@@ -103,6 +103,11 @@ class InternshipFeedViewModel: ObservableObject {
         loadTask?.cancel()
     }
 
+    /// Removes all internships authored by the given userId (called after blocking a user).
+    func removeInternshipsFromUser(_ userId: String) {
+        internships.removeAll { $0.author.id == userId }
+    }
+
     // MARK: - Private Methods
     private func performLoad(authState: AuthState) async {
         guard let token = authState.authToken,

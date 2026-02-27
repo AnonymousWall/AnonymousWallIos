@@ -9,6 +9,7 @@ import SwiftUI
 
 struct PostDetailView: View {
     @EnvironmentObject var authState: AuthState
+    @EnvironmentObject var blockViewModel: BlockViewModel
     @Environment(\.dismiss) var dismiss
     
     @Binding var post: Post
@@ -329,18 +330,26 @@ struct PostDetailView: View {
         .fullScreenCover(item: $selectedImageViewer) { item in
             FullScreenImageViewer(imageURLs: post.imageUrls, initialIndex: item.index)
         }
+        .onReceive(blockViewModel.userBlockedPublisher) { blockedUserId in
+            viewModel.removeCommentsFromUser(blockedUserId)
+        }
     }
 }
 
 // MARK: - Comment Row View
 
 struct CommentRowView: View {
+    @EnvironmentObject var authState: AuthState
+    @EnvironmentObject var blockViewModel: BlockViewModel
     let comment: Comment
     let isOwnComment: Bool
     var onDelete: () -> Void
     var onReport: () -> Void
     var onTapAuthor: (() -> Void)?
-    
+
+    @State private var showAuthorActionSheet = false
+    @State private var showBlockSuccessAlert = false
+
     var body: some View {
         HStack(spacing: 0) {
             // Add leading spacer for own comments (push to right)
@@ -361,7 +370,8 @@ struct CommentRowView: View {
                             .accessibilityLabel("Your comment")
                     } else {
                         Button(action: {
-                            onTapAuthor?()
+                            HapticFeedback.selection()
+                            showAuthorActionSheet = true
                         }) {
                             Text(comment.author.profileName)
                                 .font(.caption)
@@ -370,7 +380,23 @@ struct CommentRowView: View {
                                 .underline()
                         }
                         .accessibilityLabel("Comment by \(comment.author.profileName)")
-                        .accessibilityHint("Double tap to message \(comment.author.profileName)")
+                        .accessibilityHint("Double tap to message or block \(comment.author.profileName)")
+                        .confirmationDialog(
+                            comment.author.profileName,
+                            isPresented: $showAuthorActionSheet,
+                            titleVisibility: .visible
+                        ) {
+                            Button("Message \(comment.author.profileName)") {
+                                onTapAuthor?()
+                            }
+                            Button("Block \(comment.author.profileName)", role: .destructive) {
+                                HapticFeedback.warning()
+                                blockViewModel.blockUser(targetUserId: comment.author.id, authState: authState) {
+                                    showBlockSuccessAlert = true
+                                }
+                            }
+                            Button("Cancel", role: .cancel) {}
+                        }
                     }
                     
                     Text(comment.text)
@@ -419,6 +445,21 @@ struct CommentRowView: View {
             }
         }
         .padding(.horizontal)
+        .alert("User Blocked", isPresented: $showBlockSuccessAlert) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("\(comment.author.profileName) has been blocked.")
+        }
+        .alert("Error", isPresented: .init(
+            get: { blockViewModel.errorMessage != nil },
+            set: { if !$0 { blockViewModel.errorMessage = nil } }
+        )) {
+            Button("OK", role: .cancel) { blockViewModel.errorMessage = nil }
+        } message: {
+            if let error = blockViewModel.errorMessage {
+                Text(error)
+            }
+        }
     }
 }
 
@@ -441,6 +482,7 @@ struct CommentRowView: View {
             NavigationStack {
                 PostDetailView(post: $post)
                     .environmentObject(AuthState())
+                    .environmentObject(BlockViewModel())
             }
         }
     }

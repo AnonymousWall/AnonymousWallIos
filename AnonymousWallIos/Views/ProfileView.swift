@@ -534,6 +534,8 @@ struct ProfileView: View {
                     EmptyView() // Handled as a sheet
                 case .editProfileName:
                     EmptyView() // Handled as a sheet
+                case .blockedUsers:
+                    BlockedUsersView()
                 }
             }
             .toolbar {
@@ -551,6 +553,11 @@ struct ProfileView: View {
                             }
                         }
                         
+                        // Blocked users option
+                        Button(action: { coordinator.navigate(to: .blockedUsers) }) {
+                            Label("Blocked Users", systemImage: "hand.raised.fill")
+                        }
+
                         // Logout option
                         Button(role: .destructive, action: {
                             authState.logout()
@@ -655,4 +662,5 @@ struct ProfileCommentRowView: View {
 #Preview {
     ProfileView(coordinator: ProfileCoordinator())
         .environmentObject(AuthState())
+        .environmentObject(BlockViewModel())
 }

@@ -14,6 +14,9 @@ struct InternshipDetailView: View {
     @Binding var internship: Internship
     @StateObject private var viewModel = InternshipDetailViewModel()
     @State private var showDeleteConfirmation = false
+    @State private var showAuthorActionSheet = false
+    @State private var showBlockSuccessAlert = false
+    @EnvironmentObject var blockViewModel: BlockViewModel
 
     var onTapAuthor: ((String, String) -> Void)?
 
@@ -30,7 +33,10 @@ struct InternshipDetailView: View {
                                     .font(.caption)
                                     .foregroundColor(.secondary)
                             } else {
-                                Button(action: { onTapAuthor?(internship.author.id, internship.author.profileName) }) {
+                                Button(action: {
+                                    HapticFeedback.selection()
+                                    showAuthorActionSheet = true
+                                }) {
                                     Text("Posted by \(internship.author.profileName)")
                                         .font(.caption)
                                         .fontWeight(.medium)
@@ -38,7 +44,23 @@ struct InternshipDetailView: View {
                                         .underline()
                                 }
                                 .accessibilityLabel("Posted by \(internship.author.profileName)")
-                                .accessibilityHint("Double tap to message \(internship.author.profileName)")
+                                .accessibilityHint("Double tap to message or block \(internship.author.profileName)")
+                                .confirmationDialog(
+                                    internship.author.profileName,
+                                    isPresented: $showAuthorActionSheet,
+                                    titleVisibility: .visible
+                                ) {
+                                    Button("Message \(internship.author.profileName)") {
+                                        onTapAuthor?(internship.author.id, internship.author.profileName)
+                                    }
+                                    Button("Block \(internship.author.profileName)", role: .destructive) {
+                                        HapticFeedback.warning()
+                                        blockViewModel.blockUser(targetUserId: internship.author.id, authState: authState) {
+                                            showBlockSuccessAlert = true
+                                        }
+                                    }
+                                    Button("Cancel", role: .cancel) {}
+                                }
                             }
                             Spacer()
                         }
@@ -250,6 +272,24 @@ struct InternshipDetailView: View {
         } message: {
             Text("Are you sure you want to delete this comment?")
         }
+        .alert("User Blocked", isPresented: $showBlockSuccessAlert) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("\(internship.author.profileName) has been blocked.")
+        }
+        .alert("Error", isPresented: .init(
+            get: { blockViewModel.errorMessage != nil },
+            set: { if !$0 { blockViewModel.errorMessage = nil } }
+        )) {
+            Button("OK", role: .cancel) { blockViewModel.errorMessage = nil }
+        } message: {
+            if let error = blockViewModel.errorMessage {
+                Text(error)
+            }
+        }
+        .onReceive(blockViewModel.userBlockedPublisher) { blockedUserId in
+            viewModel.removeCommentsFromUser(blockedUserId)
+        }
     }
 
     @ViewBuilder
@@ -357,6 +397,7 @@ private struct InternshipDetailRow: View {
             NavigationStack {
                 InternshipDetailView(internship: $internship)
                     .environmentObject(AuthState())
+                    .environmentObject(BlockViewModel())
             }
         }
     }

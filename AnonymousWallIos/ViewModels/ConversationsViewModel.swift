@@ -122,6 +122,11 @@ class ConversationsViewModel: ObservableObject {
         Logger.chat.info("🔌 ConversationsViewModel disconnect called")
         repository.disconnect()
     }
+
+    /// Removes all conversations with the given userId (called after blocking a user).
+    func removeConversationsFromUser(_ userId: String) {
+        conversations.removeAll { $0.userId == userId }
+    }
     
     // MARK: - Private Methods
     

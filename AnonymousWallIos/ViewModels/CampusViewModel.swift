@@ -214,4 +214,9 @@ class CampusViewModel: ObservableObject {
             errorMessage = error.localizedDescription
         }
     }
+
+    /// Removes all posts authored by the given userId (called after blocking a user).
+    func removePostsFromUser(_ userId: String) {
+        posts.removeAll { $0.author.id == userId }
+    }
 }

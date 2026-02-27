@@ -13,7 +13,11 @@ struct InternshipRowView: View {
     var onDelete: () -> Void
     var onTapAuthor: (() -> Void)?
 
+    @EnvironmentObject var authState: AuthState
+    @EnvironmentObject var blockViewModel: BlockViewModel
     @State private var showDeleteConfirmation = false
+    @State private var showAuthorActionSheet = false
+    @State private var showBlockSuccessAlert = false
 
     private var isCampus: Bool {
         internship.wall.uppercased() == WallType.campus.rawValue.uppercased()
@@ -48,7 +52,10 @@ struct InternshipRowView: View {
                         .foregroundColor(.secondary)
                         .accessibilityLabel("Posted by you")
                 } else {
-                    Button(action: { onTapAuthor?() }) {
+                    Button(action: {
+                        HapticFeedback.selection()
+                        showAuthorActionSheet = true
+                    }) {
                         Text("by \(internship.author.profileName)")
                             .font(.caption)
                             .fontWeight(.medium)
@@ -56,7 +63,23 @@ struct InternshipRowView: View {
                             .underline()
                     }
                     .accessibilityLabel("Posted by \(internship.author.profileName)")
-                    .accessibilityHint("Double tap to message \(internship.author.profileName)")
+                    .accessibilityHint("Double tap to message or block \(internship.author.profileName)")
+                    .confirmationDialog(
+                        internship.author.profileName,
+                        isPresented: $showAuthorActionSheet,
+                        titleVisibility: .visible
+                    ) {
+                        Button("Message \(internship.author.profileName)") {
+                            onTapAuthor?()
+                        }
+                        Button("Block \(internship.author.profileName)", role: .destructive) {
+                            HapticFeedback.warning()
+                            blockViewModel.blockUser(targetUserId: internship.author.id, authState: authState) {
+                                showBlockSuccessAlert = true
+                            }
+                        }
+                        Button("Cancel", role: .cancel) {}
+                    }
                 }
 
                 Spacer()
@@ -159,6 +182,21 @@ struct InternshipRowView: View {
             RoundedRectangle(cornerRadius: 16)
                 .stroke(Color(.systemGray5), lineWidth: 0.5)
         )
+        .alert("User Blocked", isPresented: $showBlockSuccessAlert) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("\(internship.author.profileName) has been blocked.")
+        }
+        .alert("Error", isPresented: .init(
+            get: { blockViewModel.errorMessage != nil },
+            set: { if !$0 { blockViewModel.errorMessage = nil } }
+        )) {
+            Button("OK", role: .cancel) { blockViewModel.errorMessage = nil }
+        } message: {
+            if let error = blockViewModel.errorMessage {
+                Text(error)
+            }
+        }
     }
 }
 
@@ -205,4 +243,6 @@ private struct DetailChip: View {
         onDelete: {}
     )
     .padding()
+    .environmentObject(AuthState())
+    .environmentObject(BlockViewModel())
 }

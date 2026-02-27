@@ -15,6 +15,9 @@ struct MarketplaceDetailView: View {
     @StateObject private var viewModel = MarketplaceDetailViewModel()
     @State private var showDeleteConfirmation = false
     @State private var selectedImageViewer: ImageViewerItem?
+    @State private var showAuthorActionSheet = false
+    @State private var showBlockSuccessAlert = false
+    @EnvironmentObject var blockViewModel: BlockViewModel
 
     var onTapAuthor: ((String, String) -> Void)?
 
@@ -31,7 +34,10 @@ struct MarketplaceDetailView: View {
                                     .font(.caption)
                                     .foregroundColor(.secondary)
                             } else {
-                                Button(action: { onTapAuthor?(item.author.id, item.author.profileName) }) {
+                                Button(action: {
+                                    HapticFeedback.selection()
+                                    showAuthorActionSheet = true
+                                }) {
                                     Text("Listed by \(item.author.profileName)")
                                         .font(.caption)
                                         .fontWeight(.medium)
@@ -39,7 +45,23 @@ struct MarketplaceDetailView: View {
                                         .underline()
                                 }
                                 .accessibilityLabel("Listed by \(item.author.profileName)")
-                                .accessibilityHint("Double tap to message \(item.author.profileName)")
+                                .accessibilityHint("Double tap to message or block \(item.author.profileName)")
+                                .confirmationDialog(
+                                    item.author.profileName,
+                                    isPresented: $showAuthorActionSheet,
+                                    titleVisibility: .visible
+                                ) {
+                                    Button("Message \(item.author.profileName)") {
+                                        onTapAuthor?(item.author.id, item.author.profileName)
+                                    }
+                                    Button("Block \(item.author.profileName)", role: .destructive) {
+                                        HapticFeedback.warning()
+                                        blockViewModel.blockUser(targetUserId: item.author.id, authState: authState) {
+                                            showBlockSuccessAlert = true
+                                        }
+                                    }
+                                    Button("Cancel", role: .cancel) {}
+                                }
                             }
                             Spacer()
                         }
@@ -272,6 +294,24 @@ struct MarketplaceDetailView: View {
         .fullScreenCover(item: $selectedImageViewer) { viewer in
             FullScreenImageViewer(imageURLs: item.imageUrls, initialIndex: viewer.index)
         }
+        .alert("User Blocked", isPresented: $showBlockSuccessAlert) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("\(item.author.profileName) has been blocked.")
+        }
+        .alert("Error", isPresented: .init(
+            get: { blockViewModel.errorMessage != nil },
+            set: { if !$0 { blockViewModel.errorMessage = nil } }
+        )) {
+            Button("OK", role: .cancel) { blockViewModel.errorMessage = nil }
+        } message: {
+            if let error = blockViewModel.errorMessage {
+                Text(error)
+            }
+        }
+        .onReceive(blockViewModel.userBlockedPublisher) { blockedUserId in
+            viewModel.removeCommentsFromUser(blockedUserId)
+        }
     }
 
     @ViewBuilder
@@ -361,6 +401,7 @@ struct MarketplaceDetailView: View {
             NavigationStack {
                 MarketplaceDetailView(item: $item)
                     .environmentObject(AuthState())
+                    .environmentObject(BlockViewModel())
             }
         }
     }

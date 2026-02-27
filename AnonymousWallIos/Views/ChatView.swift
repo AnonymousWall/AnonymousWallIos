@@ -20,6 +20,9 @@ struct ChatView: View {
     @State private var showImageConfirmation = false
     @State private var selectedImageURL: String? = nil
     @State private var selectedImageItem: ImageViewerItem? = nil
+    @State private var showBlockConfirmation = false
+    @State private var showBlockSuccessAlert = false
+    @EnvironmentObject var blockViewModel: BlockViewModel
     
     var body: some View {
         VStack(spacing: 0) {
@@ -147,6 +150,37 @@ struct ChatView: View {
         }
         .navigationTitle(viewModel.otherUserName)
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Menu {
+                    Button(role: .destructive, action: {
+                        HapticFeedback.warning()
+                        showBlockConfirmation = true
+                    }) {
+                        Label("Block User", systemImage: "hand.raised.fill")
+                    }
+                } label: {
+                    Image(systemName: "ellipsis.circle")
+                        .font(.title3)
+                }
+                .accessibilityLabel("Chat options")
+                .accessibilityHint("Double tap to access chat options including block user")
+            }
+        }
+        .confirmationDialog(
+            "Block \(viewModel.otherUserName)?",
+            isPresented: $showBlockConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button("Block \(viewModel.otherUserName)", role: .destructive) {
+                blockViewModel.blockUser(targetUserId: viewModel.otherUserId, authState: authState) {
+                    dismiss()
+                }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("They will no longer be able to see your content, and you won't see theirs.")
+        }
         .onAppear {
             viewModel.loadMessages(authState: authState)
             viewModel.viewDidAppear()
@@ -174,6 +208,21 @@ struct ChatView: View {
             Button("Cancel", role: .cancel) { viewModel.errorMessage = nil }
         } message: {
             if let error = viewModel.errorMessage {
+                Text(error)
+            }
+        }
+        .alert("User Blocked", isPresented: $showBlockSuccessAlert) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("\(viewModel.otherUserName) has been blocked.")
+        }
+        .alert("Block Error", isPresented: .init(
+            get: { blockViewModel.errorMessage != nil },
+            set: { if !$0 { blockViewModel.errorMessage = nil } }
+        )) {
+            Button("OK", role: .cancel) { blockViewModel.errorMessage = nil }
+        } message: {
+            if let error = blockViewModel.errorMessage {
                 Text(error)
             }
         }

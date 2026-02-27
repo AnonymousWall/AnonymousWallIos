@@ -17,6 +17,7 @@ class ProfileCoordinator: Coordinator {
         case setPassword
         case changePassword
         case editProfileName
+        case blockedUsers
     }
     
     @Published var path = NavigationPath()
@@ -60,6 +61,8 @@ class ProfileCoordinator: Coordinator {
             showChangePassword = true
         case .editProfileName:
             showEditProfileName = true
+        case .blockedUsers:
+            path.append(destination)
         }
     }
     
