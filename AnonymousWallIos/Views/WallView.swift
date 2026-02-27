@@ -9,6 +9,7 @@ import SwiftUI
 
 struct WallView: View {
     @EnvironmentObject var authState: AuthState
+    @EnvironmentObject var blockViewModel: BlockViewModel
     @StateObject private var viewModel = WallViewModel()
     @State private var showSetPassword = false
     @State private var showChangePassword = false

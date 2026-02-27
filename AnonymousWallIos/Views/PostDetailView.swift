@@ -9,6 +9,7 @@ import SwiftUI
 
 struct PostDetailView: View {
     @EnvironmentObject var authState: AuthState
+    @EnvironmentObject var blockViewModel: BlockViewModel
     @Environment(\.dismiss) var dismiss
     
     @Binding var post: Post

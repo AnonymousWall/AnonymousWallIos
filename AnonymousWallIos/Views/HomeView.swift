@@ -9,6 +9,7 @@ import SwiftUI
 
 struct HomeView: View {
     @EnvironmentObject var authState: AuthState
+    @EnvironmentObject var blockViewModel: BlockViewModel
     @StateObject private var viewModel = HomeViewModel()
     @ObservedObject var coordinator: HomeCoordinator
     

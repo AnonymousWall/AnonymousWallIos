@@ -9,6 +9,7 @@ import SwiftUI
 
 struct CampusView: View {
     @EnvironmentObject var authState: AuthState
+    @EnvironmentObject var blockViewModel: BlockViewModel
     @StateObject private var viewModel = CampusViewModel()
     @ObservedObject var coordinator: CampusCoordinator
     
