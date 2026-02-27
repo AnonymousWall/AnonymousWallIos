@@ -9,6 +9,7 @@ import SwiftUI
 
 struct MarketView: View {
     @EnvironmentObject var authState: AuthState
+    @EnvironmentObject var blockViewModel: BlockViewModel
     @ObservedObject var coordinator: MarketplaceCoordinator
     @StateObject private var campusViewModel = MarketplaceFeedViewModel(wallType: .campus)
     @StateObject private var nationalViewModel = MarketplaceFeedViewModel(wallType: .national)
@@ -215,6 +216,10 @@ struct MarketView: View {
         .onDisappear {
             campusViewModel.cleanup()
             nationalViewModel.cleanup()
+        }
+        .onReceive(blockViewModel.userBlockedPublisher) { blockedUserId in
+            campusViewModel.removeItemsFromUser(blockedUserId)
+            nationalViewModel.removeItemsFromUser(blockedUserId)
         }
     }
 

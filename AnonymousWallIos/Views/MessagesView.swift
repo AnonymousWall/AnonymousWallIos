@@ -9,6 +9,7 @@ import SwiftUI
 
 struct MessagesView: View {
     @EnvironmentObject var authState: AuthState
+    @EnvironmentObject var blockViewModel: BlockViewModel
     @ObservedObject var coordinator: ChatCoordinator
     @StateObject private var conversationsViewModel: ConversationsViewModel
     
@@ -43,10 +44,14 @@ struct MessagesView: View {
             // NOT when navigating between ConversationsListView and ChatView
             conversationsViewModel.disconnect()
         }
+        .onReceive(blockViewModel.userBlockedPublisher) { blockedUserId in
+            conversationsViewModel.removeConversationsFromUser(blockedUserId)
+        }
     }
 }
 
 #Preview {
     MessagesView(coordinator: ChatCoordinator())
         .environmentObject(AuthState())
+        .environmentObject(BlockViewModel())
 }

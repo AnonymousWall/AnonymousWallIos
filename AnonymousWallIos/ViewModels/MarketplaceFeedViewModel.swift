@@ -104,6 +104,11 @@ class MarketplaceFeedViewModel: ObservableObject {
         loadTask?.cancel()
     }
 
+    /// Removes all marketplace items authored by the given userId (called after blocking a user).
+    func removeItemsFromUser(_ userId: String) {
+        items.removeAll { $0.author.id == userId }
+    }
+
     // MARK: - Private Methods
 
     private func reloadWithFilter(authState: AuthState) {

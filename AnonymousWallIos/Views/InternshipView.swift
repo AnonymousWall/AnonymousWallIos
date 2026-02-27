@@ -9,6 +9,7 @@ import SwiftUI
 
 struct InternshipView: View {
     @EnvironmentObject var authState: AuthState
+    @EnvironmentObject var blockViewModel: BlockViewModel
     @ObservedObject var coordinator: InternshipCoordinator
     @StateObject private var campusViewModel = InternshipFeedViewModel(wallType: .campus)
     @StateObject private var nationalViewModel = InternshipFeedViewModel(wallType: .national)
@@ -197,6 +198,10 @@ struct InternshipView: View {
         .onDisappear {
             campusViewModel.cleanup()
             nationalViewModel.cleanup()
+        }
+        .onReceive(blockViewModel.userBlockedPublisher) { blockedUserId in
+            campusViewModel.removeInternshipsFromUser(blockedUserId)
+            nationalViewModel.removeInternshipsFromUser(blockedUserId)
         }
     }
 }
