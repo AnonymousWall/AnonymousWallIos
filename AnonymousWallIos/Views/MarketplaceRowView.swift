@@ -13,8 +13,12 @@ struct MarketplaceRowView: View {
     var onDelete: () -> Void
     var onTapAuthor: (() -> Void)?
 
+    @EnvironmentObject var authState: AuthState
+    @EnvironmentObject var blockViewModel: BlockViewModel
     @State private var showDeleteConfirmation = false
     @State private var selectedImageViewer: ImageViewerItem?
+    @State private var showAuthorActionSheet = false
+    @State private var showBlockSuccessAlert = false
 
     private var isCampus: Bool {
         item.wall.uppercased() == WallType.campus.rawValue.uppercased()
@@ -51,7 +55,10 @@ struct MarketplaceRowView: View {
                         .foregroundColor(.secondary)
                         .accessibilityLabel("Listed by you")
                 } else {
-                    Button(action: { onTapAuthor?() }) {
+                    Button(action: {
+                        HapticFeedback.selection()
+                        showAuthorActionSheet = true
+                    }) {
                         Text("by \(item.author.profileName)")
                             .font(.caption)
                             .fontWeight(.medium)
@@ -59,7 +66,23 @@ struct MarketplaceRowView: View {
                             .underline()
                     }
                     .accessibilityLabel("Listed by \(item.author.profileName)")
-                    .accessibilityHint("Double tap to message \(item.author.profileName)")
+                    .accessibilityHint("Double tap to message or block \(item.author.profileName)")
+                    .confirmationDialog(
+                        item.author.profileName,
+                        isPresented: $showAuthorActionSheet,
+                        titleVisibility: .visible
+                    ) {
+                        Button("Message \(item.author.profileName)") {
+                            onTapAuthor?()
+                        }
+                        Button("Block \(item.author.profileName)", role: .destructive) {
+                            HapticFeedback.warning()
+                            blockViewModel.blockUser(targetUserId: item.author.id, authState: authState) {
+                                showBlockSuccessAlert = true
+                            }
+                        }
+                        Button("Cancel", role: .cancel) {}
+                    }
                 }
             }
 
@@ -184,6 +207,21 @@ struct MarketplaceRowView: View {
         .fullScreenCover(item: $selectedImageViewer) { viewer in
             FullScreenImageViewer(imageURLs: item.imageUrls, initialIndex: viewer.index)
         }
+        .alert("User Blocked", isPresented: $showBlockSuccessAlert) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("\(item.author.profileName) has been blocked.")
+        }
+        .alert("Error", isPresented: .init(
+            get: { blockViewModel.errorMessage != nil },
+            set: { if !$0 { blockViewModel.errorMessage = nil } }
+        )) {
+            Button("OK", role: .cancel) { blockViewModel.errorMessage = nil }
+        } message: {
+            if let error = blockViewModel.errorMessage {
+                Text(error)
+            }
+        }
     }
 
     // MARK: - Helpers
@@ -217,4 +255,6 @@ struct MarketplaceRowView: View {
         onDelete: {}
     )
     .padding()
+    .environmentObject(AuthState())
+    .environmentObject(BlockViewModel())
 }
