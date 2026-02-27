@@ -198,4 +198,5 @@ struct CampusView: View {
 #Preview {
     CampusView(coordinator: CampusCoordinator())
         .environmentObject(AuthState())
+        .environmentObject(BlockViewModel())
 }

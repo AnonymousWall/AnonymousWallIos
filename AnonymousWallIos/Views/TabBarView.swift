@@ -73,4 +73,5 @@ struct TabBarView: View {
 #Preview {
     TabBarView(coordinator: TabCoordinator())
         .environmentObject(AuthState())
+        .environmentObject(BlockViewModel())
 }

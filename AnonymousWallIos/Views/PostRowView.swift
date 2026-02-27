@@ -14,8 +14,12 @@ struct PostRowView: View {
     var onDelete: () -> Void
     var onTapAuthor: (() -> Void)?
     
+    @EnvironmentObject var authState: AuthState
+    @EnvironmentObject var blockViewModel: BlockViewModel
     @State private var showDeleteConfirmation = false
     @State private var selectedImageViewer: ImageViewerItem?
+    @State private var showAuthorActionSheet = false
+    @State private var showBlockSuccessAlert = false
     
     private var isCampusPost: Bool {
         post.wall.uppercased() == WallType.campus.rawValue.uppercased()
@@ -56,8 +60,9 @@ struct PostRowView: View {
                         .accessibilityLabel("Posted by you")
                 } else {
                     Button(action: {
-                        onTapAuthor?()
-                    }) {
+                            HapticFeedback.selection()
+                            showAuthorActionSheet = true
+                        }) {
                         Text("by \(post.author.profileName)")
                             .font(.caption)
                             .fontWeight(.medium)
@@ -65,7 +70,23 @@ struct PostRowView: View {
                             .underline()
                     }
                     .accessibilityLabel("Posted by \(post.author.profileName)")
-                    .accessibilityHint("Double tap to message \(post.author.profileName)")
+                    .accessibilityHint("Double tap to message or block \(post.author.profileName)")
+                    .confirmationDialog(
+                        post.author.profileName,
+                        isPresented: $showAuthorActionSheet,
+                        titleVisibility: .visible
+                    ) {
+                        Button("Message \(post.author.profileName)") {
+                            onTapAuthor?()
+                        }
+                        Button("Block \(post.author.profileName)", role: .destructive) {
+                            HapticFeedback.warning()
+                            blockViewModel.blockUser(targetUserId: post.author.id, authState: authState) {
+                                showBlockSuccessAlert = true
+                            }
+                        }
+                        Button("Cancel", role: .cancel) {}
+                    }
                 }
                 
                 Spacer()
@@ -194,6 +215,21 @@ struct PostRowView: View {
         .fullScreenCover(item: $selectedImageViewer) { item in
             FullScreenImageViewer(imageURLs: post.imageUrls, initialIndex: item.index)
         }
+        .alert("User Blocked", isPresented: $showBlockSuccessAlert) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("\(post.author.profileName) has been blocked.")
+        }
+        .alert("Error", isPresented: .init(
+            get: { blockViewModel.errorMessage != nil },
+            set: { if !$0 { blockViewModel.errorMessage = nil } }
+        )) {
+            Button("OK", role: .cancel) { blockViewModel.errorMessage = nil }
+        } message: {
+            if let error = blockViewModel.errorMessage {
+                Text(error)
+            }
+        }
     }
 }
 
@@ -216,5 +252,7 @@ struct PostRowView: View {
         onDelete: {},
         onTapAuthor: {}
     )
+    .environmentObject(AuthState())
+    .environmentObject(BlockViewModel())
     .padding()
 }

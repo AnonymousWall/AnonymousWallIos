@@ -11,6 +11,7 @@ import SwiftUI
 struct AnonymousWallIosApp: App {
     @StateObject private var authState = AuthState()
     @StateObject private var appCoordinator: AppCoordinator
+    @StateObject private var blockViewModel = BlockViewModel()
 
     init() {
         let authState = AuthState()
@@ -31,6 +32,7 @@ struct AnonymousWallIosApp: App {
                 if authState.isAuthenticated {
                     TabBarView(coordinator: appCoordinator.tabCoordinator)
                         .environmentObject(authState)
+                        .environmentObject(blockViewModel)
                 } else {
                     AuthenticationView(coordinator: appCoordinator.authCoordinator)
                         .environmentObject(authState)

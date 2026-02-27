@@ -223,6 +223,7 @@ struct MarketView: View {
 #Preview {
     MarketView(coordinator: MarketplaceCoordinator())
         .environmentObject(AuthState())
+        .environmentObject(BlockViewModel())
 }
 
 

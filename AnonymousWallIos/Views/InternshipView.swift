@@ -204,6 +204,7 @@ struct InternshipView: View {
 #Preview {
     InternshipView(coordinator: InternshipCoordinator())
         .environmentObject(AuthState())
+        .environmentObject(BlockViewModel())
 }
 
 

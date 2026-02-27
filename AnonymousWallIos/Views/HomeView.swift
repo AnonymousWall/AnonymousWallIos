@@ -198,4 +198,5 @@ struct HomeView: View {
 #Preview {
     HomeView(coordinator: HomeCoordinator())
         .environmentObject(AuthState())
+        .environmentObject(BlockViewModel())
 }

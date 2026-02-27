@@ -188,4 +188,5 @@ struct WallView: View {
 #Preview {
     WallView()
         .environmentObject(AuthState())
+        .environmentObject(BlockViewModel())
 }
