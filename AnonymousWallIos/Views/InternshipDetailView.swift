@@ -287,6 +287,9 @@ struct InternshipDetailView: View {
                 Text(error)
             }
         }
+        .onReceive(blockViewModel.userBlockedPublisher) { blockedUserId in
+            viewModel.removeCommentsFromUser(blockedUserId)
+        }
     }
 
     @ViewBuilder

@@ -226,4 +226,9 @@ class InternshipDetailViewModel: ObservableObject {
             errorMessage = error.localizedDescription
         }
     }
+
+    /// Removes all comments authored by the given userId (called after blocking a user).
+    func removeCommentsFromUser(_ userId: String) {
+        comments.removeAll { $0.author.id == userId }
+    }
 }

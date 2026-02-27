@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import Combine
 
 @MainActor
 class BlockViewModel: ObservableObject {
@@ -15,10 +16,18 @@ class BlockViewModel: ObservableObject {
     @Published var isLoading = false
     @Published var errorMessage: String?
 
+    // MARK: - Publishers
+
+    /// Emits the blocked userId immediately after a successful block, enabling reactive feed filtering.
+    var userBlockedPublisher: AnyPublisher<String, Never> {
+        userBlockedSubject.eraseToAnyPublisher()
+    }
+
     // MARK: - Private Properties
 
     private let blockService: BlockServiceProtocol
     private var loadTask: Task<Void, Never>?
+    private let userBlockedSubject = PassthroughSubject<String, Never>()
 
     // MARK: - Initialization
 
@@ -71,6 +80,7 @@ class BlockViewModel: ObservableObject {
             do {
                 try await blockService.blockUser(targetUserId: targetUserId, token: token, userId: userId)
                 guard !Task.isCancelled else { return }
+                userBlockedSubject.send(targetUserId)
                 HapticFeedback.success()
                 onSuccess()
             } catch {

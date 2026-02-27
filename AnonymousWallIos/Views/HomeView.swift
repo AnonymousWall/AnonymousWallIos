@@ -192,6 +192,9 @@ struct HomeView: View {
             // Cancel any ongoing load task when view disappears
             viewModel.cleanup()
         }
+        .onReceive(blockViewModel.userBlockedPublisher) { blockedUserId in
+            viewModel.removePostsFromUser(blockedUserId)
+        }
     }
 }
 

@@ -329,6 +329,9 @@ struct PostDetailView: View {
         .fullScreenCover(item: $selectedImageViewer) { item in
             FullScreenImageViewer(imageURLs: post.imageUrls, initialIndex: item.index)
         }
+        .onReceive(blockViewModel.userBlockedPublisher) { blockedUserId in
+            viewModel.removeCommentsFromUser(blockedUserId)
+        }
     }
 }
 

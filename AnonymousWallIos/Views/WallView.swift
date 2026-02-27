@@ -182,6 +182,9 @@ struct WallView: View {
         .onDisappear {
             viewModel.cleanup()
         }
+        .onReceive(blockViewModel.userBlockedPublisher) { blockedUserId in
+            viewModel.removePostsFromUser(blockedUserId)
+        }
     }
 }
 
