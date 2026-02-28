@@ -86,9 +86,11 @@ class CreateMarketplaceViewModel: ObservableObject {
         imageLoadProgress = 0
 
         let timer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { [weak self] _ in
-            guard let self else { return }
-            if self.imageLoadProgress < 0.9 {
-                self.imageLoadProgress += 0.03
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                if self.imageLoadProgress < 0.9 {
+                    self.imageLoadProgress += 0.03
+                }
             }
         }
 
