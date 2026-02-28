@@ -53,24 +53,28 @@ struct CreateMarketplaceView: View {
                                 .padding(.vertical, 4)
                             }
                             .onChange(of: photoPickerItems) { _, items in
+                                guard !items.isEmpty else { return }
                                 Task {
-                                    var loadFailed = false
-                                    for item in items {
-                                        if let data = try? await item.loadTransferable(type: Data.self),
-                                           let image = UIImage(data: data) {
-                                            viewModel.addImage(image)
-                                        } else {
-                                            loadFailed = true
-                                        }
-                                    }
+                                    await viewModel.loadPhotos(items)
                                     photoPickerItems = []
-                                    if loadFailed {
-                                        viewModel.errorMessage = "One or more photos could not be loaded"
-                                    }
                                 }
                             }
                             .accessibilityLabel("Add photo")
                             .accessibilityHint("Double tap to select up to \(remainingSlots) photos")
+                        }
+
+                        if viewModel.isLoadingImages {
+                            VStack(spacing: 6) {
+                                ProgressView(value: viewModel.imageLoadProgress)
+                                    .tint(.primaryPurple)
+                                Text(viewModel.imageLoadProgress < 1.0
+                                    ? "Downloading from iCloud... \(Int(viewModel.imageLoadProgress * 100))%"
+                                    : "Processing...")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                            }
+                            .padding(.vertical, 4)
+                            .transition(.opacity)
                         }
 
                         if !viewModel.selectedImages.isEmpty {

@@ -8,7 +8,7 @@
 import SwiftUI
 
 @MainActor
-class CreateMarketplaceViewModel: ObservableObject {
+class CreateMarketplaceViewModel: ImagePickerViewModel {
     // MARK: - Published Properties
     @Published var title = ""
     @Published var priceText = ""
@@ -18,7 +18,6 @@ class CreateMarketplaceViewModel: ObservableObject {
     @Published var selectedWall: WallType = .campus
     @Published var isPosting = false
     @Published var errorMessage: String?
-    @Published var selectedImages: [UIImage] = []
 
     // MARK: - Dependencies
     private let service: MarketplaceServiceProtocol
@@ -28,11 +27,11 @@ class CreateMarketplaceViewModel: ObservableObject {
     let maxDescriptionLength = 5000
     let validConditions = ["new", "like-new", "good", "fair"]
     let conditionDisplayNames = ["New", "Like New", "Good", "Fair"]
-    private let maxImages = 5
 
     // MARK: - Initialization
     init(service: MarketplaceServiceProtocol = MarketplaceService.shared) {
         self.service = service
+        super.init(maxImages: 5)
     }
 
     // MARK: - Computed Properties
@@ -53,26 +52,13 @@ class CreateMarketplaceViewModel: ObservableObject {
         priceText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ||
         !isPriceValid ||
         isTitleOverLimit || isDescriptionOverLimit ||
-        isPosting
+        isPosting ||
+        isLoadingImages
     }
 
-    var canAddMoreImages: Bool { selectedImages.count < maxImages }
-    var imageCount: Int { selectedImages.count }
-    var remainingImageSlots: Int { maxImages - selectedImages.count }
-
-    // MARK: - Image Management
-
-    func addImage(_ image: UIImage) {
-        guard selectedImages.count < maxImages else {
-            errorMessage = "Maximum \(maxImages) images allowed"
-            return
-        }
-        selectedImages.append(image)
-    }
-
-    func removeImage(at index: Int) {
-        guard index < selectedImages.count else { return }
-        selectedImages.remove(at: index)
+    // MARK: - Error Reporting
+    override func setError(_ message: String) {
+        errorMessage = message
     }
 
     // MARK: - Public Methods
@@ -131,3 +117,4 @@ class CreateMarketplaceViewModel: ObservableObject {
         }
     }
 }
+

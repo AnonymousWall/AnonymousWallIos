@@ -8,14 +8,13 @@
 import SwiftUI
 
 @MainActor
-class CreatePostViewModel: ObservableObject {
+class CreatePostViewModel: ImagePickerViewModel {
     // MARK: - Published Properties
     @Published var postTitle = ""
     @Published var postContent = ""
     @Published var selectedWall: WallType = .campus
     @Published var isPosting = false
     @Published var errorMessage: String?
-    @Published var selectedImages: [UIImage] = []
     
     // MARK: - Dependencies
     private let postService: PostServiceProtocol
@@ -23,11 +22,11 @@ class CreatePostViewModel: ObservableObject {
     // MARK: - Constants
     private let maxTitleCharacters = 255
     private let maxContentCharacters = 5000
-    private let maxImages = 5
     
     // MARK: - Initialization
     init(postService: PostServiceProtocol = PostService.shared) {
         self.postService = postService
+        super.init(maxImages: 5)
     }
     
     // MARK: - Computed Properties
@@ -52,7 +51,8 @@ class CreatePostViewModel: ObservableObject {
         postContent.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ||
         postTitle.count > maxTitleCharacters ||
         postContent.count > maxContentCharacters ||
-        isPosting
+        isPosting ||
+        isLoadingImages
     }
     
     var maxTitleCount: Int {
@@ -63,23 +63,9 @@ class CreatePostViewModel: ObservableObject {
         maxContentCharacters
     }
     
-    var canAddMoreImages: Bool { selectedImages.count < maxImages }
-    var imageCount: Int { selectedImages.count }
-    var remainingImageSlots: Int { maxImages - selectedImages.count }
-    
-    // MARK: - Image Management
-    
-    func addImage(_ image: UIImage) {
-        guard selectedImages.count < maxImages else {
-            errorMessage = "Maximum \(maxImages) images allowed"
-            return
-        }
-        selectedImages.append(image)
-    }
-    
-    func removeImage(at index: Int) {
-        guard index < selectedImages.count else { return }
-        selectedImages.remove(at: index)
+    // MARK: - Error Reporting
+    override func setError(_ message: String) {
+        errorMessage = message
     }
     
     // MARK: - Public Methods
@@ -129,3 +115,4 @@ class CreatePostViewModel: ObservableObject {
         }
     }
 }
+
