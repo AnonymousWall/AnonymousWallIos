@@ -397,6 +397,109 @@ struct CreatePostViewModelTests {
         #expect(error is TimeoutError)
     }
     
+    // MARK: - Poll Mode Tests
+    
+    @Test func testDefaultPostTypeIsStandard() async throws {
+        let viewModel = CreatePostViewModel(postService: MockPostService())
+        #expect(viewModel.postType == .standard)
+        #expect(viewModel.isPollMode == false)
+    }
+    
+    @Test func testSwitchingToPollMode() async throws {
+        let viewModel = CreatePostViewModel(postService: MockPostService())
+        viewModel.postType = .poll
+        #expect(viewModel.isPollMode == true)
+    }
+    
+    @Test func testDefaultPollOptionsCount() async throws {
+        let viewModel = CreatePostViewModel(postService: MockPostService())
+        #expect(viewModel.pollOptions.count == 2)
+    }
+    
+    @Test func testCanAddPollOptionWhenFewerThanFour() async throws {
+        let viewModel = CreatePostViewModel(postService: MockPostService())
+        #expect(viewModel.canAddPollOption == true)
+        viewModel.addPollOption()
+        viewModel.addPollOption()
+        #expect(viewModel.pollOptions.count == 4)
+        #expect(viewModel.canAddPollOption == false)
+    }
+    
+    @Test func testCanRemovePollOptionWhenMoreThanTwo() async throws {
+        let viewModel = CreatePostViewModel(postService: MockPostService())
+        #expect(viewModel.canRemovePollOption == false)
+        viewModel.addPollOption()
+        #expect(viewModel.canRemovePollOption == true)
+        viewModel.removePollOption(at: 2)
+        #expect(viewModel.pollOptions.count == 2)
+        #expect(viewModel.canRemovePollOption == false)
+    }
+    
+    @Test func testArePollOptionsValidWithTwoNonEmptyOptions() async throws {
+        let viewModel = CreatePostViewModel(postService: MockPostService())
+        viewModel.pollOptions = ["Option A", "Option B"]
+        #expect(viewModel.arePollOptionsValid == true)
+    }
+    
+    @Test func testArePollOptionsInvalidWithEmptyOption() async throws {
+        let viewModel = CreatePostViewModel(postService: MockPostService())
+        viewModel.pollOptions = ["Option A", ""]
+        #expect(viewModel.arePollOptionsValid == false)
+    }
+    
+    @Test func testArePollOptionsInvalidWhenOptionExceedsLimit() async throws {
+        let viewModel = CreatePostViewModel(postService: MockPostService())
+        viewModel.pollOptions = ["Option A", String(repeating: "x", count: 101)]
+        #expect(viewModel.arePollOptionsValid == false)
+    }
+    
+    @Test func testPollModeButtonDisabledWhenOptionsInvalid() async throws {
+        let viewModel = CreatePostViewModel(postService: MockPostService())
+        viewModel.postType = .poll
+        viewModel.postTitle = "A poll"
+        viewModel.pollOptions = ["Option A", ""]
+        #expect(viewModel.isPostButtonDisabled == true)
+    }
+    
+    @Test func testPollModeButtonEnabledWhenValid() async throws {
+        let viewModel = CreatePostViewModel(postService: MockPostService())
+        viewModel.postType = .poll
+        viewModel.postTitle = "A poll"
+        viewModel.pollOptions = ["Option A", "Option B"]
+        #expect(viewModel.isPostButtonDisabled == false)
+    }
+    
+    @Test func testPollModeContentNotRequired() async throws {
+        let viewModel = CreatePostViewModel(postService: MockPostService())
+        viewModel.postType = .poll
+        viewModel.postTitle = "A poll"
+        viewModel.postContent = ""
+        viewModel.pollOptions = ["Option A", "Option B"]
+        #expect(viewModel.isPostButtonDisabled == false)
+    }
+    
+    @Test func testCreatePollPostSuccess() async throws {
+        let mockService = MockPostService()
+        let viewModel = CreatePostViewModel(postService: mockService)
+        let authState = createMockAuthState()
+        
+        viewModel.postType = .poll
+        viewModel.postTitle = "My Poll"
+        viewModel.pollOptions = ["Yes", "No"]
+        
+        var successCalled = false
+        viewModel.createPost(authState: authState) {
+            successCalled = true
+        }
+        
+        try await Task.sleep(nanoseconds: 500_000_000)
+        
+        #expect(viewModel.isPosting == false)
+        #expect(viewModel.errorMessage == nil)
+        #expect(successCalled == true)
+        #expect(mockService.createPollPostCalled == true)
+    }
+    
     // MARK: - Helper Methods
     
     private func createMockAuthState() -> AuthState {

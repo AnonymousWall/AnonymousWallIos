@@ -84,6 +84,10 @@ class NetworkClient: NetworkClientProtocol {
             case HTTPStatus.notFound:
                 throw NetworkError.notFound
                 
+            case 409:
+                let errorMessage = extractErrorMessage(from: data) ?? "Conflict"
+                throw NetworkError.conflict(errorMessage)
+                
             case HTTPStatus.timeout:
                 throw NetworkError.timeout
                 

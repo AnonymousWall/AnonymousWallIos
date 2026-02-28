@@ -75,6 +75,24 @@ protocol PostServiceProtocol {
     
     /// Report a comment
     func reportComment(postId: String, commentId: String, reason: String?, token: String, userId: String) async throws -> ReportResponse
+    
+    // MARK: - Poll Operations
+    
+    /// Create a poll post
+    func createPollPost(
+        title: String,
+        content: String?,
+        wall: WallType,
+        pollOptions: [String],
+        token: String,
+        userId: String
+    ) async throws -> Post
+    
+    /// Vote on a poll option; returns updated PollDTO
+    func votePoll(postId: UUID, optionId: UUID, token: String, userId: String) async throws -> PollDTO
+    
+    /// Fetch poll details; pass viewResults=true to show vote counts/percentages
+    func getPoll(postId: UUID, viewResults: Bool, token: String, userId: String) async throws -> PollDTO
 }
 
 // MARK: - Default implementations

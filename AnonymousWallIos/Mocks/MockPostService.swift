@@ -59,6 +59,9 @@ class MockPostService: PostServiceProtocol {
     var unhideCommentCalled = false
     var reportPostCalled = false
     var reportCommentCalled = false
+    var createPollPostCalled = false
+    var votePollCalled = false
+    var getPollCalled = false
     
     // MARK: - Configurable Behavior
     
@@ -74,6 +77,9 @@ class MockPostService: PostServiceProtocol {
     var unhideCommentBehavior: MockBehavior = .success
     var reportPostBehavior: MockBehavior = .success
     var reportCommentBehavior: MockBehavior = .success
+    var createPollPostBehavior: MockBehavior = .success
+    var votePollBehavior: MockBehavior = .success
+    var getPollBehavior: MockBehavior = .success
     
     // MARK: - Configurable State
     
@@ -84,6 +90,7 @@ class MockPostService: PostServiceProtocol {
     var mockLikeResponse: LikeResponse?
     var mockHideResponse: HidePostResponse?
     var mockReportResponse: ReportResponse?
+    var mockPollDTO: PollDTO?
     
     // MARK: - Initialization
     
@@ -399,6 +406,91 @@ class MockPostService: PostServiceProtocol {
         }
     }
     
+    // MARK: - Poll Operations
+    
+    func createPollPost(
+        title: String,
+        content: String?,
+        wall: WallType,
+        pollOptions: [String],
+        token: String,
+        userId: String
+    ) async throws -> Post {
+        createPollPostCalled = true
+        
+        switch createPollPostBehavior {
+        case .success:
+            let newPost = Post(
+                id: "new-poll-\(mockPosts.count)",
+                title: title,
+                content: content ?? "",
+                wall: wall.rawValue,
+                likes: 0,
+                comments: 0,
+                liked: false,
+                author: Post.Author(id: userId, profileName: "Mock User", isAnonymous: true),
+                createdAt: "2026-01-31T00:00:00Z",
+                updatedAt: "2026-01-31T00:00:00Z",
+                postType: "poll",
+                totalVotes: 0,
+                poll: mockPollDTO
+            )
+            mockPosts.append(newPost)
+            return newPost
+        case .failure(let error):
+            throw error
+        case .emptyState:
+            return Post(
+                id: "",
+                title: "",
+                content: "",
+                wall: "",
+                likes: 0,
+                comments: 0,
+                liked: false,
+                author: Post.Author(id: "", profileName: "", isAnonymous: false),
+                createdAt: "",
+                updatedAt: ""
+            )
+        }
+    }
+    
+    func votePoll(postId: UUID, optionId: UUID, token: String, userId: String) async throws -> PollDTO {
+        votePollCalled = true
+        
+        switch votePollBehavior {
+        case .success:
+            return mockPollDTO ?? PollDTO(
+                options: [],
+                totalVotes: 1,
+                userVotedOptionId: optionId,
+                resultsVisible: true
+            )
+        case .failure(let error):
+            throw error
+        case .emptyState:
+            return PollDTO(options: [], totalVotes: 0, userVotedOptionId: nil, resultsVisible: false)
+        }
+    }
+    
+    func getPoll(postId: UUID, viewResults: Bool, token: String, userId: String) async throws -> PollDTO {
+        getPollCalled = true
+        
+        switch getPollBehavior {
+        case .success:
+            return mockPollDTO ?? PollDTO(
+                options: [],
+                totalVotes: 0,
+                userVotedOptionId: nil,
+                resultsVisible: viewResults
+            )
+        case .failure(let error):
+            throw error
+        case .emptyState:
+            return PollDTO(options: [], totalVotes: 0, userVotedOptionId: nil, resultsVisible: false)
+        }
+    }
+    
     // MARK: - Helper Methods
     
     /// Reset all call tracking flags
@@ -415,6 +507,9 @@ class MockPostService: PostServiceProtocol {
         unhideCommentCalled = false
         reportPostCalled = false
         reportCommentCalled = false
+        createPollPostCalled = false
+        votePollCalled = false
+        getPollCalled = false
     }
     
     /// Reset all behaviors to success
@@ -431,6 +526,9 @@ class MockPostService: PostServiceProtocol {
         unhideCommentBehavior = .success
         reportPostBehavior = .success
         reportCommentBehavior = .success
+        createPollPostBehavior = .success
+        votePollBehavior = .success
+        getPollBehavior = .success
     }
     
     /// Configure all methods to fail with specific error
@@ -447,6 +545,9 @@ class MockPostService: PostServiceProtocol {
         unhideCommentBehavior = .failure(error)
         reportPostBehavior = .failure(error)
         reportCommentBehavior = .failure(error)
+        createPollPostBehavior = .failure(error)
+        votePollBehavior = .failure(error)
+        getPollBehavior = .failure(error)
     }
     
     /// Configure all methods to return empty state
@@ -463,6 +564,9 @@ class MockPostService: PostServiceProtocol {
         unhideCommentBehavior = .emptyState
         reportPostBehavior = .emptyState
         reportCommentBehavior = .emptyState
+        createPollPostBehavior = .emptyState
+        votePollBehavior = .emptyState
+        getPollBehavior = .emptyState
     }
     
     /// Clear all stored mock data
@@ -474,5 +578,6 @@ class MockPostService: PostServiceProtocol {
         mockLikeResponse = nil
         mockHideResponse = nil
         mockReportResponse = nil
+        mockPollDTO = nil
     }
 }

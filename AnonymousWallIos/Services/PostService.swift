@@ -262,4 +262,64 @@ class PostService: PostServiceProtocol {
         
         return try await networkClient.performRequest(request)
     }
+    
+    // MARK: - Poll Operations
+    
+    /// Create a poll post (JSON request — no image upload for poll posts)
+    func createPollPost(
+        title: String,
+        content: String?,
+        wall: WallType,
+        pollOptions: [String],
+        token: String,
+        userId: String
+    ) async throws -> Post {
+        let body = CreatePostRequest(
+            title: title,
+            content: content,
+            wall: wall.rawValue,
+            postType: "poll",
+            pollOptions: pollOptions
+        )
+        
+        let request = try APIRequestBuilder()
+            .setPath("/posts")
+            .setMethod(.POST)
+            .setBody(body)
+            .setToken(token)
+            .setUserId(userId)
+            .build()
+        
+        return try await networkClient.performRequest(request)
+    }
+    
+    /// Vote on a poll option
+    func votePoll(postId: UUID, optionId: UUID, token: String, userId: String) async throws -> PollDTO {
+        let body = PollVoteRequest(optionId: optionId)
+        
+        let request = try APIRequestBuilder()
+            .setPath("/posts/\(postId.uuidString)/vote")
+            .setMethod(.POST)
+            .setBody(body)
+            .setToken(token)
+            .setUserId(userId)
+            .build()
+        
+        return try await networkClient.performRequest(request)
+    }
+    
+    /// Fetch poll details
+    func getPoll(postId: UUID, viewResults: Bool, token: String, userId: String) async throws -> PollDTO {
+        let queryItems = [URLQueryItem(name: "viewResults", value: viewResults ? "true" : "false")]
+        
+        let request = try APIRequestBuilder()
+            .setPath("/posts/\(postId.uuidString)/poll")
+            .setMethod(.GET)
+            .addQueryItems(queryItems)
+            .setToken(token)
+            .setUserId(userId)
+            .build()
+        
+        return try await networkClient.performRequest(request)
+    }
 }
