@@ -6,10 +6,9 @@
 //
 
 import SwiftUI
-import PhotosUI
 
 @MainActor
-class CreateMarketplaceViewModel: ObservableObject {
+class CreateMarketplaceViewModel: ImagePickerViewModel {
     // MARK: - Published Properties
     @Published var title = ""
     @Published var priceText = ""
@@ -19,9 +18,6 @@ class CreateMarketplaceViewModel: ObservableObject {
     @Published var selectedWall: WallType = .campus
     @Published var isPosting = false
     @Published var errorMessage: String?
-    @Published var selectedImages: [UIImage] = []
-    @Published var isLoadingImages: Bool = false
-    @Published var imageLoadProgress: Double = 0
 
     // MARK: - Dependencies
     private let service: MarketplaceServiceProtocol
@@ -31,11 +27,11 @@ class CreateMarketplaceViewModel: ObservableObject {
     let maxDescriptionLength = 5000
     let validConditions = ["new", "like-new", "good", "fair"]
     let conditionDisplayNames = ["New", "Like New", "Good", "Fair"]
-    private let maxImages = 5
 
     // MARK: - Initialization
     init(service: MarketplaceServiceProtocol = MarketplaceService.shared) {
         self.service = service
+        super.init(maxImages: 5)
     }
 
     // MARK: - Computed Properties
@@ -60,69 +56,9 @@ class CreateMarketplaceViewModel: ObservableObject {
         isLoadingImages
     }
 
-    var canAddMoreImages: Bool { selectedImages.count < maxImages }
-    var imageCount: Int { selectedImages.count }
-    var remainingImageSlots: Int { maxImages - selectedImages.count }
-
-    // MARK: - Image Management
-
-    func addImage(_ image: UIImage) {
-        guard selectedImages.count < maxImages else {
-            errorMessage = "Maximum \(maxImages) images allowed"
-            return
-        }
-        selectedImages.append(image)
-    }
-
-    func removeImage(at index: Int) {
-        guard index < selectedImages.count else { return }
-        selectedImages.remove(at: index)
-    }
-
-    // MARK: - Photo Loading
-
-    func loadPhotos(_ items: [PhotosPickerItem]) async {
-        isLoadingImages = true
-        imageLoadProgress = 0
-
-        let timer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { [weak self] _ in
-            Task { @MainActor [weak self] in
-                guard let self else { return }
-                if self.imageLoadProgress < 0.9 {
-                    self.imageLoadProgress += 0.03
-                }
-            }
-        }
-
-        defer {
-            timer.invalidate()
-            imageLoadProgress = 1.0
-            isLoadingImages = false
-        }
-
-        var hasTimeout = false
-        var hasError = false
-
-        for item in items {
-            do {
-                let data = try await withTimeout(seconds: 30) {
-                    try await item.loadTransferable(type: Data.self)
-                }
-                if let data, let image = UIImage(data: data) {
-                    addImage(image)
-                }
-            } catch is TimeoutError {
-                hasTimeout = true
-            } catch {
-                hasError = true
-            }
-        }
-
-        if hasTimeout {
-            errorMessage = "One or more photos are still downloading from iCloud. Please wait a moment and try again."
-        } else if hasError {
-            errorMessage = "One or more photos could not be loaded"
-        }
+    // MARK: - Error Reporting
+    override func setError(_ message: String) {
+        errorMessage = message
     }
 
     // MARK: - Public Methods
@@ -181,3 +117,4 @@ class CreateMarketplaceViewModel: ObservableObject {
         }
     }
 }
+
