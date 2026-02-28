@@ -154,6 +154,31 @@ struct CreatePostViewModelTests {
         #expect(viewModel.isPostButtonDisabled == false)
     }
     
+    @Test func testPostButtonDisabledWhenLoadingImages() async throws {
+        let mockPostService = MockPostService()
+        let viewModel = CreatePostViewModel(postService: mockPostService)
+        
+        viewModel.postTitle = "Valid Title"
+        viewModel.postContent = "Valid content"
+        viewModel.isLoadingImages = true
+        
+        #expect(viewModel.isPostButtonDisabled == true)
+    }
+    
+    @Test func testIsLoadingImagesInitiallyFalse() async throws {
+        let mockPostService = MockPostService()
+        let viewModel = CreatePostViewModel(postService: mockPostService)
+        
+        #expect(viewModel.isLoadingImages == false)
+    }
+    
+    @Test func testImageLoadProgressInitiallyZero() async throws {
+        let mockPostService = MockPostService()
+        let viewModel = CreatePostViewModel(postService: mockPostService)
+        
+        #expect(viewModel.imageLoadProgress == 0)
+    }
+    
     // MARK: - Create Post Tests
     
     @Test func testCreatePostWithEmptyTitle() async throws {
@@ -344,6 +369,32 @@ struct CreatePostViewModelTests {
         try await Task.sleep(nanoseconds: 500_000_000)
         
         #expect(viewModel.errorMessage == nil)
+    }
+    
+    // MARK: - Timeout Helper Tests
+    
+    @Test func testWithTimeoutSucceedsWhenOperationCompletesInTime() async throws {
+        let result = try await withTimeout(seconds: 5) {
+            "success"
+        }
+        #expect(result == "success")
+    }
+    
+    @Test func testWithTimeoutThrowsTimeoutErrorWhenOperationExceedsLimit() async throws {
+        do {
+            _ = try await withTimeout(seconds: 0.1) {
+                try await Task.sleep(nanoseconds: 5_000_000_000)
+                return "should not reach"
+            }
+            Issue.record("Expected TimeoutError to be thrown")
+        } catch is TimeoutError {
+            // Expected
+        }
+    }
+    
+    @Test func testTimeoutErrorIsError() {
+        let error: any Error = TimeoutError()
+        #expect(error is TimeoutError)
     }
     
     // MARK: - Helper Methods

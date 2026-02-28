@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import PhotosUI
 
 @MainActor
 class CreateMarketplaceViewModel: ObservableObject {
@@ -19,6 +20,8 @@ class CreateMarketplaceViewModel: ObservableObject {
     @Published var isPosting = false
     @Published var errorMessage: String?
     @Published var selectedImages: [UIImage] = []
+    @Published var isLoadingImages: Bool = false
+    @Published var imageLoadProgress: Double = 0
 
     // MARK: - Dependencies
     private let service: MarketplaceServiceProtocol
@@ -53,7 +56,8 @@ class CreateMarketplaceViewModel: ObservableObject {
         priceText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ||
         !isPriceValid ||
         isTitleOverLimit || isDescriptionOverLimit ||
-        isPosting
+        isPosting ||
+        isLoadingImages
     }
 
     var canAddMoreImages: Bool { selectedImages.count < maxImages }
@@ -73,6 +77,50 @@ class CreateMarketplaceViewModel: ObservableObject {
     func removeImage(at index: Int) {
         guard index < selectedImages.count else { return }
         selectedImages.remove(at: index)
+    }
+
+    // MARK: - Photo Loading
+
+    func loadPhotos(_ items: [PhotosPickerItem]) async {
+        isLoadingImages = true
+        imageLoadProgress = 0
+
+        let timer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { [weak self] _ in
+            guard let self else { return }
+            if self.imageLoadProgress < 0.9 {
+                self.imageLoadProgress += 0.03
+            }
+        }
+
+        defer {
+            timer.invalidate()
+            imageLoadProgress = 1.0
+            isLoadingImages = false
+        }
+
+        var hasTimeout = false
+        var hasError = false
+
+        for item in items {
+            do {
+                let data = try await withTimeout(seconds: 30) {
+                    try await item.loadTransferable(type: Data.self)
+                }
+                if let data, let image = UIImage(data: data) {
+                    addImage(image)
+                }
+            } catch is TimeoutError {
+                hasTimeout = true
+            } catch {
+                hasError = true
+            }
+        }
+
+        if hasTimeout {
+            errorMessage = "One or more photos are still downloading from iCloud. Please wait a moment and try again."
+        } else if hasError {
+            errorMessage = "One or more photos could not be loaded"
+        }
     }
 
     // MARK: - Public Methods

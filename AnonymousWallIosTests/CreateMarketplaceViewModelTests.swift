@@ -103,6 +103,31 @@ struct CreateMarketplaceViewModelTests {
         #expect(viewModel.isSubmitDisabled == false)
     }
 
+    @Test func testSubmitDisabledWhenLoadingImages() async throws {
+        let mockService = MockMarketplaceService()
+        let viewModel = CreateMarketplaceViewModel(service: mockService)
+
+        viewModel.title = "Used Textbook"
+        viewModel.priceText = "25.00"
+        viewModel.isLoadingImages = true
+
+        #expect(viewModel.isSubmitDisabled == true)
+    }
+
+    @Test func testIsLoadingImagesInitiallyFalse() async throws {
+        let mockService = MockMarketplaceService()
+        let viewModel = CreateMarketplaceViewModel(service: mockService)
+
+        #expect(viewModel.isLoadingImages == false)
+    }
+
+    @Test func testImageLoadProgressInitiallyZero() async throws {
+        let mockService = MockMarketplaceService()
+        let viewModel = CreateMarketplaceViewModel(service: mockService)
+
+        #expect(viewModel.imageLoadProgress == 0)
+    }
+
     @Test func testTitleOverLimit() async throws {
         let mockService = MockMarketplaceService()
         let viewModel = CreateMarketplaceViewModel(service: mockService)
