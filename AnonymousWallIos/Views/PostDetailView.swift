@@ -374,7 +374,7 @@ struct CommentRowView: View {
                             Text(comment.author.profileName)
                                 .font(.caption)
                                 .fontWeight(.semibold)
-                                .foregroundColor(.white)
+                                .foregroundColor(.accentPurple)
                                 .underline()
                         }
                         .accessibilityLabel("Comment by \(comment.author.profileName)")

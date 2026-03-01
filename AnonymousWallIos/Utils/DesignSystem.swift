@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import UIKit
 
 // MARK: - Color Tokens
 
@@ -35,20 +36,67 @@ extension Color {
         )
     }
 
-    // Backgrounds
-    static let appBackground     = Color(hex: "#0d0d0f")
-    static let surfacePrimary    = Color(hex: "#17171a")
-    static let surfaceSecondary  = Color(hex: "#1f1f23")
-    static let surfaceTertiary   = Color(hex: "#26262b")
+    // Adaptive background: dark mode #0d0d0f / light mode #f5f5f7
+    static let appBackground = Color(uiColor: UIColor { traits in
+        traits.userInterfaceStyle == .dark
+            ? UIColor(red: 13/255, green: 13/255, blue: 15/255, alpha: 1)
+            : UIColor(red: 245/255, green: 245/255, blue: 247/255, alpha: 1)
+    })
 
-    // Borders
-    static let borderSubtle      = Color.white.opacity(0.07)
-    static let borderMedium      = Color.white.opacity(0.12)
+    // Adaptive surface: dark mode #17171a / light mode white
+    static let surfacePrimary = Color(uiColor: UIColor { traits in
+        traits.userInterfaceStyle == .dark
+            ? UIColor(red: 23/255, green: 23/255, blue: 26/255, alpha: 1)
+            : UIColor.white
+    })
 
-    // Text
-    static let textPrimary       = Color(hex: "#f2f2f5")
-    static let textSecondary     = Color(hex: "#8a8a96")
-    static let textTertiary      = Color(hex: "#55555e")
+    // Adaptive surface: dark mode #1f1f23 / light mode #f2f2f5
+    static let surfaceSecondary = Color(uiColor: UIColor { traits in
+        traits.userInterfaceStyle == .dark
+            ? UIColor(red: 31/255, green: 31/255, blue: 35/255, alpha: 1)
+            : UIColor(red: 242/255, green: 242/255, blue: 245/255, alpha: 1)
+    })
+
+    // Adaptive surface: dark mode #26262b / light mode #e8e8ed
+    static let surfaceTertiary = Color(uiColor: UIColor { traits in
+        traits.userInterfaceStyle == .dark
+            ? UIColor(red: 38/255, green: 38/255, blue: 43/255, alpha: 1)
+            : UIColor(red: 232/255, green: 232/255, blue: 237/255, alpha: 1)
+    })
+
+    // Adaptive border: dark mode white opacity / light mode black opacity
+    static let borderSubtle = Color(uiColor: UIColor { traits in
+        traits.userInterfaceStyle == .dark
+            ? UIColor.white.withAlphaComponent(0.07)
+            : UIColor.black.withAlphaComponent(0.08)
+    })
+
+    static let borderMedium = Color(uiColor: UIColor { traits in
+        traits.userInterfaceStyle == .dark
+            ? UIColor.white.withAlphaComponent(0.12)
+            : UIColor.black.withAlphaComponent(0.15)
+    })
+
+    // Adaptive text: dark mode #f2f2f5 / light mode #0d0d0f
+    static let textPrimary = Color(uiColor: UIColor { traits in
+        traits.userInterfaceStyle == .dark
+            ? UIColor(red: 242/255, green: 242/255, blue: 245/255, alpha: 1)
+            : UIColor(red: 13/255, green: 13/255, blue: 15/255, alpha: 1)
+    })
+
+    // Adaptive text: dark mode #8a8a96 / light mode #55555e
+    static let textSecondary = Color(uiColor: UIColor { traits in
+        traits.userInterfaceStyle == .dark
+            ? UIColor(red: 138/255, green: 138/255, blue: 150/255, alpha: 1)
+            : UIColor(red: 85/255, green: 85/255, blue: 94/255, alpha: 1)
+    })
+
+    // Adaptive text: dark mode #55555e / light mode #8a8a96
+    static let textTertiary = Color(uiColor: UIColor { traits in
+        traits.userInterfaceStyle == .dark
+            ? UIColor(red: 85/255, green: 85/255, blue: 94/255, alpha: 1)
+            : UIColor(red: 138/255, green: 138/255, blue: 150/255, alpha: 1)
+    })
 
     // Accent — purple-pink brand
     static let accentPurple      = Color(hex: "#9b5de5")
