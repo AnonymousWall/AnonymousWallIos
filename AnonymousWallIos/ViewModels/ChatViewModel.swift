@@ -198,8 +198,8 @@ class ChatViewModel: ObservableObject {
     
     func onTextChanged() {
         typingTimer?.invalidate()
+        typingTimer = nil
         sendTypingIndicator()
-        typingTimer = Timer.scheduledTimer(withTimeInterval: 2.0, repeats: false) { _ in }
     }
     
     func viewDidAppear() {

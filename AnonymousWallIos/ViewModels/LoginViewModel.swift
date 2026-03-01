@@ -36,6 +36,11 @@ class LoginViewModel: ObservableObject {
         self.authService = authService
     }
     
+    deinit {
+        countdownTimer?.invalidate()
+        countdownTimer = nil
+    }
+    
     // MARK: - Computed Properties
     var isLoginButtonDisabled: Bool {
         if loginMethod == .password {
