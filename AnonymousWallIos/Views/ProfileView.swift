@@ -81,14 +81,14 @@ struct ProfileView: View {
                         HStack(spacing: 6) {
                             Image(systemName: "person.fill")
                                 .font(.caption)
-                                .foregroundColor(.vibrantTeal)
+                                .foregroundColor(.accentBlue)
                             Text(profileName)
                                 .font(.subheadline.weight(.medium))
                                 .foregroundColor(.textSecondary)
                         }
                         .padding(.horizontal, 14)
                         .padding(.vertical, 6)
-                        .background(Color.vibrantTeal.opacity(0.15))
+                        .background(Color.accentBlue.opacity(0.15))
                         .cornerRadius(12)
                         .accessibilityElement(children: .combine)
                         .accessibilityLabel("Profile name: \(profileName)")
@@ -307,13 +307,13 @@ struct ProfileView: View {
                             VStack(spacing: 20) {
                                 ZStack {
                                     Circle()
-                                        .fill(Color.tealPurpleGradient)
+                                        .fill(LinearGradient.brandGradient)
                                         .frame(width: 100, height: 100)
                                         .blur(radius: 30)
                                     
                                     Image(systemName: "bubble.left.fill")
                                         .font(.system(size: 60))
-                                        .foregroundStyle(Color.tealPurpleGradient)
+                                        .foregroundStyle(LinearGradient.brandGradient)
                                         .accessibilityHidden(true)
                                 }
                                 
@@ -383,13 +383,13 @@ struct ProfileView: View {
                             VStack(spacing: 20) {
                                 ZStack {
                                     Circle()
-                                        .fill(Color.tealPurpleGradient)
+                                        .fill(LinearGradient.brandGradient)
                                         .frame(width: 100, height: 100)
                                         .blur(radius: 30)
                                     
                                     Image(systemName: "briefcase.fill")
                                         .font(.system(size: 60))
-                                        .foregroundStyle(Color.tealPurpleGradient)
+                                        .foregroundStyle(LinearGradient.brandGradient)
                                         .accessibilityHidden(true)
                                 }
                                 
@@ -608,7 +608,7 @@ struct ProfileCommentRowView: View {
     
     var parentBadgeColor: Color {
         switch parentType {
-        case "POST": return .vibrantTeal
+        case "POST": return .accentBlue
         case "INTERNSHIP": return .orange
         case "MARKETPLACE": return .green
         default: return .gray

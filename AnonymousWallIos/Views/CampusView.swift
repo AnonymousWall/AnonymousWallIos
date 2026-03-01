@@ -71,13 +71,13 @@ struct CampusView: View {
                             VStack(spacing: 20) {
                                 ZStack {
                                     Circle()
-                                        .fill(Color.purplePinkGradient)
+                                        .fill(LinearGradient.brandGradient)
                                         .frame(width: 100, height: 100)
                                         .blur(radius: 30)
                                     
                                     Image(systemName: "building.2.fill")
                                         .font(.system(size: 60))
-                                        .foregroundStyle(Color.purplePinkGradient)
+                                        .foregroundStyle(LinearGradient.brandGradient)
                                         .accessibilityHidden(true)
                                 }
                                 

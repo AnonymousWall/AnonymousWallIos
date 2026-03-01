@@ -222,7 +222,7 @@ struct MarketplaceDetailView: View {
                             Circle()
                                 .fill(viewModel.commentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
                                       ? AnyShapeStyle(Color.gray.opacity(0.3))
-                                      : AnyShapeStyle(Color.purplePinkGradient))
+                                      : AnyShapeStyle(LinearGradient.brandGradient))
                                 .frame(width: 36, height: 36)
                             Image(systemName: "arrow.up")
                                 .font(.callout.bold())

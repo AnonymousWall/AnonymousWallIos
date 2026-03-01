@@ -25,7 +25,7 @@ struct MarketplaceRowView: View {
     }
 
     private var wallGradient: LinearGradient {
-        isCampus ? Color.purplePinkGradient : Color.tealPurpleGradient
+        LinearGradient.brandGradient
     }
 
     private var wallDisplayName: String {
@@ -152,15 +152,15 @@ struct MarketplaceRowView: View {
                 HStack(spacing: 5) {
                     Image(systemName: "bubble.left.fill")
                         .font(.callout)
-                        .foregroundColor(.vibrantTeal)
+                        .foregroundColor(.accentBlue)
                     Text("\(item.comments)")
                         .font(.subheadline)
                         .fontWeight(.semibold)
-                        .foregroundColor(.vibrantTeal)
+                        .foregroundColor(.accentBlue)
                 }
                 .padding(.horizontal, 10)
                 .padding(.vertical, 6)
-                .background(Color.vibrantTeal.opacity(0.15))
+                .background(Color.accentBlue.opacity(0.15))
                 .cornerRadius(8)
                 .accessibilityElement(children: .combine)
                 .accessibilityLabel("\(item.comments) comments")

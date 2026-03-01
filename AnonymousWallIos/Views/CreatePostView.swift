@@ -160,7 +160,7 @@ struct CreatePostView: View {
                         label: "Post",
                         isLoading: viewModel.isPosting,
                         isDisabled: viewModel.isPostButtonDisabled,
-                        gradient: Color.purplePinkGradient,
+                        gradient: LinearGradient.brandGradient,
                         action: {
                             HapticFeedback.light()
                             viewModel.createPost(authState: authState, onSuccess: {

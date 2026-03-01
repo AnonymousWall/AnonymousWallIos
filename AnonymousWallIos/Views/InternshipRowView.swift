@@ -24,7 +24,7 @@ struct InternshipRowView: View {
     }
 
     private var wallGradient: LinearGradient {
-        isCampus ? Color.purplePinkGradient : Color.tealPurpleGradient
+        LinearGradient.brandGradient
     }
 
     private var wallDisplayName: String {

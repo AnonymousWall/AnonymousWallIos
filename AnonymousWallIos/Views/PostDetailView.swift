@@ -231,14 +231,14 @@ struct PostDetailView: View {
                     } else {
                         ZStack {
                             Circle()
-                                .fill(viewModel.commentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? AnyShapeStyle(Color.gray.opacity(0.3)) : AnyShapeStyle(Color.purplePinkGradient))
+                                .fill(viewModel.commentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? AnyShapeStyle(Color.gray.opacity(0.3)) : AnyShapeStyle(LinearGradient.brandGradient))
                                 .frame(width: 36, height: 36)
                             
                             Image(systemName: "arrow.up")
                                 .font(.callout.bold())
                                 .foregroundColor(.white)
                         }
-                        .shadow(color: viewModel.commentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? Color.clear : Color.primaryPurple.opacity(0.3), radius: 4, x: 0, y: 2)
+                        .shadow(color: viewModel.commentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? Color.clear : Color.accentPurple.opacity(0.3), radius: 4, x: 0, y: 2)
                     }
                 }
                 .disabled(viewModel.commentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || viewModel.isSubmitting)

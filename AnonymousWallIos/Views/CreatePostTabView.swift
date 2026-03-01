@@ -18,7 +18,7 @@ struct CreatePostTabView: View {
                     VStack(spacing: 8) {
                         Image(systemName: "plus.circle.fill")
                             .font(.system(size: 64))
-                            .foregroundStyle(Color.purplePinkGradient)
+                            .foregroundStyle(LinearGradient.brandGradient)
                             .accessibilityHidden(true)
 
                         Text("Create")
@@ -39,7 +39,7 @@ struct CreatePostTabView: View {
                             icon: "bubble.left.and.bubble.right.fill",
                             title: "New Post",
                             subtitle: "Share your thoughts anonymously",
-                            gradient: Color.purplePinkGradient,
+                            gradient: LinearGradient.brandGradient,
                             action: { viewModel.showCreatePostSheet() }
                         )
                         .accessibilityLabel("Create new post")
@@ -49,7 +49,7 @@ struct CreatePostTabView: View {
                             icon: "briefcase.fill",
                             title: "New Internship",
                             subtitle: "Share an internship opportunity",
-                            gradient: Color.tealPurpleGradient,
+                            gradient: LinearGradient.brandGradient,
                             action: { viewModel.showCreateInternshipSheet() }
                         )
                         .accessibilityLabel("Create new internship posting")
@@ -128,7 +128,7 @@ private struct CreateOptionButton: View {
                     .foregroundColor(.secondary)
             }
             .padding(16)
-            .background(Color(.systemBackground))
+            .background(Color.surfacePrimary)
             .cornerRadius(16)
             .shadow(color: Color.black.opacity(0.06), radius: 8, x: 0, y: 4)
             .overlay(

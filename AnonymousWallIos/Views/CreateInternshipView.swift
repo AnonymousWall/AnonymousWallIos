@@ -41,7 +41,7 @@ struct CreateInternshipView: View {
                         label: "Post Internship",
                         isLoading: viewModel.isPosting,
                         isDisabled: viewModel.isSubmitDisabled,
-                        gradient: Color.tealPurpleGradient,
+                        gradient: LinearGradient.brandGradient,
                         action: {
                             HapticFeedback.light()
                             viewModel.createInternship(authState: authState) {

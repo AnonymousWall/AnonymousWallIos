@@ -126,7 +126,7 @@ struct ChatView: View {
                 TextField("Type a message...", text: $viewModel.messageText, axis: .vertical)
                     .textFieldStyle(.plain)
                     .padding(10)
-                    .background(Color(.systemGray6))
+                    .background(Color.surfaceSecondary)
                     .cornerRadius(20)
                     .focused($isInputFocused)
                     .onChange(of: viewModel.messageText) { _, _ in
@@ -266,13 +266,13 @@ struct ChatView: View {
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
-            .background(Color(.systemGray6))
+            .background(Color.surfaceSecondary)
             .cornerRadius(16)
             
             Spacer()
         }
     }
-    
+
     private func connectionStatusBar(text: String, color: Color) -> some View {
         HStack {
             ProgressView()

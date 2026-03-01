@@ -71,13 +71,13 @@ struct HomeView: View {
                             VStack(spacing: 20) {
                                 ZStack {
                                     Circle()
-                                        .fill(Color.tealPurpleGradient)
+                                        .fill(LinearGradient.brandGradient)
                                         .frame(width: 100, height: 100)
                                         .blur(radius: 30)
                                     
                                     Image(systemName: "globe.americas.fill")
                                         .font(.system(size: 60))
-                                        .foregroundStyle(Color.tealPurpleGradient)
+                                        .foregroundStyle(LinearGradient.brandGradient)
                                         .accessibilityHidden(true)
                                 }
                                 
