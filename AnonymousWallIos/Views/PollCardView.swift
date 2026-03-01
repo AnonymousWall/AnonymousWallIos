@@ -93,7 +93,7 @@ struct PollCardView: View {
         .padding(.vertical, 8)
         .padding(.horizontal, 2)
         .onChange(of: poll) { _, newPoll in
-            pollViewModel.updatePoll(newPoll)
+            pollViewModel.updatePoll(newPoll, postId: postId, authState: authState)
         }
     }
 }

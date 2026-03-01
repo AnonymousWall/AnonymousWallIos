@@ -258,6 +258,85 @@ struct PollViewModelTests {
         #expect(vm.poll?.totalVotes == 0)
         vm.isVoting = false
     }
+
+    // MARK: - userViewedResults flag
+
+    @Test func testUserViewedResultsSetAfterLoadResults() async {
+        let mockService = MockPostService()
+        mockService.mockPollDTO = makePoll(totalVotes: 3, resultsVisible: true)
+
+        let vm = PollViewModel(poll: makePoll(), postService: mockService)
+        #expect(vm.userViewedResults == false)
+
+        await vm.loadResults(postId: UUID(), authState: makeAuthState())
+
+        #expect(vm.userViewedResults == true)
+    }
+
+    @Test func testUserViewedResultsSetAfterSuccessfulVote() async {
+        let mockService = MockPostService()
+        let optionId = UUID()
+        mockService.mockPollDTO = makePoll(totalVotes: 1, userVotedOptionId: optionId, resultsVisible: true)
+
+        let vm = PollViewModel(poll: makePoll(), postService: mockService)
+        #expect(vm.userViewedResults == false)
+
+        await vm.vote(postId: UUID(), optionId: optionId, authState: makeAuthState())
+
+        #expect(vm.userViewedResults == true)
+    }
+
+    @Test func testUpdatePollTriggersBackgroundRefetchWhenUserViewedResults() async {
+        // Scenario: UserB taps "View Results" (resultsVisible=true, 0 votes),
+        // then UserA votes on the server. UserB pulls to refresh — the list
+        // endpoint returns resultsVisible=false and voteCount=nil. The ViewModel
+        // must silently re-call getPoll(viewResults:true) to fetch fresh
+        // percentages.
+        let mockService = MockPostService()
+        // Step 1: simulate user tapping "View Results" — sets userViewedResults=true
+        let initialOption = makeOption(text: "A", voteCount: 0, percentage: 0.0)
+        mockService.mockPollDTO = makePoll(options: [initialOption], totalVotes: 0, resultsVisible: true)
+        let vm = PollViewModel(poll: makePoll(), postService: mockService)
+        let postId = UUID()
+        await vm.loadResults(postId: postId, authState: makeAuthState())
+        #expect(vm.userViewedResults == true)
+
+        // Step 2: reset tracking, then simulate pull-to-refresh delivering stale list data
+        mockService.resetCallTracking()
+        let updatedOption = makeOption(text: "A", voteCount: 1, percentage: 100.0)
+        mockService.mockPollDTO = makePoll(options: [updatedOption], totalVotes: 1, resultsVisible: true)
+
+        let staleFreshOption = makeOption(text: "A")     // voteCount: nil (list endpoint)
+        let stalePoll = makePoll(options: [staleFreshOption], totalVotes: 1, resultsVisible: false)
+        vm.updatePoll(stalePoll, postId: postId, authState: makeAuthState())
+
+        // Poll until the background task completes (up to 500ms)
+        for _ in 0..<50 {
+            if mockService.getPollCalled { break }
+            try? await Task.sleep(nanoseconds: 10_000_000) // 10ms increments
+        }
+
+        // Background getPoll should have been called with viewResults=true
+        #expect(mockService.getPollCalled == true)
+        #expect(mockService.getPollLastViewResults == true)
+        // Poll should now reflect the fresh percentages
+        #expect(vm.poll?.options.first?.percentage == 100.0)
+        #expect(vm.poll?.totalVotes == 1)
+    }
+
+    @Test func testUpdatePollDoesNotRefetchWhenUserHasNotViewedResults() {
+        // No re-fetch should be triggered when user never tapped View Results
+        let mockService = MockPostService()
+        let localPoll = makePoll(totalVotes: 0, resultsVisible: true)
+        let vm = PollViewModel(poll: localPoll, postService: mockService)
+        // userViewedResults is false by default
+
+        let stalePoll = makePoll(totalVotes: 1, resultsVisible: false)
+        vm.updatePoll(stalePoll, postId: UUID(), authState: makeAuthState())
+
+        #expect(mockService.getPollCalled == false)
+    }
+
     // MARK: - Unauthenticated
 
     @Test func testVoteWithoutAuthSetsError() async {

@@ -62,6 +62,7 @@ class MockPostService: PostServiceProtocol {
     var createPollPostCalled = false
     var votePollCalled = false
     var getPollCalled = false
+    var getPollLastViewResults: Bool?
     
     // MARK: - Configurable Behavior
     
@@ -475,6 +476,7 @@ class MockPostService: PostServiceProtocol {
     
     func getPoll(postId: UUID, viewResults: Bool, token: String, userId: String) async throws -> PollDTO {
         getPollCalled = true
+        getPollLastViewResults = viewResults
         
         switch getPollBehavior {
         case .success:
@@ -510,6 +512,7 @@ class MockPostService: PostServiceProtocol {
         createPollPostCalled = false
         votePollCalled = false
         getPollCalled = false
+        getPollLastViewResults = nil
     }
     
     /// Reset all behaviors to success

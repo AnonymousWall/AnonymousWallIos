@@ -16,12 +16,25 @@ class PollViewModel: ObservableObject {
     
     // Track which option is being voted on to show per-option loading
     @Published var votingOptionId: UUID?
-    
+
+    // Set to true when the user taps "View Results" or casts a vote.
+    // Used to trigger a silent background re-fetch after pull-to-refresh
+    // delivers vote-count-free list data so percentages stay fresh.
+    private(set) var userViewedResults = false
+
+    // Holds the latest background re-fetch task so it can be cancelled when
+    // a new refresh arrives or the ViewModel is deallocated.
+    private var backgroundRefetchTask: Task<Void, Never>?
+
     private let postService: PostServiceProtocol
     
     init(poll: PollDTO? = nil, postService: PostServiceProtocol = PostService.shared) {
         self.poll = poll
         self.postService = postService
+    }
+
+    deinit {
+        backgroundRefetchTask?.cancel()
     }
     
     // MARK: - Vote
@@ -41,6 +54,7 @@ class PollViewModel: ObservableObject {
         do {
             let updatedPoll = try await postService.votePoll(postId: postId, optionId: optionId, token: token, userId: userId)
             poll = updatedPoll
+            userViewedResults = true
         } catch NetworkError.conflict {
             // User already voted — silently refresh without showing error
             await loadResults(postId: postId, viewResults: false, authState: authState)
@@ -56,6 +70,7 @@ class PollViewModel: ObservableObject {
     
     /// Load poll results with viewResults=true (shows vote counts and percentages).
     func loadResults(postId: UUID, authState: AuthState) async {
+        userViewedResults = true
         await loadResults(postId: postId, viewResults: true, authState: authState)
     }
     
@@ -67,7 +82,11 @@ class PollViewModel: ObservableObject {
     /// a stale server snapshot that has resultsVisible: false is NOT allowed
     /// to clobber the local voted state — only totalVotes is updated so that
     /// votes from other users are still reflected.
-    func updatePoll(_ incoming: PollDTO) {
+    /// When `userViewedResults` is true and the incoming snapshot carries no
+    /// vote counts (list endpoint omits them for non-voters), a silent
+    /// background re-fetch with viewResults=true is fired so that option
+    /// percentages stay fresh without blocking the UI.
+    func updatePoll(_ incoming: PollDTO, postId: UUID? = nil, authState: AuthState? = nil) {
         guard !isVoting else { return }
 
         if let current = poll, current.resultsVisible && !incoming.resultsVisible {
@@ -85,6 +104,19 @@ class PollViewModel: ObservableObject {
                 userVotedOptionId: current.userVotedOptionId,
                 resultsVisible: current.resultsVisible
             )
+            // The list endpoint never sends voteCount for non-voters, so
+            // stale 0% percentages can linger after other users have voted.
+            // When the user already explicitly viewed results this session,
+            // re-fetch silently to refresh the percentages.
+            if userViewedResults,
+               !incoming.options.isEmpty,
+               incoming.options.first?.voteCount == nil,
+               let postId, let authState {
+                backgroundRefetchTask?.cancel()
+                backgroundRefetchTask = Task {
+                    await loadResults(postId: postId, viewResults: true, silent: true, authState: authState)
+                }
+            }
             return
         }
 
@@ -93,11 +125,11 @@ class PollViewModel: ObservableObject {
     
     // MARK: - Private Helpers
     
-    private func loadResults(postId: UUID, viewResults: Bool, authState: AuthState) async {
+    private func loadResults(postId: UUID, viewResults: Bool, silent: Bool = false, authState: AuthState) async {
         guard let token = authState.authToken,
               let userId = authState.currentUser?.id else { return }
         
-        if viewResults {
+        if viewResults && !silent {
             isLoadingResults = true
         }
         
@@ -105,11 +137,13 @@ class PollViewModel: ObservableObject {
             let updatedPoll = try await postService.getPoll(postId: postId, viewResults: viewResults, token: token, userId: userId)
             poll = updatedPoll
         } catch {
-            if viewResults {
+            if viewResults && !silent {
                 errorMessage = error.localizedDescription
             }
         }
         
-        isLoadingResults = false
+        if !silent {
+            isLoadingResults = false
+        }
     }
 }
