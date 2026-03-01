@@ -37,15 +37,7 @@ struct GradientButton: View {
             .frame(height: 52)
             .foregroundColor(.white)
         }
-        .background(
-            Group {
-                if isDisabled {
-                    AnyShapeStyle(Color.surfaceTertiary)
-                } else {
-                    AnyShapeStyle(LinearGradient.brandGradient)
-                }
-            }
-        )
+        .background(isDisabled ? AnyShapeStyle(Color.surfaceTertiary) : AnyShapeStyle(LinearGradient.brandGradient))
         .cornerRadius(Radius.lg)
         .opacity(isDisabled ? 0.35 : 1.0)
         .disabled(isDisabled || isLoading)
