@@ -52,7 +52,7 @@ struct PollCardView: View {
                         .foregroundColor(.secondary)
                         .accessibilityLabel("\(poll.totalVotes) votes")
 
-                    if !poll.resultsVisible && !pollViewModel.isLoadingResults {
+                    if !poll.resultsVisible {
                         Spacer()
                         Button {
                             Task {

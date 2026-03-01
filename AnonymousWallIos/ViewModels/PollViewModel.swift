@@ -80,11 +80,4 @@ class PollViewModel: ObservableObject {
         
         isLoadingResults = false
     }
-    
-    /// Returns true when an error represents an HTTP 409 Conflict.
-    private func isConflictError(_ error: Error) -> Bool {
-        if case NetworkError.conflict = error { return true }
-        let description = error.localizedDescription.lowercased()
-        return description.contains("409") || description.contains("conflict") || description.contains("already voted")
-    }
 }

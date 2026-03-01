@@ -1,0 +1,160 @@
+//
+//  PollViewModelTests.swift
+//  AnonymousWallIosTests
+//
+//  Tests for PollViewModel - voting and result loading logic
+//
+
+import Testing
+@testable import AnonymousWallIos
+
+@MainActor
+struct PollViewModelTests {
+
+    // MARK: - Helpers
+
+    private func makeOption(
+        id: UUID = UUID(),
+        text: String = "Option",
+        order: Int = 0,
+        voteCount: Int? = nil,
+        percentage: Double? = nil
+    ) -> PollOptionDTO {
+        PollOptionDTO(id: id, optionText: text, displayOrder: order, voteCount: voteCount, percentage: percentage)
+    }
+
+    private func makePoll(
+        options: [PollOptionDTO] = [],
+        totalVotes: Int = 0,
+        userVotedOptionId: UUID? = nil,
+        resultsVisible: Bool = false
+    ) -> PollDTO {
+        PollDTO(options: options, totalVotes: totalVotes, userVotedOptionId: userVotedOptionId, resultsVisible: resultsVisible)
+    }
+
+    private func makeAuthState() -> AuthState {
+        let state = AuthState(loadPersistedState: false)
+        state.authToken = "test-token"
+        state.currentUser = User(
+            id: "user-1",
+            email: "user@test.com",
+            profileName: "Test",
+            isVerified: true,
+            passwordSet: true,
+            createdAt: "2026-01-01T00:00:00Z"
+        )
+        return state
+    }
+
+    // MARK: - Initialization
+
+    @Test func testInitializationWithPoll() {
+        let poll = makePoll(totalVotes: 5)
+        let vm = PollViewModel(poll: poll)
+        #expect(vm.poll?.totalVotes == 5)
+        #expect(vm.isVoting == false)
+        #expect(vm.isLoadingResults == false)
+        #expect(vm.errorMessage == nil)
+    }
+
+    // MARK: - Vote Success
+
+    @Test func testVoteSuccessUpdatesPoll() async {
+        let mockService = MockPostService()
+        let optionId = UUID()
+        let resultPoll = makePoll(totalVotes: 1, userVotedOptionId: optionId, resultsVisible: true)
+        mockService.mockPollDTO = resultPoll
+
+        let vm = PollViewModel(poll: makePoll(), postService: mockService)
+        let postId = UUID()
+        let authState = makeAuthState()
+
+        await vm.vote(postId: postId, optionId: optionId, authState: authState)
+
+        #expect(mockService.votePollCalled == true)
+        #expect(vm.poll?.userVotedOptionId == optionId)
+        #expect(vm.isVoting == false)
+        #expect(vm.errorMessage == nil)
+    }
+
+    // MARK: - Vote Conflict (409)
+
+    @Test func testVoteConflictSilentlyRefreshesPoll() async {
+        let mockService = MockPostService()
+        // votePoll will throw a 409 conflict
+        mockService.votePollBehavior = .failure(NetworkError.conflict("already voted"))
+        // getPoll will return updated poll
+        let refreshedPoll = makePoll(totalVotes: 3, resultsVisible: false)
+        mockService.mockPollDTO = refreshedPoll
+        mockService.getPollBehavior = .success
+
+        let vm = PollViewModel(poll: makePoll(), postService: mockService)
+        let authState = makeAuthState()
+
+        await vm.vote(postId: UUID(), optionId: UUID(), authState: authState)
+
+        #expect(mockService.votePollCalled == true)
+        #expect(mockService.getPollCalled == true)
+        // No error shown
+        #expect(vm.errorMessage == nil)
+        #expect(vm.isVoting == false)
+    }
+
+    // MARK: - Vote Network Error
+
+    @Test func testVoteNetworkErrorSetsErrorMessage() async {
+        let mockService = MockPostService()
+        mockService.votePollBehavior = .failure(NetworkError.noConnection)
+
+        let vm = PollViewModel(poll: makePoll(), postService: mockService)
+        let authState = makeAuthState()
+
+        await vm.vote(postId: UUID(), optionId: UUID(), authState: authState)
+
+        #expect(vm.errorMessage != nil)
+        #expect(vm.isVoting == false)
+    }
+
+    // MARK: - Load Results
+
+    @Test func testLoadResultsUpdatesPoll() async {
+        let mockService = MockPostService()
+        let resultPoll = makePoll(totalVotes: 10, resultsVisible: true)
+        mockService.mockPollDTO = resultPoll
+
+        let vm = PollViewModel(poll: makePoll(), postService: mockService)
+        let authState = makeAuthState()
+
+        await vm.loadResults(postId: UUID(), authState: authState)
+
+        #expect(mockService.getPollCalled == true)
+        #expect(vm.poll?.resultsVisible == true)
+        #expect(vm.isLoadingResults == false)
+        #expect(vm.errorMessage == nil)
+    }
+
+    @Test func testLoadResultsFailureSetsErrorMessage() async {
+        let mockService = MockPostService()
+        mockService.getPollBehavior = .failure(NetworkError.noConnection)
+
+        let vm = PollViewModel(poll: makePoll(), postService: mockService)
+        let authState = makeAuthState()
+
+        await vm.loadResults(postId: UUID(), authState: authState)
+
+        #expect(vm.errorMessage != nil)
+        #expect(vm.isLoadingResults == false)
+    }
+
+    // MARK: - Unauthenticated
+
+    @Test func testVoteWithoutAuthSetsError() async {
+        let vm = PollViewModel(poll: makePoll())
+        let unauthState = AuthState(loadPersistedState: false)
+
+        await vm.vote(postId: UUID(), optionId: UUID(), authState: unauthState)
+
+        #expect(vm.errorMessage == "Not authenticated")
+        #expect(vm.isVoting == false)
+    }
+}
