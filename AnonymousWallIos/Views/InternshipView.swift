@@ -40,6 +40,7 @@ struct InternshipView: View {
                     HapticFeedback.selection()
                     activeViewModel.loadInternships(authState: authState)
                 }
+                .tint(.accentPurple)
 
                 // Sort picker
                 HStack {
@@ -75,14 +76,14 @@ struct InternshipView: View {
                             VStack(spacing: 16) {
                                 Image(systemName: "briefcase.fill")
                                     .font(.system(size: 60))
-                                    .foregroundColor(.gray)
+                                    .foregroundColor(.textSecondary)
                                     .accessibilityHidden(true)
                                 Text("No internships yet")
                                     .font(.headline)
-                                    .foregroundColor(.gray)
+                                    .foregroundColor(.textSecondary)
                                 Text("Be the first to post an opportunity!")
                                     .font(.subheadline)
-                                    .foregroundColor(.gray)
+                                    .foregroundColor(.textSecondary)
                             }
                             .accessibilityElement(children: .combine)
                             .accessibilityLabel("No internships yet. Be the first to post an opportunity!")
@@ -132,7 +133,7 @@ struct InternshipView: View {
 
                 if let errorMessage = activeViewModel.errorMessage {
                     Text(errorMessage)
-                        .foregroundColor(.red)
+                        .foregroundColor(.accentRed)
                         .font(.caption)
                         .padding()
                 }
@@ -186,6 +187,7 @@ struct InternshipView: View {
                 }
             }
         }
+        .background(Color.appBackground.ignoresSafeArea())
         .sheet(isPresented: $showCreateInternship) {
             CreateInternshipView {
                 activeViewModel.loadInternships(authState: authState)

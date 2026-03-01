@@ -26,7 +26,7 @@ struct HomeView: View {
                             .foregroundColor(.orange)
                         Text("Please set up your password to secure your account")
                             .font(.caption)
-                            .foregroundColor(.primary)
+                            .foregroundColor(.textPrimary)
                         Spacer()
                         Button("Set Now") {
                             coordinator.navigate(to: .setPassword)
@@ -71,23 +71,23 @@ struct HomeView: View {
                             VStack(spacing: 20) {
                                 ZStack {
                                     Circle()
-                                        .fill(Color.tealPurpleGradient)
+                                        .fill(LinearGradient.brandGradient)
                                         .frame(width: 100, height: 100)
                                         .blur(radius: 30)
                                     
                                     Image(systemName: "globe.americas.fill")
                                         .font(.system(size: 60))
-                                        .foregroundStyle(Color.tealPurpleGradient)
+                                        .foregroundStyle(LinearGradient.brandGradient)
                                         .accessibilityHidden(true)
                                 }
                                 
                                 VStack(spacing: 8) {
                                     Text("No national posts yet")
                                         .font(.title3.bold())
-                                        .foregroundColor(.primary)
+                                        .foregroundColor(.textPrimary)
                                     Text("Be the first to post!")
                                         .font(.body)
-                                        .foregroundColor(.secondary)
+                                        .foregroundColor(.textSecondary)
                                 }
                                 .accessibilityElement(children: .combine)
                                 .accessibilityLabel("No national posts yet. Be the first to post!")
@@ -136,11 +136,12 @@ struct HomeView: View {
                 .refreshable {
                     await viewModel.refreshPosts(authState: authState)
                 }
+                .tint(.accentPurple)
                 
                 // Error message
                 if let errorMessage = viewModel.errorMessage {
                     Text(errorMessage)
-                        .foregroundColor(.red)
+                        .foregroundColor(.accentRed)
                         .font(.caption)
                         .padding()
                 }
@@ -174,6 +175,7 @@ struct HomeView: View {
                 }
             }
         }
+        .background(Color.appBackground.ignoresSafeArea())
         .sheet(isPresented: $coordinator.showSetPassword) {
             SetPasswordView(authService: AuthService.shared)
         }

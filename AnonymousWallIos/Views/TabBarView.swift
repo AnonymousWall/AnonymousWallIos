@@ -62,7 +62,7 @@ struct TabBarView: View {
                 }
                 .tag(6)
         }
-        .accentColor(.primaryPurple)
+        .accentColor(.accentPurple)
         .animation(.easeInOut(duration: 0.2), value: coordinator.selectedTab)
         .onChange(of: coordinator.selectedTab) { _, _ in
             HapticFeedback.selection()

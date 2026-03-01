@@ -24,9 +24,9 @@ struct RegistrationView: View {
                     VStack(spacing: 16) {
                         ZStack {
                             Circle()
-                                .fill(Color.tealPurpleGradient)
+                                .fill(LinearGradient.brandGradient)
                                 .frame(width: 100, height: 100)
-                                .shadow(color: Color.vibrantTeal.opacity(0.3), radius: 10, x: 0, y: 5)
+                                .shadow(color: Color.accentPurple.opacity(0.3), radius: 10, x: 0, y: 5)
                             
                             Image(systemName: "person.circle.fill")
                                 .resizable()
@@ -36,11 +36,12 @@ struct RegistrationView: View {
                         
                         VStack(spacing: 8) {
                             Text("Create Account")
-                                .font(.system(size: 32, weight: .bold))
+                                .font(.displayLarge)
+                                .foregroundColor(.textPrimary)
                             
                             Text(viewModel.codeSent ? "Enter the code sent to your email" : "Enter your email to get started")
                                 .font(.system(size: 16))
-                                .foregroundColor(.secondary)
+                                .foregroundColor(.textSecondary)
                                 .multilineTextAlignment(.center)
                                 .padding(.horizontal)
                         }
@@ -51,7 +52,7 @@ struct RegistrationView: View {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Email")
                             .font(.system(size: 15, weight: .semibold))
-                            .foregroundColor(.primary)
+                            .foregroundColor(.textPrimary)
                         
                         HStack {
                             TextField("Enter your email", text: $viewModel.email)
@@ -60,7 +61,7 @@ struct RegistrationView: View {
                                 .autocorrectionDisabled()
                                 .disabled(viewModel.codeSent)
                                 .padding()
-                                .background(Color(.systemGray6))
+                                .background(Color.surfaceSecondary)
                                 .cornerRadius(12)
                             
                             if !viewModel.codeSent {
@@ -83,10 +84,10 @@ struct RegistrationView: View {
                                 }
                                 .padding(.horizontal, 18)
                                 .padding(.vertical, 14)
-                                .background((viewModel.email.isEmpty || viewModel.resendCountdown > 0) ? AnyShapeStyle(Color.gray) : AnyShapeStyle(Color.tealPurpleGradient))
+                                .background((viewModel.email.isEmpty || viewModel.resendCountdown > 0) ? AnyShapeStyle(Color.gray) : AnyShapeStyle(LinearGradient.brandGradient))
                                 .foregroundColor(.white)
                                 .cornerRadius(12)
-                                .shadow(color: (viewModel.email.isEmpty || viewModel.resendCountdown > 0) ? Color.clear : Color.vibrantTeal.opacity(0.3), radius: 4, x: 0, y: 2)
+                                .shadow(color: (viewModel.email.isEmpty || viewModel.resendCountdown > 0) ? Color.clear : Color.accentPurple.opacity(0.3), radius: 4, x: 0, y: 2)
                                 .disabled(viewModel.email.isEmpty || viewModel.isSendingCode || viewModel.resendCountdown > 0)
                             }
                         }
@@ -98,13 +99,13 @@ struct RegistrationView: View {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Verification Code")
                             .font(.headline)
-                            .foregroundColor(.primary)
+                            .foregroundColor(.textPrimary)
                         
                         TextField("Enter 6-digit code", text: $viewModel.verificationCode)
                             .keyboardType(.numberPad)
                             .autocorrectionDisabled()
                             .padding()
-                            .background(Color(.systemGray6))
+                            .background(Color.surfaceSecondary)
                             .cornerRadius(10)
                     }
                     .padding(.horizontal)
@@ -113,11 +114,11 @@ struct RegistrationView: View {
                         if viewModel.resendCountdown > 0 {
                             Text("Resend Code in \(viewModel.resendCountdown)s")
                                 .font(.caption)
-                                .foregroundColor(.gray)
+                                .foregroundColor(.textSecondary)
                         } else {
                             Text("Resend Code")
                                 .font(.caption)
-                                .foregroundColor(.blue)
+                                .foregroundColor(.accentPurple)
                         }
                     }
                     .disabled(viewModel.resendCountdown > 0)
@@ -126,7 +127,7 @@ struct RegistrationView: View {
                 // Error message
                 if let errorMessage = viewModel.errorMessage {
                     Text(errorMessage)
-                        .foregroundColor(.red)
+                        .foregroundColor(.accentRed)
                         .font(.caption)
                         .padding(.horizontal)
                 }
@@ -156,11 +157,11 @@ struct RegistrationView: View {
                     .background(
                         viewModel.verificationCode.isEmpty 
                         ? AnyShapeStyle(Color.gray)
-                        : AnyShapeStyle(Color.tealPurpleGradient)
+                        : AnyShapeStyle(LinearGradient.brandGradient)
                     )
                     .foregroundColor(.white)
                     .cornerRadius(16)
-                    .shadow(color: viewModel.verificationCode.isEmpty ? Color.clear : Color.vibrantTeal.opacity(0.3), radius: 8, x: 0, y: 4)
+                    .shadow(color: viewModel.verificationCode.isEmpty ? Color.clear : Color.accentPurple.opacity(0.3), radius: 8, x: 0, y: 4)
                     .padding(.horizontal)
                     .disabled(viewModel.verificationCode.isEmpty || viewModel.isLoading)
                 }
@@ -170,15 +171,17 @@ struct RegistrationView: View {
                 // Login link
                 HStack {
                     Text("Already have an account?")
-                        .foregroundColor(.gray)
+                        .foregroundColor(.textSecondary)
                     Button("Login") {
                         coordinator.navigate(to: .login)
                     }
                     .fontWeight(.semibold)
+                    .foregroundColor(.accentPurple)
                 }
                 .padding(.bottom, 20)
             }
         }
+        .background(Color.appBackground.ignoresSafeArea())
         .navigationBarTitleDisplayMode(.inline)
         .navigationTitle("Create Account")
         .onDisappear {

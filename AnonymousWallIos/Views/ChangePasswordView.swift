@@ -24,7 +24,7 @@ struct ChangePasswordView: View {
                     Image(systemName: "lock.shield")
                         .resizable()
                         .frame(width: 60, height: 60)
-                        .foregroundColor(.blue)
+                        .foregroundColor(.accentPurple)
                     
                     Text("Change Password")
                         .font(.largeTitle)
@@ -32,7 +32,7 @@ struct ChangePasswordView: View {
                     
                     Text("Update your password")
                         .font(.subheadline)
-                        .foregroundColor(.gray)
+                        .foregroundColor(.textSecondary)
                 }
                 .padding(.top, 40)
                 
@@ -42,12 +42,12 @@ struct ChangePasswordView: View {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Current Password")
                         .font(.headline)
-                        .foregroundColor(.primary)
+                        .foregroundColor(.textPrimary)
                     
                     SecureField("Enter current password", text: $viewModel.oldPassword)
                         .autocorrectionDisabled()
                         .padding()
-                        .background(Color(.systemGray6))
+                        .background(Color.surfaceSecondary)
                         .cornerRadius(10)
                 }
                 .padding(.horizontal)
@@ -56,17 +56,17 @@ struct ChangePasswordView: View {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("New Password")
                         .font(.headline)
-                        .foregroundColor(.primary)
+                        .foregroundColor(.textPrimary)
                     
                     SecureField("Enter new password", text: $viewModel.newPassword)
                         .autocorrectionDisabled()
                         .padding()
-                        .background(Color(.systemGray6))
+                        .background(Color.surfaceSecondary)
                         .cornerRadius(10)
                     
                     Text("Password must be at least 8 characters")
                         .font(.caption)
-                        .foregroundColor(.gray)
+                        .foregroundColor(.textSecondary)
                 }
                 .padding(.horizontal)
                 
@@ -74,12 +74,12 @@ struct ChangePasswordView: View {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Confirm New Password")
                         .font(.headline)
-                        .foregroundColor(.primary)
+                        .foregroundColor(.textPrimary)
                     
                     SecureField("Confirm new password", text: $viewModel.confirmPassword)
                         .autocorrectionDisabled()
                         .padding()
-                        .background(Color(.systemGray6))
+                        .background(Color.surfaceSecondary)
                         .cornerRadius(10)
                 }
                 .padding(.horizontal)
@@ -87,7 +87,7 @@ struct ChangePasswordView: View {
                 // Error message
                 if let errorMessage = viewModel.errorMessage {
                     Text(errorMessage)
-                        .foregroundColor(.red)
+                        .foregroundColor(.accentRed)
                         .font(.caption)
                         .padding(.horizontal)
                 }
@@ -107,7 +107,7 @@ struct ChangePasswordView: View {
                     }
                 }
                 .frame(height: 50)
-                .background(viewModel.isButtonDisabled ? Color.gray : Color.blue)
+                .background(viewModel.isButtonDisabled ? AnyShapeStyle(Color.gray) : AnyShapeStyle(LinearGradient.brandGradient))
                 .foregroundColor(.white)
                 .cornerRadius(10)
                 .padding(.horizontal)
@@ -118,11 +118,12 @@ struct ChangePasswordView: View {
                 // Cancel button
                 Button(action: { dismiss() }) {
                     Text("Cancel")
-                        .foregroundColor(.gray)
+                        .foregroundColor(.textSecondary)
                 }
                 .padding(.bottom, 20)
             }
             .navigationBarHidden(true)
+            .background(Color.appBackground.ignoresSafeArea())
             .alert("Password Changed", isPresented: $viewModel.showSuccess) {
                 Button("OK") {
                     dismiss()

@@ -14,7 +14,7 @@ struct AuthenticationView: View {
         NavigationStack(path: $coordinator.path) {
             ZStack {
                 // Gradient background
-                Color.purplePinkGradient
+                LinearGradient.brandGradient
                     .ignoresSafeArea()
                 
                 VStack(spacing: 40) {
@@ -65,7 +65,7 @@ struct AuthenticationView: View {
                             .frame(maxWidth: .infinity)
                             .frame(height: 56)
                             .background(Color.white)
-                            .foregroundColor(.primaryPurple)
+                            .foregroundColor(.accentPurple)
                             .cornerRadius(16)
                             .shadow(color: Color.black.opacity(0.15), radius: 10, x: 0, y: 5)
                         }

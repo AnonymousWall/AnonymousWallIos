@@ -41,7 +41,7 @@ struct CreateInternshipView: View {
                         label: "Post Internship",
                         isLoading: viewModel.isPosting,
                         isDisabled: viewModel.isSubmitDisabled,
-                        gradient: Color.tealPurpleGradient,
+                        gradient: LinearGradient.brandGradient,
                         action: {
                             HapticFeedback.light()
                             viewModel.createInternship(authState: authState) {
@@ -58,7 +58,7 @@ struct CreateInternshipView: View {
                         : "Double tap to create your posting")
                 }
             }
-            .background(Color(.systemGroupedBackground))
+            .background(Color.appBackground.ignoresSafeArea())
             .navigationTitle("New Internship")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

@@ -24,7 +24,7 @@ struct SetPasswordView: View {
                     Image(systemName: "key.fill")
                         .resizable()
                         .frame(width: 60, height: 60)
-                        .foregroundColor(.blue)
+                        .foregroundColor(.accentPurple)
                     
                     Text("Set Your Password")
                         .font(.largeTitle)
@@ -32,7 +32,7 @@ struct SetPasswordView: View {
                     
                     Text("Create a secure password for your account")
                         .font(.subheadline)
-                        .foregroundColor(.gray)
+                        .foregroundColor(.textSecondary)
                         .multilineTextAlignment(.center)
                         .padding(.horizontal)
                 }
@@ -44,17 +44,17 @@ struct SetPasswordView: View {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Password")
                         .font(.headline)
-                        .foregroundColor(.primary)
+                        .foregroundColor(.textPrimary)
                     
                     SecureField("Enter password", text: $viewModel.password)
                         .autocorrectionDisabled()
                         .padding()
-                        .background(Color(.systemGray6))
+                        .background(Color.surfaceSecondary)
                         .cornerRadius(10)
                     
                     Text("Password must be at least 8 characters")
                         .font(.caption)
-                        .foregroundColor(.gray)
+                        .foregroundColor(.textSecondary)
                 }
                 .padding(.horizontal)
                 
@@ -62,12 +62,12 @@ struct SetPasswordView: View {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Confirm Password")
                         .font(.headline)
-                        .foregroundColor(.primary)
+                        .foregroundColor(.textPrimary)
                     
                     SecureField("Confirm password", text: $viewModel.confirmPassword)
                         .autocorrectionDisabled()
                         .padding()
-                        .background(Color(.systemGray6))
+                        .background(Color.surfaceSecondary)
                         .cornerRadius(10)
                 }
                 .padding(.horizontal)
@@ -75,7 +75,7 @@ struct SetPasswordView: View {
                 // Error message
                 if let errorMessage = viewModel.errorMessage {
                     Text(errorMessage)
-                        .foregroundColor(.red)
+                        .foregroundColor(.accentRed)
                         .font(.caption)
                         .padding(.horizontal)
                 }
@@ -98,7 +98,7 @@ struct SetPasswordView: View {
                     }
                 }
                 .frame(height: 50)
-                .background(viewModel.isButtonDisabled ? Color.gray : Color.blue)
+                .background(viewModel.isButtonDisabled ? AnyShapeStyle(Color.gray) : AnyShapeStyle(LinearGradient.brandGradient))
                 .foregroundColor(.white)
                 .cornerRadius(10)
                 .padding(.horizontal)
@@ -109,11 +109,12 @@ struct SetPasswordView: View {
                 // Skip for now option
                 Button(action: { dismiss() }) {
                     Text("Skip for now")
-                        .foregroundColor(.gray)
+                        .foregroundColor(.textSecondary)
                 }
                 .padding(.bottom, 20)
             }
             .navigationBarHidden(true)
+            .background(Color.appBackground.ignoresSafeArea())
             .alert("Password Set Successfully", isPresented: $viewModel.showSuccess) {
                 Button("OK") {
                     authState.updatePasswordSetupStatus(completed: true)

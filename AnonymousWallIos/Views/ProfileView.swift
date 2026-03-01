@@ -40,14 +40,14 @@ struct ProfileView: View {
                             .foregroundColor(.orange)
                         Text("Please set up your password to secure your account")
                             .font(.caption)
-                            .foregroundColor(.primary)
+                            .foregroundColor(.textPrimary)
                         Spacer()
                         Button("Set Now") {
                             coordinator.navigate(to: .setPassword)
                         }
                         .font(.caption)
                         .fontWeight(.semibold)
-                        .foregroundColor(.blue)
+                        .foregroundColor(.accentPurple)
                     }
                     .padding()
                     .background(Color.orange.opacity(0.1))
@@ -60,9 +60,9 @@ struct ProfileView: View {
                     // Avatar with gradient background
                     ZStack {
                         Circle()
-                            .fill(Color.purplePinkGradient)
+                            .fill(LinearGradient.brandGradient)
                             .frame(width: 90, height: 90)
-                            .shadow(color: Color.primaryPurple.opacity(0.3), radius: 10, x: 0, y: 5)
+                            .shadow(color: Color.accentPurple.opacity(0.3), radius: 10, x: 0, y: 5)
                         
                         Image(systemName: "person.circle.fill")
                             .font(.system(size: 80))
@@ -72,8 +72,8 @@ struct ProfileView: View {
                     
                     if let email = authState.currentUser?.email {
                         Text(email)
-                            .font(.body.weight(.semibold))
-                            .foregroundColor(.primary)
+                            .font(.displayLarge)
+                            .foregroundColor(.textPrimary)
                             .accessibilityLabel("Email: \(email)")
                     }
                     
@@ -81,14 +81,14 @@ struct ProfileView: View {
                         HStack(spacing: 6) {
                             Image(systemName: "person.fill")
                                 .font(.caption)
-                                .foregroundColor(.vibrantTeal)
+                                .foregroundColor(.accentBlue)
                             Text(profileName)
                                 .font(.subheadline.weight(.medium))
-                                .foregroundColor(.secondary)
+                                .foregroundColor(.textSecondary)
                         }
                         .padding(.horizontal, 14)
                         .padding(.vertical, 6)
-                        .background(Color.vibrantTeal.opacity(0.15))
+                        .background(Color.accentBlue.opacity(0.15))
                         .cornerRadius(12)
                         .accessibilityElement(children: .combine)
                         .accessibilityLabel("Profile name: \(profileName)")
@@ -116,7 +116,7 @@ struct ProfileView: View {
                 HStack {
                     Text("Sort by:")
                         .font(.subheadline)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(.textSecondary)
                     
                     Menu {
                         if viewModel.selectedSegment == 0 {
@@ -213,14 +213,14 @@ struct ProfileView: View {
                     } label: {
                         HStack {
                             Text(currentSortDisplayName)
-                                .foregroundColor(.blue)
+                                .foregroundColor(.accentPurple)
                             Image(systemName: "chevron.down")
                                 .font(.caption)
-                                .foregroundColor(.blue)
+                                .foregroundColor(.accentPurple)
                         }
                         .padding(.horizontal, 12)
                         .padding(.vertical, 6)
-                        .background(Color(.systemGray6))
+                        .background(Color.surfaceSecondary)
                         .cornerRadius(8)
                     }
                     .accessibilityLabel("Sort by")
@@ -259,10 +259,10 @@ struct ProfileView: View {
                                 VStack(spacing: 8) {
                                     Text("No posts yet")
                                         .font(.title3.bold())
-                                        .foregroundColor(.primary)
+                                        .foregroundColor(.textPrimary)
                                     Text("Create your first post!")
                                         .font(.body)
-                                        .foregroundColor(.secondary)
+                                        .foregroundColor(.textSecondary)
                                 }
                                 .accessibilityElement(children: .combine)
                                 .accessibilityLabel("No posts yet. Create your first post!")
@@ -307,23 +307,23 @@ struct ProfileView: View {
                             VStack(spacing: 20) {
                                 ZStack {
                                     Circle()
-                                        .fill(Color.tealPurpleGradient)
+                                        .fill(LinearGradient.brandGradient)
                                         .frame(width: 100, height: 100)
                                         .blur(radius: 30)
                                     
                                     Image(systemName: "bubble.left.fill")
                                         .font(.system(size: 60))
-                                        .foregroundStyle(Color.tealPurpleGradient)
+                                        .foregroundStyle(LinearGradient.brandGradient)
                                         .accessibilityHidden(true)
                                 }
                                 
                                 VStack(spacing: 8) {
                                     Text("No comments yet")
                                         .font(.title3.bold())
-                                        .foregroundColor(.primary)
+                                        .foregroundColor(.textPrimary)
                                     Text("Start commenting on posts!")
                                         .font(.body)
-                                        .foregroundColor(.secondary)
+                                        .foregroundColor(.textSecondary)
                                 }
                                 .accessibilityElement(children: .combine)
                                 .accessibilityLabel("No comments yet. Start commenting on posts!")
@@ -383,23 +383,23 @@ struct ProfileView: View {
                             VStack(spacing: 20) {
                                 ZStack {
                                     Circle()
-                                        .fill(Color.tealPurpleGradient)
+                                        .fill(LinearGradient.brandGradient)
                                         .frame(width: 100, height: 100)
                                         .blur(radius: 30)
                                     
                                     Image(systemName: "briefcase.fill")
                                         .font(.system(size: 60))
-                                        .foregroundStyle(Color.tealPurpleGradient)
+                                        .foregroundStyle(LinearGradient.brandGradient)
                                         .accessibilityHidden(true)
                                 }
                                 
                                 VStack(spacing: 8) {
                                     Text("No internship postings yet")
                                         .font(.title3.bold())
-                                        .foregroundColor(.primary)
+                                        .foregroundColor(.textPrimary)
                                     Text("Post your first internship opportunity!")
                                         .font(.body)
-                                        .foregroundColor(.secondary)
+                                        .foregroundColor(.textSecondary)
                                 }
                                 .accessibilityElement(children: .combine)
                                 .accessibilityLabel("No internship postings yet. Post your first internship opportunity!")
@@ -456,10 +456,10 @@ struct ProfileView: View {
                                 VStack(spacing: 8) {
                                     Text("No marketplace listings yet")
                                         .font(.title3.bold())
-                                        .foregroundColor(.primary)
+                                        .foregroundColor(.textPrimary)
                                     Text("List your first item for sale!")
                                         .font(.body)
-                                        .foregroundColor(.secondary)
+                                        .foregroundColor(.textSecondary)
                                 }
                                 .accessibilityElement(children: .combine)
                                 .accessibilityLabel("No marketplace listings yet. List your first item for sale!")
@@ -506,7 +506,7 @@ struct ProfileView: View {
                 // Error message
                 if let errorMessage = viewModel.errorMessage {
                     Text(errorMessage)
-                        .foregroundColor(.red)
+                        .foregroundColor(.accentRed)
                         .font(.caption)
                         .padding()
                 }
@@ -573,6 +573,7 @@ struct ProfileView: View {
                 }
             }
         }
+        .background(Color.appBackground.ignoresSafeArea())
         .sheet(isPresented: $coordinator.showSetPassword) {
             SetPasswordView(authService: AuthService.shared)
         }
@@ -607,7 +608,7 @@ struct ProfileCommentRowView: View {
     
     var parentBadgeColor: Color {
         switch parentType {
-        case "POST": return .vibrantTeal
+        case "POST": return .accentBlue
         case "INTERNSHIP": return .orange
         case "MARKETPLACE": return .green
         default: return .gray
@@ -628,7 +629,7 @@ struct ProfileCommentRowView: View {
             HStack {
                 Text("Comment by Me")
                     .font(.caption)
-                    .foregroundColor(.blue)
+                    .foregroundColor(.accentPurple)
                     .fontWeight(.semibold)
                 
                 // Badge showing parent type
@@ -645,15 +646,15 @@ struct ProfileCommentRowView: View {
                 
                 Text(DateFormatting.formatRelativeTime(comment.createdAt))
                     .font(.caption2)
-                    .foregroundColor(.gray)
+                    .foregroundColor(.textSecondary)
             }
             
             Text(comment.text)
                 .font(.body)
-                .foregroundColor(.primary)
+                .foregroundColor(.textPrimary)
         }
         .padding()
-        .background(Color(.systemGray6))
+        .background(Color.surfacePrimary)
         .cornerRadius(10)
     }
 }

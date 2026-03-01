@@ -21,7 +21,7 @@ struct PollOptionsEditorView: View {
             HStack(spacing: 8) {
                 Image(systemName: "list.bullet.rectangle")
                     .font(.callout)
-                    .foregroundColor(.primaryPurple)
+                    .foregroundColor(.accentPurple)
                     .accessibilityHidden(true)
                 Text("Poll Options")
                     .font(.headline)
@@ -42,9 +42,9 @@ struct PollOptionsEditorView: View {
                 Button(action: onAdd) {
                     HStack(spacing: 6) {
                         Image(systemName: "plus.circle.fill")
-                            .foregroundColor(.primaryPurple)
+                            .foregroundColor(.accentPurple)
                         Text("Add Option")
-                            .foregroundColor(.primaryPurple)
+                            .foregroundColor(.accentPurple)
                             .fontWeight(.medium)
                     }
                     .padding(.vertical, 4)
@@ -77,11 +77,11 @@ private struct PollOptionRow: View {
                 Spacer()
                 Text("\(text.count)/\(maxCharacters)")
                     .font(.caption2)
-                    .foregroundColor(isOverLimit ? .red : .secondary)
+                    .foregroundColor(isOverLimit ? .accentRed : .textSecondary)
                 if canRemove {
                     Button(action: onRemove) {
                         Image(systemName: "minus.circle.fill")
-                            .foregroundColor(.red)
+                            .foregroundColor(.accentRed)
                             .font(.title3)
                     }
                     .accessibilityLabel("Remove \(label)")
@@ -91,11 +91,11 @@ private struct PollOptionRow: View {
             TextField("Enter option text", text: $text)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 10)
-                .background(Color(.secondarySystemGroupedBackground))
+                .background(Color.surfaceSecondary)
                 .cornerRadius(10)
                 .overlay(
                     RoundedRectangle(cornerRadius: 10)
-                        .stroke(isOverLimit ? Color.red : Color(.separator), lineWidth: 0.5)
+                        .stroke(isOverLimit ? Color.accentRed : Color(.separator), lineWidth: 0.5)
                 )
         }
         .accessibilityElement(children: .combine)

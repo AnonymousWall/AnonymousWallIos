@@ -32,7 +32,7 @@ struct MarketplaceDetailView: View {
                             if item.author.id == authState.currentUser?.id {
                                 Text("Listed by Me")
                                     .font(.caption)
-                                    .foregroundColor(.secondary)
+                                    .foregroundColor(.textSecondary)
                             } else {
                                 Button(action: {
                                     HapticFeedback.selection()
@@ -70,7 +70,7 @@ struct MarketplaceDetailView: View {
                         HStack(alignment: .top) {
                             Text(item.title)
                                 .font(.title2.bold())
-                                .foregroundColor(.primary)
+                                .foregroundColor(.textPrimary)
                                 .fixedSize(horizontal: false, vertical: true)
                                 .accessibilityLabel("Item: \(item.title)")
 
@@ -88,20 +88,20 @@ struct MarketplaceDetailView: View {
                                 let display = conditionDisplayName(condition)
                                 Text(display)
                                     .font(.caption)
-                                    .foregroundColor(.secondary)
+                                    .foregroundColor(.textSecondary)
                                     .padding(.horizontal, 8)
                                     .padding(.vertical, 4)
-                                    .background(Color(.systemGray6))
+                                    .background(Color.surfaceSecondary)
                                     .cornerRadius(8)
                                     .accessibilityLabel("Condition: \(display)")
                             }
                             if let category = item.category, !category.isEmpty {
                                 Text(category.capitalized)
                                     .font(.caption)
-                                    .foregroundColor(.secondary)
+                                    .foregroundColor(.textSecondary)
                                     .padding(.horizontal, 8)
                                     .padding(.vertical, 4)
-                                    .background(Color(.systemGray6))
+                                    .background(Color.surfaceSecondary)
                                     .cornerRadius(8)
                                     .accessibilityLabel("Category: \(category)")
                             }
@@ -112,7 +112,7 @@ struct MarketplaceDetailView: View {
                             Divider()
                             Text(description)
                                 .font(.body)
-                                .foregroundColor(.primary)
+                                .foregroundColor(.textPrimary)
                                 .lineSpacing(2)
                                 .fixedSize(horizontal: false, vertical: true)
                                 .accessibilityLabel("Description: \(description)")
@@ -128,10 +128,10 @@ struct MarketplaceDetailView: View {
                             HStack(spacing: 4) {
                                 Image(systemName: "clock")
                                     .font(.caption2)
-                                    .foregroundColor(.secondary)
+                                    .foregroundColor(.textSecondary)
                                 Text(DateFormatting.formatRelativeTime(item.createdAt))
                                     .font(.caption)
-                                    .foregroundColor(.secondary)
+                                    .foregroundColor(.textSecondary)
                             }
                             .accessibilityElement(children: .combine)
                             .accessibilityLabel("Posted \(DateFormatting.formatRelativeTime(item.createdAt))")
@@ -141,11 +141,11 @@ struct MarketplaceDetailView: View {
                             HStack(spacing: 5) {
                                 Image(systemName: "bubble.left.fill")
                                     .font(.callout)
-                                    .foregroundColor(.vibrantTeal)
+                                    .foregroundColor(.accentBlue)
                                 Text("\(item.comments)")
                                     .font(.subheadline)
                                     .fontWeight(.semibold)
-                                    .foregroundColor(.vibrantTeal)
+                                    .foregroundColor(.accentBlue)
                             }
                             .accessibilityElement(children: .combine)
                             .accessibilityLabel("\(item.comments) comments")
@@ -154,12 +154,12 @@ struct MarketplaceDetailView: View {
                     .padding(16)
                     .background(
                         RoundedRectangle(cornerRadius: 16)
-                            .fill(Color(.systemBackground))
+                            .fill(Color.surfacePrimary)
                             .shadow(color: Color.black.opacity(0.08), radius: 8, x: 0, y: 4)
                     )
                     .overlay(
                         RoundedRectangle(cornerRadius: 16)
-                            .stroke(Color(.systemGray5), lineWidth: 0.5)
+                            .stroke(Color.borderSubtle, lineWidth: 0.5)
                     )
 
                     Divider().padding(.vertical, 8)
@@ -194,7 +194,7 @@ struct MarketplaceDetailView: View {
 
             if let errorMessage = viewModel.errorMessage {
                 Text(errorMessage)
-                    .foregroundColor(.red)
+                    .foregroundColor(.accentRed)
                     .font(.caption)
                     .padding(.horizontal)
                     .padding(.vertical, 8)
@@ -222,7 +222,7 @@ struct MarketplaceDetailView: View {
                             Circle()
                                 .fill(viewModel.commentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
                                       ? AnyShapeStyle(Color.gray.opacity(0.3))
-                                      : AnyShapeStyle(Color.purplePinkGradient))
+                                      : AnyShapeStyle(LinearGradient.brandGradient))
                                 .frame(width: 36, height: 36)
                             Image(systemName: "arrow.up")
                                 .font(.callout.bold())
@@ -235,10 +235,11 @@ struct MarketplaceDetailView: View {
                 .accessibilityHint("Double tap to post your comment")
             }
             .padding()
-            .background(Color(.systemBackground))
+            .background(Color.surfacePrimary)
         }
         .navigationTitle("Item Details")
         .navigationBarTitleDisplayMode(.inline)
+        .background(Color.appBackground.ignoresSafeArea())
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
                 Menu {
@@ -327,14 +328,14 @@ struct MarketplaceDetailView: View {
             VStack(spacing: 12) {
                 Image(systemName: "bubble.left.and.bubble.right")
                     .font(.largeTitle)
-                    .foregroundColor(.gray)
+                    .foregroundColor(.textSecondary)
                     .accessibilityHidden(true)
                 Text("No comments yet")
                     .font(.subheadline)
-                    .foregroundColor(.gray)
+                    .foregroundColor(.textSecondary)
                 Text("Be the first to comment!")
                     .font(.caption)
-                    .foregroundColor(.gray)
+                    .foregroundColor(.textSecondary)
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 32)

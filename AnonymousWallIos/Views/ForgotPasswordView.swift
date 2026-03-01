@@ -24,7 +24,7 @@ struct ForgotPasswordView: View {
                     Image(systemName: "lock.rotation")
                         .resizable()
                         .frame(width: 60, height: 60)
-                        .foregroundColor(.blue)
+                        .foregroundColor(.accentPurple)
                     
                     Text("Reset Password")
                         .font(.largeTitle)
@@ -32,7 +32,7 @@ struct ForgotPasswordView: View {
                     
                     Text(viewModel.codeSent ? "Enter the code and new password" : "Enter your email to reset password")
                         .font(.subheadline)
-                        .foregroundColor(.gray)
+                        .foregroundColor(.textSecondary)
                         .multilineTextAlignment(.center)
                         .padding(.horizontal)
                 }
@@ -44,7 +44,7 @@ struct ForgotPasswordView: View {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Email")
                         .font(.headline)
-                        .foregroundColor(.primary)
+                        .foregroundColor(.textPrimary)
                     
                     HStack {
                         TextField("Enter your email", text: $viewModel.email)
@@ -53,7 +53,7 @@ struct ForgotPasswordView: View {
                             .autocorrectionDisabled()
                             .disabled(viewModel.codeSent)
                             .padding()
-                            .background(Color(.systemGray6))
+                            .background(Color.surfaceSecondary)
                             .cornerRadius(10)
                         
                         if !viewModel.codeSent {
@@ -71,7 +71,7 @@ struct ForgotPasswordView: View {
                             }
                             .padding(.horizontal, 16)
                             .padding(.vertical, 12)
-                            .background((viewModel.email.isEmpty || viewModel.resendCountdown > 0) ? Color.gray : Color.blue)
+                            .background((viewModel.email.isEmpty || viewModel.resendCountdown > 0) ? Color.gray : Color.accentPurple)
                             .foregroundColor(.white)
                             .cornerRadius(10)
                             .disabled(viewModel.email.isEmpty || viewModel.isSendingCode || viewModel.resendCountdown > 0)
@@ -85,13 +85,13 @@ struct ForgotPasswordView: View {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Verification Code")
                             .font(.headline)
-                            .foregroundColor(.primary)
+                            .foregroundColor(.textPrimary)
                         
                         TextField("Enter 6-digit code", text: $viewModel.verificationCode)
                             .keyboardType(.numberPad)
                             .autocorrectionDisabled()
                             .padding()
-                            .background(Color(.systemGray6))
+                            .background(Color.surfaceSecondary)
                             .cornerRadius(10)
                     }
                     .padding(.horizontal)
@@ -99,12 +99,12 @@ struct ForgotPasswordView: View {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("New Password")
                             .font(.headline)
-                            .foregroundColor(.primary)
+                            .foregroundColor(.textPrimary)
                         
                         SecureField("Enter new password", text: $viewModel.newPassword)
                             .autocorrectionDisabled()
                             .padding()
-                            .background(Color(.systemGray6))
+                            .background(Color.surfaceSecondary)
                             .cornerRadius(10)
                     }
                     .padding(.horizontal)
@@ -112,12 +112,12 @@ struct ForgotPasswordView: View {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Confirm Password")
                             .font(.headline)
-                            .foregroundColor(.primary)
+                            .foregroundColor(.textPrimary)
                         
                         SecureField("Confirm new password", text: $viewModel.confirmPassword)
                             .autocorrectionDisabled()
                             .padding()
-                            .background(Color(.systemGray6))
+                            .background(Color.surfaceSecondary)
                             .cornerRadius(10)
                     }
                     .padding(.horizontal)
@@ -126,11 +126,11 @@ struct ForgotPasswordView: View {
                         if viewModel.resendCountdown > 0 {
                             Text("Resend Code in \(viewModel.resendCountdown)s")
                                 .font(.caption)
-                                .foregroundColor(.gray)
+                                .foregroundColor(.textSecondary)
                         } else {
                             Text("Resend Code")
                                 .font(.caption)
-                                .foregroundColor(.blue)
+                                .foregroundColor(.accentPurple)
                         }
                     }
                     .disabled(viewModel.resendCountdown > 0)
@@ -139,7 +139,7 @@ struct ForgotPasswordView: View {
                 // Error message
                 if let errorMessage = viewModel.errorMessage {
                     Text(errorMessage)
-                        .foregroundColor(.red)
+                        .foregroundColor(.accentRed)
                         .font(.caption)
                         .padding(.horizontal)
                 }
@@ -160,7 +160,7 @@ struct ForgotPasswordView: View {
                         }
                     }
                     .frame(height: 50)
-                    .background((viewModel.verificationCode.isEmpty || viewModel.newPassword.isEmpty || viewModel.confirmPassword.isEmpty || viewModel.isLoading) ? Color.gray : Color.blue)
+                    .background((viewModel.verificationCode.isEmpty || viewModel.newPassword.isEmpty || viewModel.confirmPassword.isEmpty || viewModel.isLoading) ? AnyShapeStyle(Color.gray) : AnyShapeStyle(LinearGradient.brandGradient))
                     .foregroundColor(.white)
                     .cornerRadius(10)
                     .padding(.horizontal)
@@ -172,11 +172,12 @@ struct ForgotPasswordView: View {
                 // Cancel button
                 Button(action: { dismiss() }) {
                     Text("Cancel")
-                        .foregroundColor(.gray)
+                        .foregroundColor(.textSecondary)
                 }
                 .padding(.bottom, 20)
             }
             .navigationBarHidden(true)
+            .background(Color.appBackground.ignoresSafeArea())
             .onDisappear {
                 viewModel.cleanup()
             }

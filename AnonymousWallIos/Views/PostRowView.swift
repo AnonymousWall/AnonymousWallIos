@@ -29,34 +29,19 @@ struct PostRowView: View {
         isCampusPost ? WallType.campus.displayName : WallType.national.displayName
     }
     
-    private var wallColor: Color {
-        isCampusPost ? .primaryPurple : .vibrantTeal
-    }
-    
-    private var wallGradient: LinearGradient {
-        isCampusPost ? Color.purplePinkGradient : Color.tealPurpleGradient
-    }
-    
     var body: some View {
+        AppCard {
         VStack(alignment: .leading, spacing: 14) {
             // Wall type badge and author name
             HStack(spacing: 10) {
-                Text(wallDisplayName)
-                    .font(.caption)
-                    .fontWeight(.bold)
-                    .foregroundColor(.white)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 6)
-                    .background(wallGradient)
-                    .cornerRadius(12)
-                    .shadow(color: wallColor.opacity(0.3), radius: 4, x: 0, y: 2)
+                ChipBadge(label: wallDisplayName, color: isCampusPost ? .accentPurple : .accentBlue)
                     .accessibilityLabel("Posted on \(wallDisplayName) wall")
                 
                 if isOwnPost {
                     Text("by Me")
                         .font(.caption)
                         .fontWeight(.medium)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(.textSecondary)
                         .accessibilityLabel("Posted by you")
                 } else {
                     Button(action: {
@@ -66,7 +51,7 @@ struct PostRowView: View {
                         Text("by \(post.author.profileName)")
                             .font(.caption)
                             .fontWeight(.medium)
-                            .foregroundColor(.blue)
+                            .foregroundColor(.accentPurple)
                             .underline()
                     }
                     .accessibilityLabel("Posted by \(post.author.profileName)")
@@ -94,15 +79,15 @@ struct PostRowView: View {
             
             // Post title
             Text(post.title)
-                .font(.title3.bold())
-                .foregroundColor(.primary)
+                .font(.displayMedium)
+                .foregroundColor(.textPrimary)
                 .fixedSize(horizontal: false, vertical: true)
                 .accessibilityLabel("Post title: \(post.title)")
             
             // Post content
             Text(post.content)
-                .font(.subheadline)
-                .foregroundColor(.primary)
+                .font(.bodyMedium)
+                .foregroundColor(.textSecondary)
                 .lineSpacing(2)
                 .lineLimit(UIConstants.postRowContentMaxLines)
                 .truncationMode(.tail)
@@ -127,10 +112,10 @@ struct PostRowView: View {
                 HStack(spacing: 4) {
                     Image(systemName: "clock")
                         .font(.caption2)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(.textTertiary)
                     Text(DateFormatting.formatRelativeTime(post.createdAt))
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(.textTertiary)
                 }
                 .accessibilityElement(children: .combine)
                 .accessibilityLabel("Posted \(DateFormatting.formatRelativeTime(post.createdAt))")
@@ -147,13 +132,12 @@ struct PostRowView: View {
                             .font(.callout)
                             .foregroundColor(post.liked ? .pink : .secondary)
                         Text("\(post.likes)")
-                            .font(.subheadline)
-                            .fontWeight(.semibold)
+                            .font(.labelSmall)
                             .foregroundColor(post.liked ? .pink : .secondary)
                     }
                     .padding(.horizontal, 10)
                     .padding(.vertical, 6)
-                    .background(post.liked ? Color.pink.opacity(0.15) : Color(.systemGray6))
+                    .background(post.liked ? Color.pink.opacity(0.15) : Color.surfaceSecondary)
                     .cornerRadius(8)
                 }
                 .buttonStyle(.bounce)
@@ -165,15 +149,15 @@ struct PostRowView: View {
                 HStack(spacing: 5) {
                     Image(systemName: "bubble.left.fill")
                         .font(.callout)
-                        .foregroundColor(.vibrantTeal)
+                        .foregroundColor(.accentBlue)
                     Text("\(post.comments)")
                         .font(.subheadline)
                         .fontWeight(.semibold)
-                        .foregroundColor(.vibrantTeal)
+                        .foregroundColor(.accentBlue)
                 }
                 .padding(.horizontal, 10)
                 .padding(.vertical, 6)
-                .background(Color.vibrantTeal.opacity(0.15))
+                .background(Color.accentBlue.opacity(0.15))
                 .cornerRadius(8)
                 .accessibilityElement(children: .combine)
                 .accessibilityLabel("\(post.comments) comments")
@@ -188,7 +172,7 @@ struct PostRowView: View {
                             .font(.callout)
                             .foregroundColor(.white)
                             .padding(6)
-                            .background(Color.red)
+                            .background(Color.accentRed)
                             .cornerRadius(8)
                     }
                     .buttonStyle(.bounce)
@@ -209,16 +193,7 @@ struct PostRowView: View {
                 }
             }
         }
-        .padding(16)
-        .background(
-            RoundedRectangle(cornerRadius: 16)
-                .fill(Color(.systemBackground))
-                .shadow(color: Color.black.opacity(0.08), radius: 8, x: 0, y: 4)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 16)
-                .stroke(Color(.systemGray5), lineWidth: 0.5)
-        )
+        }
         .fullScreenCover(item: $selectedImageViewer) { item in
             FullScreenImageViewer(imageURLs: post.imageUrls, initialIndex: item.index)
         }

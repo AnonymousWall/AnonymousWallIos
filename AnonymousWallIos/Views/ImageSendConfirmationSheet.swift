@@ -36,8 +36,8 @@ struct ImageSendConfirmationSheet: View {
                     Text("Cancel")
                         .frame(maxWidth: .infinity)
                         .padding()
-                        .background(Color(.systemGray5))
-                        .foregroundColor(.primary)
+                        .background(Color.borderSubtle)
+                        .foregroundColor(.textPrimary)
                         .cornerRadius(12)
                 }
                 .accessibilityLabel("Cancel sending image")

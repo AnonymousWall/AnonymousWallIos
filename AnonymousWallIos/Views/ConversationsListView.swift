@@ -60,19 +60,21 @@ struct ConversationsListView: View {
             }
         }
         .listStyle(.plain)
+        .scrollContentBackground(.hidden)
+        .background(Color.appBackground)
     }
     
     private var emptyStateView: some View {
         VStack(spacing: 16) {
             Image(systemName: "bubble.left.and.bubble.right")
                 .font(.system(size: 60))
-                .foregroundColor(.secondary)
+                .foregroundColor(.textSecondary)
             Text("No conversations yet")
                 .font(.headline)
-                .foregroundColor(.secondary)
+                .foregroundColor(.textSecondary)
             Text("Your messages will appear here")
                 .font(.subheadline)
-                .foregroundColor(.secondary)
+                .foregroundColor(.textSecondary)
                 .multilineTextAlignment(.center)
         }
         .padding()
@@ -88,26 +90,26 @@ struct ConversationRowView: View {
         HStack(spacing: 12) {
             // Avatar placeholder
             Circle()
-                .fill(Color.accentColor.opacity(0.2))
+                .fill(LinearGradient.brandGradient)
                 .frame(width: 50, height: 50)
                 .overlay(
                     Text(conversation.profileName.prefix(1))
                         .font(.title3.bold())
-                        .foregroundColor(.accentColor)
+                        .foregroundColor(.white)
                 )
             
             VStack(alignment: .leading, spacing: 4) {
                 HStack {
                     Text(conversation.profileName)
                         .font(.headline)
-                        .foregroundColor(.primary)
+                        .foregroundColor(.textPrimary)
                     
                     Spacer()
                     
                     if let lastMessage = conversation.lastMessage {
                         Text(DateFormatting.formatRelativeTime(lastMessage.createdAt))
                             .font(.caption)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(.textSecondary)
                     }
                 }
                 
@@ -123,12 +125,12 @@ struct ConversationRowView: View {
                         
                         Text(preview)
                             .font(.subheadline)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(.textSecondary)
                             .lineLimit(1)
                     } else {
                         Text("No messages")
                             .font(.subheadline)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(.textSecondary)
                             .italic()
                     }
                     
@@ -155,7 +157,7 @@ struct Badge: View {
             .foregroundColor(.white)
             .padding(.horizontal, count > 9 ? 6 : 8)
             .padding(.vertical, 4)
-            .background(Color.red)
+            .background(Color.accentRed)
             .cornerRadius(10)
     }
 }

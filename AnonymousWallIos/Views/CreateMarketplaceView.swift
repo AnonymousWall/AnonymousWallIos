@@ -44,9 +44,9 @@ struct CreateMarketplaceView: View {
                             ) {
                                 HStack {
                                     Image(systemName: "plus.circle.fill")
-                                        .foregroundColor(.primaryPurple)
+                                        .foregroundColor(.accentPurple)
                                     Text("Add Photo (\(imageCount)/5)")
-                                        .foregroundColor(.primaryPurple)
+                                        .foregroundColor(.accentPurple)
                                         .fontWeight(.medium)
                                     Spacer()
                                 }
@@ -66,12 +66,12 @@ struct CreateMarketplaceView: View {
                         if viewModel.isLoadingImages {
                             VStack(spacing: 6) {
                                 ProgressView(value: viewModel.imageLoadProgress)
-                                    .tint(.primaryPurple)
+                                    .tint(.accentPurple)
                                 Text(viewModel.imageLoadProgress < 1.0
                                     ? "Downloading from iCloud... \(Int(viewModel.imageLoadProgress * 100))%"
                                     : "Processing...")
                                     .font(.caption)
-                                    .foregroundColor(.secondary)
+                                    .foregroundColor(.textSecondary)
                             }
                             .padding(.vertical, 4)
                             .transition(.opacity)
@@ -114,7 +114,7 @@ struct CreateMarketplaceView: View {
                         : "Double tap to list your item")
                 }
             }
-            .background(Color(.systemGroupedBackground))
+            .background(Color.appBackground.ignoresSafeArea())
             .navigationTitle("New Listing")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -144,7 +144,7 @@ struct CreateMarketplaceView: View {
                 HStack(spacing: 4) {
                     Image(systemName: "dollarsign.circle")
                         .font(.caption)
-                        .foregroundColor(.primaryPurple)
+                        .foregroundColor(.accentPurple)
                         .accessibilityHidden(true)
                     Text("Price ($)")
                         .font(.subheadline)
@@ -154,13 +154,13 @@ struct CreateMarketplaceView: View {
                     .keyboardType(.decimalPad)
                     .padding(.horizontal, 12)
                     .padding(.vertical, 10)
-                    .background(Color(.secondarySystemGroupedBackground))
+                    .background(Color.surfaceSecondary)
                     .cornerRadius(10)
                     .overlay(
                         RoundedRectangle(cornerRadius: 10)
                             .stroke(
                                 (!viewModel.priceText.isEmpty && !viewModel.isPriceValid)
-                                    ? Color.red : Color(.separator),
+                                    ? Color.accentRed : Color(.separator),
                                 lineWidth: 0.5
                             )
                     )
@@ -169,7 +169,7 @@ struct CreateMarketplaceView: View {
                 if !viewModel.priceText.isEmpty && !viewModel.isPriceValid {
                     Text("Please enter a valid price (0 or greater)")
                         .font(.caption)
-                        .foregroundColor(.red)
+                        .foregroundColor(.accentRed)
                 }
             }
         }
@@ -184,7 +184,7 @@ struct CreateMarketplaceView: View {
                 HStack(spacing: 4) {
                     Image(systemName: "sparkles")
                         .font(.caption)
-                        .foregroundColor(.primaryPurple)
+                        .foregroundColor(.accentPurple)
                         .accessibilityHidden(true)
                     Text("Condition")
                         .font(.subheadline)
@@ -205,7 +205,7 @@ struct CreateMarketplaceView: View {
                 HStack(spacing: 4) {
                     Image(systemName: "square.grid.2x2")
                         .font(.caption)
-                        .foregroundColor(.primaryPurple)
+                        .foregroundColor(.accentPurple)
                         .accessibilityHidden(true)
                     Text("Category")
                         .font(.subheadline)

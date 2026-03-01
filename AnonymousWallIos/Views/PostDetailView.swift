@@ -30,105 +30,95 @@ struct PostDetailView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
                     // Original post
-                    VStack(alignment: .leading, spacing: 14) {
-                        // Post title
-                        Text(post.title)
-                            .font(.title2.bold())
-                            .foregroundColor(.primary)
-                            .fixedSize(horizontal: false, vertical: true)
-                            .accessibilityLabel("Post title: \(post.title)")
-                        
-                        Text(post.content)
-                            .font(.body)
-                            .foregroundColor(.primary)
-                            .lineSpacing(2)
-                            .fixedSize(horizontal: false, vertical: true)
-                            .accessibilityLabel("Post content: \(post.content)")
-                        
-                        // Poll card (poll posts only)
-                        if post.postType?.lowercased() == "poll",
-                           let poll = post.poll,
-                           let postUUID = UUID(uuidString: post.id) {
-                            PollCardView(postId: postUUID, poll: poll)
-                        }
-                        
-                        // Post images
-                        if !post.imageUrls.isEmpty {
-                            PostImageGallery(imageUrls: post.imageUrls, selectedImageViewer: $selectedImageViewer, accessibilityContext: "Post images")
-                        }
-                        
-                        HStack(spacing: 16) {
-                            HStack(spacing: 4) {
-                                Image(systemName: "clock")
-                                    .font(.caption2)
-                                    .foregroundColor(.secondary)
-                                Text(DateFormatting.formatRelativeTime(post.createdAt))
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
-                            }
-                            .accessibilityElement(children: .combine)
-                            .accessibilityLabel("Posted \(DateFormatting.formatRelativeTime(post.createdAt))")
+                    AppCard {
+                        VStack(alignment: .leading, spacing: 14) {
+                            // Post title
+                            Text(post.title)
+                                .font(.displayMedium)
+                                .foregroundColor(.textPrimary)
+                                .fixedSize(horizontal: false, vertical: true)
+                                .accessibilityLabel("Post title: \(post.title)")
                             
-                            Spacer()
+                            Text(post.content)
+                                .font(.bodyMedium)
+                                .foregroundColor(.textSecondary)
+                                .lineSpacing(2)
+                                .fixedSize(horizontal: false, vertical: true)
+                                .accessibilityLabel("Post content: \(post.content)")
+                            
+                            // Poll card (poll posts only)
+                            if post.postType?.lowercased() == "poll",
+                               let poll = post.poll,
+                               let postUUID = UUID(uuidString: post.id) {
+                                PollCardView(postId: postUUID, poll: poll)
+                            }
+                            
+                            // Post images
+                            if !post.imageUrls.isEmpty {
+                                PostImageGallery(imageUrls: post.imageUrls, selectedImageViewer: $selectedImageViewer, accessibilityContext: "Post images")
+                            }
                             
                             HStack(spacing: 16) {
-                                // Like button
-                                Button(action: {
-                                    HapticFeedback.medium()
-                                    viewModel.toggleLike(post: $post, authState: authState)
-                                }) {
-                                    HStack(spacing: 5) {
-                                        Image(systemName: post.liked ? "heart.fill" : "heart")
-                                            .font(.callout)
-                                            .foregroundColor(post.liked ? .pink : .secondary)
-                                        Text("\(post.likes)")
-                                            .font(.subheadline)
-                                            .fontWeight(.semibold)
-                                            .foregroundColor(post.liked ? .pink : .secondary)
-                                    }
-                                    .padding(.horizontal, 10)
-                                    .padding(.vertical, 6)
-                                    .background(post.liked ? Color.pink.opacity(0.15) : Color(.systemGray6))
-                                    .cornerRadius(8)
-                                }
-                                .buttonStyle(.bounce)
-                                .accessibilityLabel(post.liked ? "Unlike" : "Like")
-                                .accessibilityValue("\(post.likes) likes")
-                                .accessibilityHint(post.liked ? "Double tap to remove your like" : "Double tap to like this post")
-                                
-                                HStack(spacing: 5) {
-                                    Image(systemName: "bubble.left.fill")
-                                        .font(.callout)
-                                        .foregroundColor(.vibrantTeal)
-                                    Text("\(post.comments)")
-                                        .font(.subheadline)
-                                        .fontWeight(.semibold)
-                                        .foregroundColor(.vibrantTeal)
+                                HStack(spacing: 4) {
+                                    Image(systemName: "clock")
+                                        .font(.caption2)
+                                        .foregroundColor(.textTertiary)
+                                    Text(DateFormatting.formatRelativeTime(post.createdAt))
+                                        .font(.caption)
+                                        .foregroundColor(.textTertiary)
                                 }
                                 .accessibilityElement(children: .combine)
-                                .accessibilityLabel("\(post.comments) comments")
+                                .accessibilityLabel("Posted \(DateFormatting.formatRelativeTime(post.createdAt))")
+                                
+                                Spacer()
+                                
+                                HStack(spacing: 16) {
+                                    // Like button
+                                    Button(action: {
+                                        HapticFeedback.medium()
+                                        viewModel.toggleLike(post: $post, authState: authState)
+                                    }) {
+                                        HStack(spacing: 5) {
+                                            Image(systemName: post.liked ? "heart.fill" : "heart")
+                                                .font(.callout)
+                                                .foregroundColor(post.liked ? .pink : .secondary)
+                                            Text("\(post.likes)")
+                                                .font(.subheadline)
+                                                .fontWeight(.semibold)
+                                                .foregroundColor(post.liked ? .pink : .secondary)
+                                        }
+                                        .padding(.horizontal, 10)
+                                        .padding(.vertical, 6)
+                                        .background(post.liked ? Color.pink.opacity(0.15) : Color.surfaceSecondary)
+                                        .cornerRadius(8)
+                                    }
+                                    .buttonStyle(.bounce)
+                                    .accessibilityLabel(post.liked ? "Unlike" : "Like")
+                                    .accessibilityValue("\(post.likes) likes")
+                                    .accessibilityHint(post.liked ? "Double tap to remove your like" : "Double tap to like this post")
+                                    
+                                    HStack(spacing: 5) {
+                                        Image(systemName: "bubble.left.fill")
+                                            .font(.callout)
+                                            .foregroundColor(.accentBlue)
+                                        Text("\(post.comments)")
+                                            .font(.subheadline)
+                                            .fontWeight(.semibold)
+                                            .foregroundColor(.accentBlue)
+                                    }
+                                    .accessibilityElement(children: .combine)
+                                    .accessibilityLabel("\(post.comments) comments")
+                                }
                             }
                         }
                     }
-                    .padding(16)
-                    .background(
-                        RoundedRectangle(cornerRadius: 16)
-                            .fill(Color(.systemBackground))
-                            .shadow(color: Color.black.opacity(0.08), radius: 8, x: 0, y: 4)
-                    )
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 16)
-                            .stroke(Color(.systemGray5), lineWidth: 0.5)
-                    )
                     
                     Divider()
                         .padding(.vertical, 8)
                     
                     // Comments section header with sorting
                     HStack {
-                        Text("Comments")
-                            .font(.headline)
-                            .accessibilityAddTraits(.isHeader)
+                        SectionLabel(text: "Comments")
                         
                         Spacer()
                         
@@ -159,14 +149,14 @@ struct PostDetailView: View {
                         VStack(spacing: 12) {
                             Image(systemName: "bubble.left.and.bubble.right")
                                 .font(.largeTitle)
-                                .foregroundColor(.gray)
+                                .foregroundColor(.textSecondary)
                                 .accessibilityHidden(true)
                             Text("No comments yet")
                                 .font(.subheadline)
-                                .foregroundColor(.gray)
+                                .foregroundColor(.textSecondary)
                             Text("Be the first to comment!")
                                 .font(.caption)
-                                .foregroundColor(.gray)
+                                .foregroundColor(.textSecondary)
                         }
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 32)
@@ -214,7 +204,7 @@ struct PostDetailView: View {
             // Error message
             if let errorMessage = viewModel.errorMessage {
                 Text(errorMessage)
-                    .foregroundColor(.red)
+                    .foregroundColor(.accentRed)
                     .font(.caption)
                     .padding(.horizontal)
                     .padding(.vertical, 8)
@@ -241,14 +231,14 @@ struct PostDetailView: View {
                     } else {
                         ZStack {
                             Circle()
-                                .fill(viewModel.commentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? AnyShapeStyle(Color.gray.opacity(0.3)) : AnyShapeStyle(Color.purplePinkGradient))
+                                .fill(viewModel.commentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? AnyShapeStyle(Color.gray.opacity(0.3)) : AnyShapeStyle(LinearGradient.brandGradient))
                                 .frame(width: 36, height: 36)
                             
                             Image(systemName: "arrow.up")
                                 .font(.callout.bold())
                                 .foregroundColor(.white)
                         }
-                        .shadow(color: viewModel.commentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? Color.clear : Color.primaryPurple.opacity(0.3), radius: 4, x: 0, y: 2)
+                        .shadow(color: viewModel.commentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? Color.clear : Color.accentPurple.opacity(0.3), radius: 4, x: 0, y: 2)
                     }
                 }
                 .disabled(viewModel.commentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || viewModel.isSubmitting)
@@ -256,8 +246,9 @@ struct PostDetailView: View {
                 .accessibilityHint("Double tap to post your comment")
             }
             .padding()
-            .background(Color(.systemBackground))
+            .background(Color.surfacePrimary)
         }
+        .background(Color.appBackground.ignoresSafeArea())
         .navigationTitle("Post Details")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
@@ -408,7 +399,7 @@ struct CommentRowView: View {
                     
                     Text(comment.text)
                         .font(.body)
-                        .foregroundColor(isOwnComment ? .white : .primary)
+                        .foregroundColor(isOwnComment ? .white : .textPrimary)
                         .fixedSize(horizontal: false, vertical: true)
                         .accessibilityLabel("Comment: \(comment.text)")
                     
@@ -435,14 +426,14 @@ struct CommentRowView: View {
                     Button(action: onReport) {
                         Image(systemName: "exclamationmark.triangle")
                             .font(.caption)
-                            .foregroundColor(.primary)
+                            .foregroundColor(.textPrimary)
                     }
                     .accessibilityLabel("Report comment")
                     .accessibilityHint("Double tap to report this comment")
                 }
             }
             .padding()
-            .background(isOwnComment ? Color.blue : Color(.secondarySystemBackground))
+            .background(isOwnComment ? AnyShapeStyle(LinearGradient.brandGradient) : AnyShapeStyle(Color.surfaceSecondary))
             .cornerRadius(8)
             
             // Add trailing spacer for other users' comments (push to left)

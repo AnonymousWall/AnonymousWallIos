@@ -24,6 +24,9 @@ struct AnonymousWallIosApp: App {
                 authState.handleBlockedUser()
             }
         }
+
+        // Configure global UIKit appearance for dark theme
+        configureAppAppearance()
     }
 
     var body: some Scene {
@@ -52,5 +55,28 @@ struct AnonymousWallIosApp: App {
                 }
             }
         }
+    }
+
+    private func configureAppAppearance() {
+        // Tab bar: app background, no separator, purple selected tint
+        let tabBarAppearance = UITabBarAppearance()
+        tabBarAppearance.configureWithOpaqueBackground()
+        tabBarAppearance.backgroundColor = UIColor(Color.appBackground)
+        tabBarAppearance.shadowColor = .clear
+        UITabBar.appearance().standardAppearance = tabBarAppearance
+        UITabBar.appearance().scrollEdgeAppearance = tabBarAppearance
+        UITabBar.appearance().tintColor = UIColor(Color.accentPurple)
+
+        // Navigation bar: app background, primary text
+        let navBarAppearance = UINavigationBarAppearance()
+        navBarAppearance.configureWithOpaqueBackground()
+        navBarAppearance.backgroundColor = UIColor(Color.appBackground)
+        navBarAppearance.titleTextAttributes = [.foregroundColor: UIColor(Color.textPrimary)]
+        navBarAppearance.largeTitleTextAttributes = [.foregroundColor: UIColor(Color.textPrimary)]
+        navBarAppearance.shadowColor = .clear
+        UINavigationBar.appearance().standardAppearance = navBarAppearance
+        UINavigationBar.appearance().scrollEdgeAppearance = navBarAppearance
+        UINavigationBar.appearance().compactAppearance = navBarAppearance
+        UINavigationBar.appearance().tintColor = UIColor(Color.accentPurple)
     }
 }
