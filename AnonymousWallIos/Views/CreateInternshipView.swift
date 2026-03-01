@@ -58,7 +58,7 @@ struct CreateInternshipView: View {
                         : "Double tap to create your posting")
                 }
             }
-            .background(Color(.systemGroupedBackground))
+            .background(Color.appBackground.ignoresSafeArea())
             .navigationTitle("New Internship")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

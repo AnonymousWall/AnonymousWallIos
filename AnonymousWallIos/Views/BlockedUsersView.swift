@@ -31,8 +31,11 @@ struct BlockedUsersView: View {
                             HapticFeedback.warning()
                             showUnblockConfirmation = true
                         }
+                        .listRowBackground(Color.surfacePrimary)
                     }
                 }
+                .scrollContentBackground(.hidden)
+                .background(Color.appBackground)
                 .refreshable {
                     blockViewModel.loadBlockList(authState: authState)
                 }
@@ -40,6 +43,7 @@ struct BlockedUsersView: View {
         }
         .navigationTitle("Blocked Users")
         .navigationBarTitleDisplayMode(.inline)
+        .background(Color.appBackground.ignoresSafeArea())
         .onAppear {
             blockViewModel.loadBlockList(authState: authState)
         }

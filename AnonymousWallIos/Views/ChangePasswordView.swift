@@ -32,7 +32,7 @@ struct ChangePasswordView: View {
                     
                     Text("Update your password")
                         .font(.subheadline)
-                        .foregroundColor(.gray)
+                        .foregroundColor(.textSecondary)
                 }
                 .padding(.top, 40)
                 
@@ -47,7 +47,7 @@ struct ChangePasswordView: View {
                     SecureField("Enter current password", text: $viewModel.oldPassword)
                         .autocorrectionDisabled()
                         .padding()
-                        .background(Color(.systemGray6))
+                        .background(Color.surfaceSecondary)
                         .cornerRadius(10)
                 }
                 .padding(.horizontal)
@@ -61,12 +61,12 @@ struct ChangePasswordView: View {
                     SecureField("Enter new password", text: $viewModel.newPassword)
                         .autocorrectionDisabled()
                         .padding()
-                        .background(Color(.systemGray6))
+                        .background(Color.surfaceSecondary)
                         .cornerRadius(10)
                     
                     Text("Password must be at least 8 characters")
                         .font(.caption)
-                        .foregroundColor(.gray)
+                        .foregroundColor(.textSecondary)
                 }
                 .padding(.horizontal)
                 
@@ -79,7 +79,7 @@ struct ChangePasswordView: View {
                     SecureField("Confirm new password", text: $viewModel.confirmPassword)
                         .autocorrectionDisabled()
                         .padding()
-                        .background(Color(.systemGray6))
+                        .background(Color.surfaceSecondary)
                         .cornerRadius(10)
                 }
                 .padding(.horizontal)
@@ -118,11 +118,12 @@ struct ChangePasswordView: View {
                 // Cancel button
                 Button(action: { dismiss() }) {
                     Text("Cancel")
-                        .foregroundColor(.gray)
+                        .foregroundColor(.textSecondary)
                 }
                 .padding(.bottom, 20)
             }
             .navigationBarHidden(true)
+            .background(Color.appBackground.ignoresSafeArea())
             .alert("Password Changed", isPresented: $viewModel.showSuccess) {
                 Button("OK") {
                     dismiss()

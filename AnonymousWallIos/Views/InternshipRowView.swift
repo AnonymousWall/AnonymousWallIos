@@ -49,7 +49,7 @@ struct InternshipRowView: View {
                     Text("by Me")
                         .font(.caption)
                         .fontWeight(.medium)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(.textSecondary)
                         .accessibilityLabel("Posted by you")
                 } else {
                     Button(action: {
@@ -116,10 +116,10 @@ struct InternshipRowView: View {
                 HStack(spacing: 4) {
                     Image(systemName: "clock")
                         .font(.caption2)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(.textSecondary)
                     Text(DateFormatting.formatRelativeTime(internship.createdAt))
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(.textSecondary)
                 }
                 .accessibilityElement(children: .combine)
                 .accessibilityLabel("Posted \(DateFormatting.formatRelativeTime(internship.createdAt))")
@@ -130,15 +130,15 @@ struct InternshipRowView: View {
                 HStack(spacing: 5) {
                     Image(systemName: "bubble.left.fill")
                         .font(.callout)
-                        .foregroundColor(.vibrantTeal)
+                        .foregroundColor(.accentBlue)
                     Text("\(internship.comments)")
                         .font(.subheadline)
                         .fontWeight(.semibold)
-                        .foregroundColor(.vibrantTeal)
+                        .foregroundColor(.accentBlue)
                 }
                 .padding(.horizontal, 10)
                 .padding(.vertical, 6)
-                .background(Color.vibrantTeal.opacity(0.15))
+                .background(Color.accentBlue.opacity(0.15))
                 .cornerRadius(8)
                 .accessibilityElement(children: .combine)
                 .accessibilityLabel("\(internship.comments) comments")
@@ -175,12 +175,12 @@ struct InternshipRowView: View {
         .padding(16)
         .background(
             RoundedRectangle(cornerRadius: 16)
-                .fill(Color(.systemBackground))
+                .fill(Color.surfacePrimary)
                 .shadow(color: Color.black.opacity(0.08), radius: 8, x: 0, y: 4)
         )
         .overlay(
             RoundedRectangle(cornerRadius: 16)
-                .stroke(Color(.systemGray5), lineWidth: 0.5)
+                .stroke(Color.borderSubtle, lineWidth: 0.5)
         )
         .alert("User Blocked", isPresented: $showBlockSuccessAlert) {
             Button("OK", role: .cancel) {}
@@ -213,7 +213,7 @@ private struct DetailChip: View {
                 .foregroundColor(color)
             Text(text)
                 .font(.caption)
-                .foregroundColor(.primary)
+                .foregroundColor(.textPrimary)
                 .lineLimit(1)
         }
         .padding(.horizontal, 8)
