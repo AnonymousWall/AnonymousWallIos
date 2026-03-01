@@ -59,6 +59,15 @@ class PollViewModel: ObservableObject {
         await loadResults(postId: postId, viewResults: true, authState: authState)
     }
     
+    // MARK: - Sync from parent
+    
+    /// Syncs fresh poll data from the parent post (e.g. after a list refresh).
+    /// Skipped while a vote is in flight to preserve optimistic UI state.
+    func updatePoll(_ freshPoll: PollDTO) {
+        guard !isVoting else { return }
+        poll = freshPoll
+    }
+    
     // MARK: - Private Helpers
     
     private func loadResults(postId: UUID, viewResults: Bool, authState: AuthState) async {

@@ -12,11 +12,13 @@ import SwiftUI
 
 struct PollCardView: View {
     let postId: UUID
+    private let poll: PollDTO
     @StateObject private var pollViewModel: PollViewModel
     @EnvironmentObject var authState: AuthState
 
     init(postId: UUID, poll: PollDTO) {
         self.postId = postId
+        self.poll = poll
         _pollViewModel = StateObject(wrappedValue: PollViewModel(poll: poll))
     }
 
@@ -90,6 +92,15 @@ struct PollCardView: View {
         }
         .padding(.vertical, 8)
         .padding(.horizontal, 2)
+        .onChange(of: poll.totalVotes) { _ in
+            pollViewModel.updatePoll(poll)
+        }
+        .onChange(of: poll.userVotedOptionId) { _ in
+            pollViewModel.updatePoll(poll)
+        }
+        .onChange(of: poll.resultsVisible) { _ in
+            pollViewModel.updatePoll(poll)
+        }
     }
 }
 
