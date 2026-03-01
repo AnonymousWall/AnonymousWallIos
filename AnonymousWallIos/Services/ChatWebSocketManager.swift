@@ -32,6 +32,7 @@ class ChatWebSocketManager: ChatWebSocketManagerProtocol {
     // MARK: - Properties
     
     private let config = AppConfiguration.shared
+    private let urlSession = URLSession(configuration: .default)
     private var webSocketTask: URLSessionWebSocketTask?
     private var connectionStateSubject = CurrentValueSubject<WebSocketConnectionState, Never>(.disconnected)
     private var messageSubject = PassthroughSubject<Message, Never>()
@@ -206,9 +207,7 @@ class ChatWebSocketManager: ChatWebSocketManagerProtocol {
                 return
             }
 
-        let session = URLSession(configuration: .default)
-
-        webSocketTask = session.webSocketTask(with: url, protocols: [token])
+        webSocketTask = urlSession.webSocketTask(with: url, protocols: [token])
         webSocketTask?.resume()
         
         // Start receiving messages

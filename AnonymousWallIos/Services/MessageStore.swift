@@ -10,6 +10,11 @@ import Foundation
 /// Actor-based message store for thread-safe message management
 actor MessageStore {
     
+    // MARK: - Constants
+    
+    /// Maximum number of messages retained per conversation to bound memory usage.
+    static let maxMessagesPerConversation = 200
+    
     // MARK: - Properties
     
     /// Messages stored by conversation partner's user ID
@@ -48,7 +53,8 @@ actor MessageStore {
             return msg1.id < msg2.id
         }
         
-        messagesByConversation[conversationUserId] = messages
+        // Keep only the most recent messages to bound memory usage
+        messagesByConversation[conversationUserId] = trimToLimit(messages)
         return true
     }
     
@@ -87,7 +93,8 @@ actor MessageStore {
             return msg1.id < msg2.id
         }
         
-        messagesByConversation[conversationUserId] = existingMessages
+        // Keep only the most recent messages to bound memory usage
+        messagesByConversation[conversationUserId] = trimToLimit(existingMessages)
         return newMessages.count
     }
     
@@ -245,5 +252,13 @@ actor MessageStore {
             }
         }
         return nil
+    }
+    
+    // MARK: - Private Helpers
+    
+    /// Trims a sorted messages array to the cap, keeping the most recent messages.
+    private func trimToLimit(_ messages: [Message]) -> [Message] {
+        guard messages.count > MessageStore.maxMessagesPerConversation else { return messages }
+        return Array(messages.suffix(MessageStore.maxMessagesPerConversation))
     }
 }

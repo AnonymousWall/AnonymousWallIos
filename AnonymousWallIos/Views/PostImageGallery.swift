@@ -3,12 +3,12 @@
 //  AnonymousWallIos
 //
 //  Reusable horizontal image gallery used by post and marketplace views.
-//  NOTE: AsyncImage does not cache responses. If frequent re-downloads become
-//  noticeable, consider replacing with SDWebImageSwiftUI or Kingfisher which
-//  provide in-memory and disk caching out of the box.
+//  Uses Kingfisher (KFImage) for in-memory and disk caching to reduce
+//  redundant network requests and lower memory pressure.
 //
 
 import SwiftUI
+import Kingfisher
 
 struct PostImageGallery: View {
     let imageUrls: [String]
@@ -19,45 +19,59 @@ struct PostImageGallery: View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
                 ForEach(imageUrls.indices, id: \.self) { index in
-                    AsyncImage(url: URL(string: imageUrls[index])) { phase in
-                        switch phase {
-                        case .success(let image):
-                            image
-                                .resizable()
-                                .scaledToFill()
-                                .frame(
-                                    width: imageUrls.count == 1 ? 300 : 200,
-                                    height: 200
-                                )
-                                .clipped()
-                                .cornerRadius(8)
-                                .onTapGesture {
-                                    selectedImageViewer = ImageViewerItem(index: index)
-                                }
-                                .accessibilityLabel("Image \(index + 1) of \(imageUrls.count)")
-                                .accessibilityHint("Double tap to view full screen")
-                        case .failure:
-                            RoundedRectangle(cornerRadius: 8)
-                                .fill(Color.gray.opacity(0.2))
-                                .frame(width: 200, height: 200)
-                                .overlay(
-                                    Image(systemName: "photo")
-                                        .foregroundStyle(.gray)
-                                )
-                                .accessibilityLabel("Image failed to load")
-                        case .empty:
-                            RoundedRectangle(cornerRadius: 8)
-                                .fill(Color.gray.opacity(0.1))
-                                .frame(width: 200, height: 200)
-                                .overlay(ProgressView())
-                        @unknown default:
-                            EmptyView()
-                        }
+                    PostImageGalleryCell(
+                        url: imageUrls[index],
+                        width: imageUrls.count == 1 ? 300 : 200,
+                        index: index,
+                        total: imageUrls.count
+                    ) {
+                        selectedImageViewer = ImageViewerItem(index: index)
                     }
                 }
             }
             .padding(.horizontal)
         }
         .accessibilityLabel("\(accessibilityContext), \(imageUrls.count) photo\(imageUrls.count == 1 ? "" : "s")")
+    }
+}
+
+/// Single cached image cell with proper loading, failure, and accessibility states.
+private struct PostImageGalleryCell: View {
+    let url: String
+    let width: CGFloat
+    let index: Int
+    let total: Int
+    let onTap: () -> Void
+
+    @State private var loadFailed = false
+
+    var body: some View {
+        if loadFailed {
+            RoundedRectangle(cornerRadius: 8)
+                .fill(Color.gray.opacity(0.2))
+                .frame(width: width, height: 200)
+                .overlay(
+                    Image(systemName: "photo")
+                        .foregroundStyle(.gray)
+                )
+                .accessibilityLabel("Image failed to load")
+        } else {
+            KFImage(URL(string: url))
+                .placeholder {
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(Color.gray.opacity(0.1))
+                        .frame(width: width, height: 200)
+                        .overlay(ProgressView())
+                }
+                .onFailure { _ in loadFailed = true }
+                .resizable()
+                .scaledToFill()
+                .frame(width: width, height: 200)
+                .clipped()
+                .cornerRadius(8)
+                .onTapGesture(perform: onTap)
+                .accessibilityLabel("Image \(index + 1) of \(total)")
+                .accessibilityHint("Double tap to view full screen")
+        }
     }
 }
