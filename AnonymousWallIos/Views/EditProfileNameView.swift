@@ -32,7 +32,7 @@ struct EditProfileNameView: View {
                 if let errorMessage = viewModel.errorMessage {
                     Section {
                         Text(errorMessage)
-                            .foregroundColor(.red)
+                            .foregroundColor(.accentRed)
                             .font(.caption)
                     }
                 }
@@ -58,6 +58,7 @@ struct EditProfileNameView: View {
                 viewModel.loadCurrentProfileName(from: authState.currentUser)
             }
         }
+        .background(Color.appBackground.ignoresSafeArea())
     }
 }
 

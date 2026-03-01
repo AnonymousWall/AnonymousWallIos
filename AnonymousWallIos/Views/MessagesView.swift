@@ -47,6 +47,7 @@ struct MessagesView: View {
         .onReceive(blockViewModel.userBlockedPublisher) { blockedUserId in
             conversationsViewModel.removeConversationsFromUser(blockedUserId)
         }
+        .background(Color.appBackground.ignoresSafeArea())
     }
 }
 
