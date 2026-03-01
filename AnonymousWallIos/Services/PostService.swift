@@ -329,7 +329,8 @@ class PostService: PostServiceProtocol {
             .setUserId(userId)
             .build()
         
-        return try await networkClient.performRequest(request)
+        let response: VoteResponse = try await networkClient.performRequest(request)
+        return response.poll
     }
     
     /// Fetch poll details
@@ -346,4 +347,11 @@ class PostService: PostServiceProtocol {
         
         return try await networkClient.performRequest(request)
     }
+}
+
+// MARK: - Private response wrappers
+
+private struct VoteResponse: Codable {
+    let poll: PollDTO
+    let message: String
 }
