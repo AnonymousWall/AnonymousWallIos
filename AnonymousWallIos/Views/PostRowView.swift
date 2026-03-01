@@ -109,6 +109,13 @@ struct PostRowView: View {
                 .accessibilityLabel("Post content: \(post.content)")
                 .accessibilityHint("Tap to view full post")
             
+            // Poll card (poll posts only)
+            if post.postType?.lowercased() == "poll",
+               let poll = post.poll,
+               let postUUID = UUID(uuidString: post.id) {
+                PollCardView(postId: postUUID, poll: poll)
+            }
+            
             // Post images
             if !post.imageUrls.isEmpty {
                 PostImageGallery(imageUrls: post.imageUrls, selectedImageViewer: $selectedImageViewer, accessibilityContext: "Post images")

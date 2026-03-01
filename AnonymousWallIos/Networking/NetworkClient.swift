@@ -77,12 +77,21 @@ class NetworkClient: NetworkClientProtocol {
                 throw NetworkError.unauthorized
                 
             case HTTPStatus.forbidden:
-                // Handle blocked user globally before throwing error
-                await blockedUserHandler.handleBlockedUser()
+                // Only trigger the blocked-user logout flow if the response body
+                // explicitly indicates the account is blocked.  A generic 403
+                // (e.g. content-type rejection, permission error) must not force logout.
+                let isBlockedAccount = isBlockedUserResponse(data)
+                if isBlockedAccount {
+                    await blockedUserHandler.handleBlockedUser()
+                }
                 throw NetworkError.forbidden
                 
             case HTTPStatus.notFound:
                 throw NetworkError.notFound
+                
+            case 409:
+                let errorMessage = extractErrorMessage(from: data) ?? "Conflict"
+                throw NetworkError.conflict(errorMessage)
                 
             case HTTPStatus.timeout:
                 throw NetworkError.timeout
@@ -130,6 +139,13 @@ class NetworkClient: NetworkClientProtocol {
         }
         
         return nil
+    }
+    
+    /// Returns true only when a 403 response body explicitly signals the user account is blocked.
+    /// This prevents content-type mismatches or regular permission errors from triggering logout.
+    private func isBlockedUserResponse(_ data: Data) -> Bool {
+        let bodyText = String(data: data, encoding: .utf8)?.lowercased() ?? ""
+        return bodyText.contains("blocked")
     }
     
     private func logRequest(_ request: URLRequest) {

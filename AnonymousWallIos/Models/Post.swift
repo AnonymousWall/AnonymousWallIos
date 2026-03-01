@@ -20,6 +20,12 @@ struct Post: Codable, Identifiable, Hashable {
     let author: Author
     let createdAt: String
     let updatedAt: String
+    /// "standard" or "poll"; nil decoded as "standard"
+    let postType: String?
+    /// Total poll votes; nil for standard posts
+    let totalVotes: Int?
+    /// Poll data; nil for standard posts
+    var poll: PollDTO?
     
     struct Author: Codable, Hashable {
         let id: String
@@ -38,14 +44,14 @@ struct Post: Codable, Identifiable, Hashable {
     
     enum CodingKeys: String, CodingKey {
         case id, title, content, wall, likes, comments, liked, author, createdAt, updatedAt
-        case imageUrls
+        case imageUrls, postType, totalVotes, poll
     }
     
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         id = try container.decode(String.self, forKey: .id)
         title = try container.decode(String.self, forKey: .title)
-        content = try container.decode(String.self, forKey: .content)
+        content = try container.decodeIfPresent(String.self, forKey: .content) ?? ""
         wall = try container.decode(String.self, forKey: .wall)
         likes = try container.decode(Int.self, forKey: .likes)
         comments = try container.decode(Int.self, forKey: .comments)
@@ -54,6 +60,9 @@ struct Post: Codable, Identifiable, Hashable {
         author = try container.decode(Author.self, forKey: .author)
         createdAt = try container.decode(String.self, forKey: .createdAt)
         updatedAt = try container.decode(String.self, forKey: .updatedAt)
+        postType = try container.decodeIfPresent(String.self, forKey: .postType)
+        totalVotes = try container.decodeIfPresent(Int.self, forKey: .totalVotes)
+        poll = try container.decodeIfPresent(PollDTO.self, forKey: .poll)
     }
     
     init(
@@ -67,7 +76,10 @@ struct Post: Codable, Identifiable, Hashable {
         imageUrls: [String] = [],
         author: Author,
         createdAt: String,
-        updatedAt: String
+        updatedAt: String,
+        postType: String? = nil,
+        totalVotes: Int? = nil,
+        poll: PollDTO? = nil
     ) {
         self.id = id
         self.title = title
@@ -80,6 +92,9 @@ struct Post: Codable, Identifiable, Hashable {
         self.author = author
         self.createdAt = createdAt
         self.updatedAt = updatedAt
+        self.postType = postType
+        self.totalVotes = totalVotes
+        self.poll = poll
     }
     
     /// Create a copy of this post with updated like status
@@ -95,7 +110,10 @@ struct Post: Codable, Identifiable, Hashable {
             imageUrls: self.imageUrls,
             author: self.author,
             createdAt: self.createdAt,
-            updatedAt: self.updatedAt
+            updatedAt: self.updatedAt,
+            postType: self.postType,
+            totalVotes: self.totalVotes,
+            poll: self.poll
         )
     }
     
@@ -112,7 +130,30 @@ struct Post: Codable, Identifiable, Hashable {
             imageUrls: self.imageUrls,
             author: self.author,
             createdAt: self.createdAt,
-            updatedAt: self.updatedAt
+            updatedAt: self.updatedAt,
+            postType: self.postType,
+            totalVotes: self.totalVotes,
+            poll: self.poll
+        )
+    }
+    
+    /// Create a copy of this post with updated poll data
+    func withUpdatedPoll(_ poll: PollDTO) -> Post {
+        return Post(
+            id: self.id,
+            title: self.title,
+            content: self.content,
+            wall: self.wall,
+            likes: self.likes,
+            comments: self.comments,
+            liked: self.liked,
+            imageUrls: self.imageUrls,
+            author: self.author,
+            createdAt: self.createdAt,
+            updatedAt: self.updatedAt,
+            postType: self.postType,
+            totalVotes: poll.totalVotes,
+            poll: poll
         )
     }
 }
@@ -132,9 +173,13 @@ struct PostListResponse: Codable {
 struct CreatePostRequest: Codable {
     /// Post title (required, 1-255 characters)
     let title: String
-    /// Post content (required, 1-5000 characters)
-    let content: String
+    /// Post content (optional for poll posts)
+    let content: String?
     let wall: String
+    /// "poll" or "standard"; nil defaults to standard
+    let postType: String?
+    /// 2–4 option strings; required when postType == "poll"
+    let pollOptions: [String]?
 }
 
 struct CreatePostResponse: Codable {
