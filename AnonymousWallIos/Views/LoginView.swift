@@ -28,9 +28,9 @@ struct LoginView: View {
                 VStack(spacing: 16) {
                     ZStack {
                         Circle()
-                            .fill(Color.purplePinkGradient)
+                            .fill(LinearGradient.brandGradient)
                             .frame(width: 100, height: 100)
-                            .shadow(color: Color.primaryPurple.opacity(0.3), radius: 10, x: 0, y: 5)
+                            .shadow(color: Color.accentPurple.opacity(0.3), radius: 10, x: 0, y: 5)
                         
                         Image(systemName: "lock.circle.fill")
                             .resizable()
@@ -40,11 +40,12 @@ struct LoginView: View {
                     
                     VStack(spacing: 8) {
                         Text("Welcome Back")
-                            .font(.system(size: 32, weight: .bold))
+                            .font(.displayLarge)
+                            .foregroundColor(.textPrimary)
                         
                         Text("Login to your account")
                             .font(.system(size: 16))
-                            .foregroundColor(.secondary)
+                            .foregroundColor(.textSecondary)
                             .multilineTextAlignment(.center)
                             .padding(.horizontal)
                     }
@@ -69,9 +70,10 @@ struct LoginView: View {
                         .textInputAutocapitalization(.never)
                         .keyboardType(.emailAddress)
                         .autocorrectionDisabled()
+                        .foregroundColor(.textPrimary)
                         .padding()
-                        .background(Color(.systemGray6))
-                        .cornerRadius(12)
+                        .background(Color.surfaceSecondary)
+                        .cornerRadius(Radius.md)
                 }
                 .padding(.horizontal)
             
@@ -85,7 +87,7 @@ struct LoginView: View {
                     SecureField("Enter your password", text: $viewModel.password)
                         .autocorrectionDisabled()
                         .padding()
-                        .background(Color(.systemGray6))
+                        .background(Color.surfaceSecondary)
                         .cornerRadius(10)
                 }
                 .padding(.horizontal)
@@ -96,7 +98,7 @@ struct LoginView: View {
                     Button(action: { coordinator.navigate(to: .forgotPassword) }) {
                         Text("Forgot Password?")
                             .font(.caption)
-                            .foregroundColor(.blue)
+                            .foregroundColor(.accentPurple)
                     }
                 }
                 .padding(.horizontal)
@@ -112,7 +114,7 @@ struct LoginView: View {
                             .keyboardType(.numberPad)
                             .autocorrectionDisabled()
                             .padding()
-                            .background(Color(.systemGray6))
+                            .background(Color.surfaceSecondary)
                             .cornerRadius(10)
                         
                         Button(action: { viewModel.requestVerificationCode() }) {
@@ -129,7 +131,7 @@ struct LoginView: View {
                         }
                         .padding(.horizontal, 16)
                         .padding(.vertical, 12)
-                        .background((viewModel.email.isEmpty || viewModel.resendCountdown > 0) ? Color.gray : Color.blue)
+                        .background((viewModel.email.isEmpty || viewModel.resendCountdown > 0) ? Color.gray : Color.accentPurple)
                         .foregroundColor(.white)
                         .cornerRadius(10)
                         .disabled(viewModel.email.isEmpty || viewModel.isSendingCode || viewModel.resendCountdown > 0)
@@ -141,7 +143,7 @@ struct LoginView: View {
             // Success message
             if let successMessage = viewModel.successMessage {
                 Text(successMessage)
-                    .foregroundColor(.green)
+                    .foregroundColor(.accentGreen)
                     .font(.caption)
                     .padding(.horizontal)
             }
@@ -149,7 +151,7 @@ struct LoginView: View {
             // Error message
             if let errorMessage = viewModel.errorMessage {
                 Text(errorMessage)
-                    .foregroundColor(.red)
+                    .foregroundColor(.accentRed)
                     .font(.caption)
                     .padding(.horizontal)
             }
@@ -178,11 +180,11 @@ struct LoginView: View {
             .background(
                 viewModel.isLoginButtonDisabled 
                 ? AnyShapeStyle(Color.gray)
-                : AnyShapeStyle(Color.purplePinkGradient)
+                : AnyShapeStyle(LinearGradient.brandGradient)
             )
             .foregroundColor(.white)
             .cornerRadius(16)
-            .shadow(color: viewModel.isLoginButtonDisabled ? Color.clear : Color.primaryPurple.opacity(0.3), radius: 8, x: 0, y: 4)
+            .shadow(color: viewModel.isLoginButtonDisabled ? Color.clear : Color.accentPurple.opacity(0.3), radius: 8, x: 0, y: 4)
             .padding(.horizontal)
             .disabled(viewModel.isLoginButtonDisabled)
             
@@ -191,15 +193,17 @@ struct LoginView: View {
             // Registration link
             HStack {
                 Text("Don't have an account?")
-                    .foregroundColor(.gray)
+                    .foregroundColor(.textSecondary)
                 Button("Sign Up") {
                     coordinator.navigate(to: .registration)
                 }
                 .fontWeight(.semibold)
+                .foregroundColor(.accentPurple)
             }
             .padding(.bottom, 20)
             }
         }
+        .background(Color.appBackground.ignoresSafeArea())
         .navigationBarTitleDisplayMode(.inline)
         .onDisappear {
             viewModel.cleanup()
