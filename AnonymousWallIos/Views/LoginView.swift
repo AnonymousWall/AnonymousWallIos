@@ -64,7 +64,7 @@ struct LoginView: View {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Email")
                         .font(.system(size: 15, weight: .semibold))
-                        .foregroundColor(.primary)
+                        .foregroundColor(.textPrimary)
                     
                     TextField("Enter your email", text: $viewModel.email)
                         .textInputAutocapitalization(.never)
@@ -82,7 +82,7 @@ struct LoginView: View {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Password")
                         .font(.headline)
-                        .foregroundColor(.primary)
+                        .foregroundColor(.textPrimary)
                     
                     SecureField("Enter your password", text: $viewModel.password)
                         .autocorrectionDisabled()
@@ -107,7 +107,7 @@ struct LoginView: View {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Verification Code")
                         .font(.headline)
-                        .foregroundColor(.primary)
+                        .foregroundColor(.textPrimary)
                     
                     HStack {
                         TextField("Enter 6-digit code", text: $viewModel.verificationCode)

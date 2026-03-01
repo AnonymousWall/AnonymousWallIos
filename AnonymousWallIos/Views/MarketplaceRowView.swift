@@ -175,7 +175,7 @@ struct MarketplaceRowView: View {
                             .font(.callout)
                             .foregroundColor(.white)
                             .padding(6)
-                            .background(Color.red)
+                            .background(Color.accentRed)
                             .cornerRadius(8)
                     }
                     .buttonStyle(.bounce)

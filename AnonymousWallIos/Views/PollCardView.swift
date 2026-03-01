@@ -84,7 +84,7 @@ struct PollCardView: View {
                 if let error = pollViewModel.errorMessage {
                     Text(error)
                         .font(.caption)
-                        .foregroundColor(.red)
+                        .foregroundColor(.accentRed)
                         .padding(.top, 2)
                         .accessibilityLabel("Error: \(error)")
                 }

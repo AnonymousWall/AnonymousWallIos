@@ -24,7 +24,7 @@ struct SetPasswordView: View {
                     Image(systemName: "key.fill")
                         .resizable()
                         .frame(width: 60, height: 60)
-                        .foregroundColor(.blue)
+                        .foregroundColor(.accentPurple)
                     
                     Text("Set Your Password")
                         .font(.largeTitle)
@@ -44,7 +44,7 @@ struct SetPasswordView: View {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Password")
                         .font(.headline)
-                        .foregroundColor(.primary)
+                        .foregroundColor(.textPrimary)
                     
                     SecureField("Enter password", text: $viewModel.password)
                         .autocorrectionDisabled()
@@ -62,7 +62,7 @@ struct SetPasswordView: View {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Confirm Password")
                         .font(.headline)
-                        .foregroundColor(.primary)
+                        .foregroundColor(.textPrimary)
                     
                     SecureField("Confirm password", text: $viewModel.confirmPassword)
                         .autocorrectionDisabled()
@@ -75,7 +75,7 @@ struct SetPasswordView: View {
                 // Error message
                 if let errorMessage = viewModel.errorMessage {
                     Text(errorMessage)
-                        .foregroundColor(.red)
+                        .foregroundColor(.accentRed)
                         .font(.caption)
                         .padding(.horizontal)
                 }
@@ -98,7 +98,7 @@ struct SetPasswordView: View {
                     }
                 }
                 .frame(height: 50)
-                .background(viewModel.isButtonDisabled ? Color.gray : Color.blue)
+                .background(viewModel.isButtonDisabled ? AnyShapeStyle(Color.gray) : AnyShapeStyle(LinearGradient.brandGradient))
                 .foregroundColor(.white)
                 .cornerRadius(10)
                 .padding(.horizontal)

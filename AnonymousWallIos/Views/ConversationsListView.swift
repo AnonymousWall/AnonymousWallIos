@@ -90,12 +90,12 @@ struct ConversationRowView: View {
         HStack(spacing: 12) {
             // Avatar placeholder
             Circle()
-                .fill(Color.accentColor.opacity(0.2))
+                .fill(LinearGradient.brandGradient)
                 .frame(width: 50, height: 50)
                 .overlay(
                     Text(conversation.profileName.prefix(1))
                         .font(.title3.bold())
-                        .foregroundColor(.accentColor)
+                        .foregroundColor(.white)
                 )
             
             VStack(alignment: .leading, spacing: 4) {
@@ -157,7 +157,7 @@ struct Badge: View {
             .foregroundColor(.white)
             .padding(.horizontal, count > 9 ? 6 : 8)
             .padding(.vertical, 4)
-            .background(Color.red)
+            .background(Color.accentRed)
             .cornerRadius(10)
     }
 }

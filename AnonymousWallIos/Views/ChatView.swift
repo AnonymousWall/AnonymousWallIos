@@ -32,7 +32,7 @@ struct ChatView: View {
             } else if case .reconnecting = viewModel.connectionState {
                 connectionStatusBar(text: "Reconnecting...", color: .orange)
             } else if case .failed = viewModel.connectionState {
-                connectionStatusBar(text: "Connection failed", color: .red)
+                connectionStatusBar(text: "Connection failed", color: .accentRed)
             }
             
             // Image upload progress
@@ -236,13 +236,13 @@ struct ChatView: View {
         VStack(spacing: 16) {
             Image(systemName: "bubble.left.and.bubble.right")
                 .font(.system(size: 60))
-                .foregroundColor(.secondary)
+                .foregroundColor(.textSecondary)
             Text("No messages yet")
                 .font(.headline)
-                .foregroundColor(.secondary)
+                .foregroundColor(.textSecondary)
             Text("Start a conversation by sending a message")
                 .font(.subheadline)
-                .foregroundColor(.secondary)
+                .foregroundColor(.textSecondary)
                 .multilineTextAlignment(.center)
         }
         .padding()
@@ -334,7 +334,7 @@ struct MessageBubbleView: View {
                 HStack(spacing: 4) {
                     Text(DateFormatting.formatRelativeTime(message.createdAt))
                         .font(.caption2)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(.textSecondary)
                     
                     if isCurrentUser {
                         statusIcon
@@ -353,11 +353,11 @@ struct MessageBubbleView: View {
             case .sending:
                 Image(systemName: "clock")
                     .font(.caption2)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(.textSecondary)
             case .sent, .delivered:
                 Image(systemName: "checkmark")
                     .font(.caption2)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(.textSecondary)
             case .read:
                 Image(systemName: "checkmark.circle.fill")
                     .font(.caption2)
@@ -365,7 +365,7 @@ struct MessageBubbleView: View {
             case .failed:
                 Image(systemName: "exclamationmark.circle")
                     .font(.caption2)
-                    .foregroundColor(.red)
+                    .foregroundColor(.accentRed)
             }
         }
     }

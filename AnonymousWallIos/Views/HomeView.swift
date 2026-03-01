@@ -26,7 +26,7 @@ struct HomeView: View {
                             .foregroundColor(.orange)
                         Text("Please set up your password to secure your account")
                             .font(.caption)
-                            .foregroundColor(.primary)
+                            .foregroundColor(.textPrimary)
                         Spacer()
                         Button("Set Now") {
                             coordinator.navigate(to: .setPassword)
@@ -84,10 +84,10 @@ struct HomeView: View {
                                 VStack(spacing: 8) {
                                     Text("No national posts yet")
                                         .font(.title3.bold())
-                                        .foregroundColor(.primary)
+                                        .foregroundColor(.textPrimary)
                                     Text("Be the first to post!")
                                         .font(.body)
-                                        .foregroundColor(.secondary)
+                                        .foregroundColor(.textSecondary)
                                 }
                                 .accessibilityElement(children: .combine)
                                 .accessibilityLabel("No national posts yet. Be the first to post!")
@@ -141,7 +141,7 @@ struct HomeView: View {
                 // Error message
                 if let errorMessage = viewModel.errorMessage {
                     Text(errorMessage)
-                        .foregroundColor(.red)
+                        .foregroundColor(.accentRed)
                         .font(.caption)
                         .padding()
                 }

@@ -52,7 +52,7 @@ struct RegistrationView: View {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Email")
                             .font(.system(size: 15, weight: .semibold))
-                            .foregroundColor(.primary)
+                            .foregroundColor(.textPrimary)
                         
                         HStack {
                             TextField("Enter your email", text: $viewModel.email)
@@ -99,7 +99,7 @@ struct RegistrationView: View {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Verification Code")
                             .font(.headline)
-                            .foregroundColor(.primary)
+                            .foregroundColor(.textPrimary)
                         
                         TextField("Enter 6-digit code", text: $viewModel.verificationCode)
                             .keyboardType(.numberPad)
@@ -114,7 +114,7 @@ struct RegistrationView: View {
                         if viewModel.resendCountdown > 0 {
                             Text("Resend Code in \(viewModel.resendCountdown)s")
                                 .font(.caption)
-                                .foregroundColor(.gray)
+                                .foregroundColor(.textSecondary)
                         } else {
                             Text("Resend Code")
                                 .font(.caption)

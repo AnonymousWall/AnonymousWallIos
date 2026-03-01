@@ -194,7 +194,7 @@ struct MarketplaceDetailView: View {
 
             if let errorMessage = viewModel.errorMessage {
                 Text(errorMessage)
-                    .foregroundColor(.red)
+                    .foregroundColor(.accentRed)
                     .font(.caption)
                     .padding(.horizontal)
                     .padding(.vertical, 8)

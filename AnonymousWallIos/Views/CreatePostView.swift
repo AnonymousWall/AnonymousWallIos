@@ -133,7 +133,7 @@ struct CreatePostView: View {
                                         ? "Downloading from iCloud... \(Int(viewModel.imageLoadProgress * 100))%"
                                         : "Processing...")
                                         .font(.caption)
-                                        .foregroundColor(.secondary)
+                                        .foregroundColor(.textSecondary)
                                 }
                                 .padding(.vertical, 4)
                                 .transition(.opacity)

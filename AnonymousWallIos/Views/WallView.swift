@@ -29,7 +29,7 @@ struct WallView: View {
                             .foregroundColor(.orange)
                         Text("Please set up your password to secure your account")
                             .font(.caption)
-                            .foregroundColor(.primary)
+                            .foregroundColor(.textPrimary)
                         Spacer()
                         Button("Set Now") {
                             showSetPassword = true
@@ -118,7 +118,7 @@ struct WallView: View {
                 // Error message
                 if let errorMessage = viewModel.errorMessage {
                     Text(errorMessage)
-                        .foregroundColor(.red)
+                        .foregroundColor(.accentRed)
                         .font(.caption)
                         .padding()
                 }

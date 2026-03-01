@@ -149,14 +149,14 @@ struct PostDetailView: View {
                         VStack(spacing: 12) {
                             Image(systemName: "bubble.left.and.bubble.right")
                                 .font(.largeTitle)
-                                .foregroundColor(.gray)
+                                .foregroundColor(.textSecondary)
                                 .accessibilityHidden(true)
                             Text("No comments yet")
                                 .font(.subheadline)
-                                .foregroundColor(.gray)
+                                .foregroundColor(.textSecondary)
                             Text("Be the first to comment!")
                                 .font(.caption)
-                                .foregroundColor(.gray)
+                                .foregroundColor(.textSecondary)
                         }
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 32)
@@ -204,7 +204,7 @@ struct PostDetailView: View {
             // Error message
             if let errorMessage = viewModel.errorMessage {
                 Text(errorMessage)
-                    .foregroundColor(.red)
+                    .foregroundColor(.accentRed)
                     .font(.caption)
                     .padding(.horizontal)
                     .padding(.vertical, 8)
@@ -426,7 +426,7 @@ struct CommentRowView: View {
                     Button(action: onReport) {
                         Image(systemName: "exclamationmark.triangle")
                             .font(.caption)
-                            .foregroundColor(.primary)
+                            .foregroundColor(.textPrimary)
                     }
                     .accessibilityLabel("Report comment")
                     .accessibilityHint("Double tap to report this comment")

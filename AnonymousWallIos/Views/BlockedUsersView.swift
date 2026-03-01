@@ -86,14 +86,14 @@ struct BlockedUsersView: View {
         VStack(spacing: 16) {
             Image(systemName: "person.fill.checkmark")
                 .font(.system(size: 60))
-                .foregroundColor(.secondary)
+                .foregroundColor(.textSecondary)
                 .accessibilityHidden(true)
             Text("No Blocked Users")
                 .font(.headline)
-                .foregroundColor(.secondary)
+                .foregroundColor(.textSecondary)
             Text("Users you block will appear here.")
                 .font(.subheadline)
-                .foregroundColor(.secondary)
+                .foregroundColor(.textSecondary)
                 .multilineTextAlignment(.center)
         }
         .padding()
@@ -117,7 +117,7 @@ private struct BlockedUserRow: View {
                     .accessibilityLabel("Blocked user: \(user.profileName)")
                 Text("Blocked \(DateFormatting.formatRelativeTime(user.createdAt))")
                     .font(.caption)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(.textSecondary)
                     .accessibilityLabel("Blocked \(DateFormatting.formatRelativeTime(user.createdAt))")
             }
 
@@ -127,10 +127,10 @@ private struct BlockedUserRow: View {
                 Text("Unblock")
                     .font(.subheadline)
                     .fontWeight(.medium)
-                    .foregroundColor(.red)
+                    .foregroundColor(.accentRed)
             }
             .buttonStyle(.bordered)
-            .tint(.red)
+            .tint(.accentRed)
             .accessibilityLabel("Unblock \(user.profileName)")
             .accessibilityHint("Double tap to unblock this user")
         }

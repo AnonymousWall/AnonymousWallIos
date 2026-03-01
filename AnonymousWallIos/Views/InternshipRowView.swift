@@ -89,12 +89,12 @@ struct InternshipRowView: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text(internship.company)
                     .font(.title3.bold())
-                    .foregroundColor(.primary)
+                    .foregroundColor(.textPrimary)
                     .accessibilityLabel("Company: \(internship.company)")
 
                 Text(internship.role)
                     .font(.subheadline)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(.textSecondary)
                     .accessibilityLabel("Role: \(internship.role)")
             }
 
@@ -153,7 +153,7 @@ struct InternshipRowView: View {
                             .font(.callout)
                             .foregroundColor(.white)
                             .padding(6)
-                            .background(Color.red)
+                            .background(Color.accentRed)
                             .cornerRadius(8)
                     }
                     .buttonStyle(.bounce)

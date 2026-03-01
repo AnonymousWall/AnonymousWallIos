@@ -71,7 +71,7 @@ struct CreateMarketplaceView: View {
                                     ? "Downloading from iCloud... \(Int(viewModel.imageLoadProgress * 100))%"
                                     : "Processing...")
                                     .font(.caption)
-                                    .foregroundColor(.secondary)
+                                    .foregroundColor(.textSecondary)
                             }
                             .padding(.vertical, 4)
                             .transition(.opacity)
@@ -160,7 +160,7 @@ struct CreateMarketplaceView: View {
                         RoundedRectangle(cornerRadius: 10)
                             .stroke(
                                 (!viewModel.priceText.isEmpty && !viewModel.isPriceValid)
-                                    ? Color.red : Color(.separator),
+                                    ? Color.accentRed : Color(.separator),
                                 lineWidth: 0.5
                             )
                     )
@@ -169,7 +169,7 @@ struct CreateMarketplaceView: View {
                 if !viewModel.priceText.isEmpty && !viewModel.isPriceValid {
                     Text("Please enter a valid price (0 or greater)")
                         .font(.caption)
-                        .foregroundColor(.red)
+                        .foregroundColor(.accentRed)
                 }
             }
         }

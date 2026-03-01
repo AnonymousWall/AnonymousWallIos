@@ -89,7 +89,7 @@ struct StyledTextField: View {
                     Spacer()
                     Text("\(text.count)/\(limit)")
                         .font(.caption2)
-                        .foregroundColor(isOverLimit ? .red : .secondary)
+                        .foregroundColor(isOverLimit ? .accentRed : .textSecondary)
                 }
             }
             TextField(placeholder, text: $text)
@@ -100,7 +100,7 @@ struct StyledTextField: View {
                 .cornerRadius(10)
                 .overlay(
                     RoundedRectangle(cornerRadius: 10)
-                        .stroke(isOverLimit ? Color.red : Color.borderSubtle, lineWidth: 0.5)
+                        .stroke(isOverLimit ? Color.accentRed : Color.borderSubtle, lineWidth: 0.5)
                 )
         }
         .accessibilityElement(children: .combine)
@@ -140,7 +140,7 @@ struct StyledTextEditorField: View {
                     Spacer()
                     Text("\(text.count)/\(limit)")
                         .font(.caption2)
-                        .foregroundColor(isOverLimit ? .red : .secondary)
+                        .foregroundColor(isOverLimit ? .accentRed : .textSecondary)
                 }
             }
             ZStack(alignment: .topLeading) {
@@ -151,7 +151,7 @@ struct StyledTextEditorField: View {
                     .cornerRadius(10)
                     .overlay(
                         RoundedRectangle(cornerRadius: 10)
-                            .stroke(isOverLimit ? Color.red : Color.borderSubtle, lineWidth: 0.5)
+                            .stroke(isOverLimit ? Color.accentRed : Color.borderSubtle, lineWidth: 0.5)
                     )
                 if text.isEmpty {
                     Text(placeholder)
@@ -217,16 +217,16 @@ struct FormErrorMessage: View {
         HStack(spacing: 8) {
             Image(systemName: "exclamationmark.triangle.fill")
                 .font(.caption)
-                .foregroundColor(.red)
+                .foregroundColor(.accentRed)
                 .accessibilityHidden(true)
             Text(message)
                 .font(.caption)
-                .foregroundColor(.red)
+                .foregroundColor(.accentRed)
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.red.opacity(0.08))
+        .background(Color.accentRed.opacity(0.08))
         .cornerRadius(10)
         .accessibilityLabel("Error: \(message)")
     }

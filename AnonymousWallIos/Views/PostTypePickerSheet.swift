@@ -134,7 +134,7 @@ private struct ComingSoonTypeRow: View {
                     .frame(width: 44, height: 44)
                 Image(systemName: icon)
                     .font(.system(size: 18, weight: .semibold))
-                    .foregroundColor(.secondary)
+                    .foregroundColor(.textSecondary)
             }
 
             VStack(alignment: .leading, spacing: 2) {

@@ -27,7 +27,7 @@ struct CreatePostTabView: View {
 
                         Text("Share posts, internships, or list items for sale")
                             .font(.subheadline)
-                            .foregroundColor(.gray)
+                            .foregroundColor(.textSecondary)
                             .multilineTextAlignment(.center)
                             .padding(.horizontal)
                     }
@@ -114,10 +114,10 @@ private struct CreateOptionButton: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(title)
                         .font(.headline)
-                        .foregroundColor(.primary)
+                        .foregroundColor(.textPrimary)
                     Text(subtitle)
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(.textSecondary)
                         .lineLimit(2)
                 }
 
@@ -125,7 +125,7 @@ private struct CreateOptionButton: View {
 
                 Image(systemName: "chevron.right")
                     .font(.subheadline)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(.textSecondary)
             }
             .padding(16)
             .background(Color.surfacePrimary)
@@ -133,7 +133,7 @@ private struct CreateOptionButton: View {
             .shadow(color: Color.black.opacity(0.06), radius: 8, x: 0, y: 4)
             .overlay(
                 RoundedRectangle(cornerRadius: 16)
-                    .stroke(Color(.systemGray5), lineWidth: 0.5)
+                    .stroke(Color.borderSubtle, lineWidth: 0.5)
             )
         }
         .buttonStyle(.bounce)

@@ -24,7 +24,7 @@ struct ChangePasswordView: View {
                     Image(systemName: "lock.shield")
                         .resizable()
                         .frame(width: 60, height: 60)
-                        .foregroundColor(.blue)
+                        .foregroundColor(.accentPurple)
                     
                     Text("Change Password")
                         .font(.largeTitle)
@@ -42,7 +42,7 @@ struct ChangePasswordView: View {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Current Password")
                         .font(.headline)
-                        .foregroundColor(.primary)
+                        .foregroundColor(.textPrimary)
                     
                     SecureField("Enter current password", text: $viewModel.oldPassword)
                         .autocorrectionDisabled()
@@ -56,7 +56,7 @@ struct ChangePasswordView: View {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("New Password")
                         .font(.headline)
-                        .foregroundColor(.primary)
+                        .foregroundColor(.textPrimary)
                     
                     SecureField("Enter new password", text: $viewModel.newPassword)
                         .autocorrectionDisabled()
@@ -74,7 +74,7 @@ struct ChangePasswordView: View {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Confirm New Password")
                         .font(.headline)
-                        .foregroundColor(.primary)
+                        .foregroundColor(.textPrimary)
                     
                     SecureField("Confirm new password", text: $viewModel.confirmPassword)
                         .autocorrectionDisabled()
@@ -87,7 +87,7 @@ struct ChangePasswordView: View {
                 // Error message
                 if let errorMessage = viewModel.errorMessage {
                     Text(errorMessage)
-                        .foregroundColor(.red)
+                        .foregroundColor(.accentRed)
                         .font(.caption)
                         .padding(.horizontal)
                 }
@@ -107,7 +107,7 @@ struct ChangePasswordView: View {
                     }
                 }
                 .frame(height: 50)
-                .background(viewModel.isButtonDisabled ? Color.gray : Color.blue)
+                .background(viewModel.isButtonDisabled ? AnyShapeStyle(Color.gray) : AnyShapeStyle(LinearGradient.brandGradient))
                 .foregroundColor(.white)
                 .cornerRadius(10)
                 .padding(.horizontal)

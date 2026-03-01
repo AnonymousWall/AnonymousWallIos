@@ -133,7 +133,7 @@ struct InternshipView: View {
 
                 if let errorMessage = activeViewModel.errorMessage {
                     Text(errorMessage)
-                        .foregroundColor(.red)
+                        .foregroundColor(.accentRed)
                         .font(.caption)
                         .padding()
                 }
