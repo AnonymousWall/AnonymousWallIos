@@ -12,7 +12,8 @@ struct CampusView: View {
     @EnvironmentObject var blockViewModel: BlockViewModel
     @StateObject private var viewModel = CampusViewModel()
     @ObservedObject var coordinator: CampusCoordinator
-    
+    @State private var showSortPicker = false
+
     // Minimum height for scrollable content when list is empty
     private let minimumScrollableHeight: CGFloat = 300
     
@@ -41,20 +42,38 @@ struct CampusView: View {
                     .padding()
                 }
                 
-                // Sorting segmented control
-                Picker("Sort Order", selection: $viewModel.selectedSortOrder) {
-                    ForEach(SortOrder.feedOptions, id: \.self) { option in
-                        Text(option.displayName).tag(option)
+                // Sort trigger badge
+                HStack {
+                    Button {
+                        showSortPicker = true
+                    } label: {
+                        HStack(spacing: 6) {
+                            Image(systemName: viewModel.selectedSortOrder.icon)
+                                .font(.caption.weight(.semibold))
+                            Text(viewModel.selectedSortOrder.displayName)
+                                .font(.labelMedium)
+                            Image(systemName: "chevron.down")
+                                .font(.caption2.weight(.bold))
+                        }
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 7)
+                        .foregroundColor(viewModel.selectedSortOrder.accentColor)
+                        .background(
+                            Capsule()
+                                .fill(viewModel.selectedSortOrder.accentColor.opacity(0.1))
+                                .overlay(
+                                    Capsule()
+                                        .stroke(viewModel.selectedSortOrder.accentColor.opacity(0.25), lineWidth: 1)
+                                )
+                        )
                     }
+                    .accessibilityLabel("Sort posts")
+                    .accessibilityValue(viewModel.selectedSortOrder.displayName)
+                    .accessibilityHint("Double tap to change sort order")
+                    Spacer()
                 }
-                .pickerStyle(.segmented)
                 .padding(.horizontal)
                 .padding(.vertical, 8)
-                .accessibilityLabel("Sort posts")
-                .accessibilityValue(viewModel.selectedSortOrder.displayName)
-                .onChange(of: viewModel.selectedSortOrder) { _, _ in
-                    viewModel.sortOrderChanged(authState: authState)
-                }
                 
                 // Post list
                 ScrollView {
@@ -178,6 +197,15 @@ struct CampusView: View {
         .background(Color.appBackground.ignoresSafeArea())
         .sheet(isPresented: $coordinator.showSetPassword) {
             SetPasswordView(authService: AuthService.shared)
+        }
+        .sheet(isPresented: $showSortPicker) {
+            SortPickerSheet(selectedSort: $viewModel.selectedSortOrder)
+                .presentationDetents([.medium])
+                .presentationDragIndicator(.hidden)
+                .presentationCornerRadius(28)
+        }
+        .onChange(of: viewModel.selectedSortOrder) { _, _ in
+            viewModel.sortOrderChanged(authState: authState)
         }
         .onAppear {
             // Show password setup if needed (only once)

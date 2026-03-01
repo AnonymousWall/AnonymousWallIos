@@ -15,6 +15,7 @@ struct InternshipView: View {
     @StateObject private var nationalViewModel = InternshipFeedViewModel(wallType: .national)
     @State private var selectedWall: WallType = .campus
     @State private var showCreateInternship = false
+    @State private var showWallPicker = false
 
     private var activeViewModel: InternshipFeedViewModel {
         selectedWall == .campus ? campusViewModel : nationalViewModel
@@ -25,22 +26,38 @@ struct InternshipView: View {
     var body: some View {
         NavigationStack(path: $coordinator.path) {
             VStack(spacing: 0) {
-                // Wall picker
-                Picker("Wall", selection: $selectedWall) {
-                    ForEach(WallType.allCases, id: \.self) { wall in
-                        Text(wall.displayName).tag(wall)
+                // Wall trigger badge
+                HStack {
+                    Button {
+                        showWallPicker = true
+                    } label: {
+                        HStack(spacing: 6) {
+                            Image(systemName: selectedWall.icon)
+                                .font(.caption.weight(.semibold))
+                            Text(selectedWall.displayName)
+                                .font(.labelMedium)
+                            Image(systemName: "chevron.down")
+                                .font(.caption2.weight(.bold))
+                        }
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 7)
+                        .foregroundColor(selectedWall.accentColor)
+                        .background(
+                            Capsule()
+                                .fill(selectedWall.accentColor.opacity(0.1))
+                                .overlay(
+                                    Capsule()
+                                        .stroke(selectedWall.accentColor.opacity(0.25), lineWidth: 1)
+                                )
+                        )
                     }
+                    .accessibilityLabel("Select wall")
+                    .accessibilityValue(selectedWall.displayName)
+                    .accessibilityHint("Double tap to change wall")
+                    Spacer()
                 }
-                .pickerStyle(SegmentedPickerStyle())
                 .padding(.horizontal)
                 .padding(.vertical, 8)
-                .accessibilityLabel("Select wall")
-                .accessibilityValue(selectedWall.displayName)
-                .onChange(of: selectedWall) { _, _ in
-                    HapticFeedback.selection()
-                    activeViewModel.loadInternships(authState: authState)
-                }
-                .tint(.accentPurple)
 
                 // Sort picker
                 HStack {
@@ -192,6 +209,15 @@ struct InternshipView: View {
             CreateInternshipView {
                 activeViewModel.loadInternships(authState: authState)
             }
+        }
+        .sheet(isPresented: $showWallPicker) {
+            WallPickerSheet(selectedWall: $selectedWall)
+                .presentationDetents([.height(260)])
+                .presentationDragIndicator(.hidden)
+                .presentationCornerRadius(28)
+        }
+        .onChange(of: selectedWall) { _, _ in
+            activeViewModel.loadInternships(authState: authState)
         }
         .onAppear {
             campusViewModel.loadInternships(authState: authState)
