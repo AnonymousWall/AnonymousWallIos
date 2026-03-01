@@ -63,9 +63,28 @@ class PollViewModel: ObservableObject {
     
     /// Syncs fresh poll data from the parent post (e.g. after a list refresh).
     /// Skipped while a vote is in flight to preserve optimistic UI state.
-    func updatePoll(_ freshPoll: PollDTO) {
+    /// When local state already shows results (user has voted this session),
+    /// a stale server snapshot that has resultsVisible: false is NOT allowed
+    /// to clobber the local voted state — only totalVotes is updated so that
+    /// votes from other users are still reflected.
+    func updatePoll(_ incoming: PollDTO) {
         guard !isVoting else { return }
-        poll = freshPoll
+
+        if let current = poll, current.resultsVisible && !incoming.resultsVisible {
+            // Local state is ahead of the server list snapshot (user voted in
+            // this session but the list endpoint still returns pre-vote data).
+            // Keep local voted results; only update totalVotes from server so
+            // concurrent votes by other users are reflected accurately.
+            poll = PollDTO(
+                options: current.options,
+                totalVotes: incoming.totalVotes,
+                userVotedOptionId: current.userVotedOptionId,
+                resultsVisible: current.resultsVisible
+            )
+            return
+        }
+
+        poll = incoming
     }
     
     // MARK: - Private Helpers
