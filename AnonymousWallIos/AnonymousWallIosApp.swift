@@ -9,9 +9,11 @@ import SwiftUI
 
 @main
 struct AnonymousWallIosApp: App {
+    @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     @StateObject private var authState = AuthState()
     @StateObject private var appCoordinator: AppCoordinator
     @StateObject private var blockViewModel = BlockViewModel()
+    @StateObject private var deepLinkHandler = DeepLinkHandler.shared
 
     init() {
         let authState = AuthState()
@@ -53,6 +55,11 @@ struct AnonymousWallIosApp: App {
                 if !authState.isAuthenticated {
                     NotificationCenter.default.post(name: .resetNavigation, object: nil)
                 }
+            }
+            .onChange(of: deepLinkHandler.pendingPostId) { _, postId in
+                guard let postId, authState.isAuthenticated else { return }
+                appCoordinator.navigateToPost(id: postId, authState: authState)
+                deepLinkHandler.consume()
             }
         }
     }

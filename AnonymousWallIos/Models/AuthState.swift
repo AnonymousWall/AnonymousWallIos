@@ -19,16 +19,26 @@ class AuthState: ObservableObject {
     private let config = AppConfiguration.shared
     private let keychainAuthTokenKey: String
     private let preferencesStore: PreferencesStore
+    private let deviceTokenService: DeviceTokenService
+    private var apnsTokenObserver: NSObjectProtocol?
     
-    init(loadPersistedState: Bool = true, preferencesStore: PreferencesStore = .shared) {
+    init(loadPersistedState: Bool = true, preferencesStore: PreferencesStore = .shared, deviceTokenService: DeviceTokenService = DeviceTokenService()) {
         self.keychainAuthTokenKey = config.authTokenKey
         self.preferencesStore = preferencesStore
+        self.deviceTokenService = deviceTokenService
+        setupAPNsTokenObserver()
         if loadPersistedState {
             // Load state synchronously by blocking on the async operation
             // This ensures AuthState is fully initialized before use
             Task { @MainActor in
                 await self.loadAuthState()
             }
+        }
+    }
+    
+    deinit {
+        if let observer = apnsTokenObserver {
+            NotificationCenter.default.removeObserver(observer)
         }
     }
     
@@ -46,6 +56,11 @@ class AuthState: ObservableObject {
         // 3. Next login/action will overwrite stale data if write fails
         Task {
             await saveAuthState()
+        }
+        
+        // Request notification permission and register with APNs after login
+        Task {
+            await NotificationService.shared.requestPermissionAndRegister()
         }
     }
     
@@ -110,6 +125,20 @@ class AuthState: ObservableObject {
         }
     }
     
+    private func setupAPNsTokenObserver() {
+        apnsTokenObserver = NotificationCenter.default.addObserver(
+            forName: .apnsTokenReceived,
+            object: nil,
+            queue: .main
+        ) { [weak self] notification in
+            guard let self,
+                  let token = notification.userInfo?["token"] as? String else { return }
+            Task {
+                await self.deviceTokenService.registerToken(token, authState: self)
+            }
+        }
+    }
+    
     private func saveAuthState() async {
         // Save non-sensitive data to PreferencesStore
         await preferencesStore.saveBatch(
@@ -153,6 +182,13 @@ class AuthState: ObservableObject {
                 // passwordSet is the inverse of needsPasswordSetup
                 let passwordSet = !self.needsPasswordSetup
                 self.currentUser = User(id: userId, email: userEmail, profileName: profileName, isVerified: isVerified, passwordSet: passwordSet, createdAt: "")
+            }
+        }
+        
+        // Re-register with APNs on launch if already authenticated
+        if isAuthenticated {
+            Task {
+                await NotificationService.shared.requestPermissionAndRegister()
             }
         }
     }
