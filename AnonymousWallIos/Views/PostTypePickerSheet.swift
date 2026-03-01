@@ -30,9 +30,7 @@ struct PostTypePickerSheet: View {
     var body: some View {
         VStack(spacing: 0) {
             // Sheet title
-            Text("Post Type")
-                .font(.footnote.smallCaps().weight(.semibold))
-                .foregroundColor(.secondary)
+            SectionLabel(text: "Post Type")
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal, 16)
                 .padding(.top, 20)
@@ -57,7 +55,7 @@ struct PostTypePickerSheet: View {
 
             Spacer()
         }
-        .background(Color(.systemGroupedBackground))
+        .background(Color.surfacePrimary)
     }
 }
 
@@ -85,10 +83,10 @@ struct PostTypeRow: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(type.displayName)
                         .font(.subheadline.weight(.semibold))
-                        .foregroundColor(.primary)
+                        .foregroundColor(.textPrimary)
                     Text(type.description)
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(.textSecondary)
                         .lineLimit(2)
                 }
 
@@ -142,10 +140,10 @@ private struct ComingSoonTypeRow: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(name)
                     .font(.subheadline.weight(.semibold))
-                    .foregroundColor(.primary)
+                    .foregroundColor(.textPrimary)
                 Text(description)
                     .font(.caption)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(.textSecondary)
                     .lineLimit(2)
             }
 
@@ -153,11 +151,11 @@ private struct ComingSoonTypeRow: View {
 
             Text("Soon")
                 .font(.caption2.weight(.semibold))
-                .foregroundColor(.secondary)
+                .foregroundColor(.textSecondary)
                 .padding(.horizontal, 8)
                 .padding(.vertical, 4)
                 .background(
-                    Capsule().fill(Color(.systemFill))
+                    Capsule().fill(Color.surfaceSecondary)
                 )
         }
         .padding(.horizontal, 16)
