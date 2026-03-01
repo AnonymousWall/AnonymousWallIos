@@ -23,10 +23,6 @@ struct InternshipRowView: View {
         internship.wall.uppercased() == WallType.campus.rawValue.uppercased()
     }
 
-    private var wallGradient: LinearGradient {
-        LinearGradient.brandGradient
-    }
-
     private var wallDisplayName: String {
         isCampus ? WallType.campus.displayName : WallType.national.displayName
     }
@@ -35,14 +31,7 @@ struct InternshipRowView: View {
         VStack(alignment: .leading, spacing: 14) {
             // Wall badge and author
             HStack(spacing: 10) {
-                Text(wallDisplayName)
-                    .font(.caption)
-                    .fontWeight(.bold)
-                    .foregroundColor(.white)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 6)
-                    .background(wallGradient)
-                    .cornerRadius(12)
+                ChipBadge(label: wallDisplayName, color: isCampus ? .accentPurple : .accentBlue)
                     .accessibilityLabel("Posted on \(wallDisplayName) wall")
 
                 if isOwnPosting {
