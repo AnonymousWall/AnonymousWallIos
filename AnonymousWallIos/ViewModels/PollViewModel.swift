@@ -73,11 +73,12 @@ class PollViewModel: ObservableObject {
         if let current = poll, current.resultsVisible && !incoming.resultsVisible {
             // Local state is ahead of the server list snapshot (user voted in
             // this session but the list endpoint still returns pre-vote data).
-            // Keep local voted results; only update totalVotes from server so
-            // concurrent votes by other users are reflected accurately.
+            // Keep local voted results; take the higher totalVotes so that
+            // (a) our own vote is never subtracted and
+            // (b) concurrent votes by other users are still reflected.
             poll = PollDTO(
                 options: current.options,
-                totalVotes: incoming.totalVotes,
+                totalVotes: max(current.totalVotes, incoming.totalVotes),
                 userVotedOptionId: current.userVotedOptionId,
                 resultsVisible: current.resultsVisible
             )

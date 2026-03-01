@@ -178,10 +178,29 @@ struct PollViewModelTests {
         // resultsVisible and userVotedOptionId must be preserved
         #expect(vm.poll?.resultsVisible == true)
         #expect(vm.poll?.userVotedOptionId == optionId)
-        // totalVotes must reflect the newer server count
+        // totalVotes takes max(local=1, server=2) = 2
         #expect(vm.poll?.totalVotes == 2)
         // Options (with percentages) must be preserved from local voted state
         #expect(vm.poll?.options.first?.percentage == 100)
+    }
+
+    @Test func testUpdatePollDoesNotResetVoteCountWhenServerSnapshotIsStillAtZero() {
+        // Regression: UserA votes (totalVotes becomes 1 locally), then pulls to refresh.
+        // The list endpoint hasn't reflected the vote yet and returns totalVotes: 0.
+        // The vote count must NOT go backwards to 0.
+        let optionId = UUID()
+        let localPoll = makePoll(totalVotes: 1, userVotedOptionId: optionId, resultsVisible: true)
+        let vm = PollViewModel(poll: localPoll)
+
+        // Server list snapshot still has old totalVotes (0) and resultsVisible: false
+        let staleServerPoll = makePoll(totalVotes: 0, resultsVisible: false)
+        vm.updatePoll(staleServerPoll)
+
+        // totalVotes must NOT reset — takes max(local=1, server=0) = 1
+        #expect(vm.poll?.totalVotes == 1)
+        // Voted state preserved
+        #expect(vm.poll?.resultsVisible == true)
+        #expect(vm.poll?.userVotedOptionId == optionId)
     }
 
     @Test func testUpdatePollAcceptsServerDataWhenBothResultsVisible() {
