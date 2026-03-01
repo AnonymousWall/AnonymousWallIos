@@ -8,9 +8,37 @@
 import SwiftUI
 
 /// Distinguishes standard text/image posts from poll posts.
-enum PostType: String {
+enum PostType: String, CaseIterable {
     case standard
     case poll
+
+    var displayName: String {
+        switch self {
+        case .standard: return "Standard Post"
+        case .poll:     return "Poll"
+        }
+    }
+
+    var description: String {
+        switch self {
+        case .standard: return "Share text or photos with your campus"
+        case .poll:     return "Ask your campus a question with up to 4 options"
+        }
+    }
+
+    var icon: String {
+        switch self {
+        case .standard: return "doc.text"
+        case .poll:     return "chart.bar"
+        }
+    }
+
+    var accentColor: Color {
+        switch self {
+        case .standard: return Color.blue
+        case .poll:     return Color.purple
+        }
+    }
 }
 
 @MainActor
