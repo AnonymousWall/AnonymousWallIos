@@ -13,6 +13,7 @@ struct CreatePostView: View {
     @Environment(\.dismiss) var dismiss
     @StateObject private var viewModel = CreatePostViewModel()
     @State private var photoPickerItems: [PhotosPickerItem] = []
+    @State private var showTypePicker = false
 
     var onPostCreated: () -> Void
 
@@ -25,12 +26,35 @@ struct CreatePostView: View {
                         .padding(.horizontal)
                         .padding(.top, 10)
 
-                    // Post type toggle
-                    PostTypePickerSection(postType: $viewModel.postType)
-                        .padding(.horizontal)
-
                     // Post details card
                     FormSectionCard(title: "Post Details", systemIcon: "doc.text.fill") {
+                        // Type badge
+                        Button {
+                            showTypePicker = true
+                        } label: {
+                            HStack(spacing: 6) {
+                                Image(systemName: viewModel.postType.icon)
+                                    .font(.caption.weight(.semibold))
+                                Text(viewModel.postType.displayName)
+                                    .font(.subheadline.weight(.semibold))
+                                Image(systemName: "chevron.down")
+                                    .font(.caption2.weight(.bold))
+                            }
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 7)
+                            .foregroundColor(viewModel.postType.accentColor)
+                            .background(
+                                Capsule()
+                                    .fill(viewModel.postType.accentColor.opacity(0.1))
+                                    .overlay(
+                                        Capsule()
+                                            .stroke(viewModel.postType.accentColor.opacity(0.25), lineWidth: 1)
+                                    )
+                            )
+                        }
+                        .accessibilityLabel("Post type: \(viewModel.postType.displayName)")
+                        .accessibilityHint("Double tap to change post type")
+
                         StyledTextField(
                             icon: "character.cursor.ibeam",
                             label: "Title",
@@ -55,16 +79,18 @@ struct CreatePostView: View {
 
                     // Poll options editor (only in poll mode)
                     if viewModel.isPollMode {
-                        FormSectionCard(title: "Poll Options", systemIcon: "list.bullet.rectangle") {
-                            PollOptionsEditorView(
-                                pollOptions: $viewModel.pollOptions,
-                                maxCharacters: viewModel.maxPollOptionCount,
-                                canAdd: viewModel.canAddPollOption,
-                                canRemove: viewModel.canRemovePollOption,
-                                onAdd: { viewModel.addPollOption() },
-                                onRemove: { viewModel.removePollOption(at: $0) }
-                            )
-                        }
+                        PollOptionsEditorView(
+                            pollOptions: $viewModel.pollOptions,
+                            maxCharacters: viewModel.maxPollOptionCount,
+                            canAdd: viewModel.canAddPollOption,
+                            canRemove: viewModel.canRemovePollOption,
+                            onAdd: { viewModel.addPollOption() },
+                            onRemove: { viewModel.removePollOption(at: $0) }
+                        )
+                        .padding(16)
+                        .background(Color(.systemBackground))
+                        .cornerRadius(16)
+                        .shadow(color: Color.black.opacity(0.06), radius: 8, x: 0, y: 3)
                         .padding(.horizontal)
                     }
 
@@ -163,25 +189,12 @@ struct CreatePostView: View {
                     .accessibilityHint("Double tap to cancel creating a post")
                 }
             }
-        }
-    }
-}
-
-// MARK: - Post Type Picker
-
-private struct PostTypePickerSection: View {
-    @Binding var postType: PostType
-
-    var body: some View {
-        Picker("Post Type", selection: $postType) {
-            Text("Standard").tag(PostType.standard)
-            Text("Poll").tag(PostType.poll)
-        }
-        .pickerStyle(.segmented)
-        .accessibilityLabel("Select post type")
-        .accessibilityValue(postType == .poll ? "Poll" : "Standard")
-        .onChange(of: postType) { _, _ in
-            HapticFeedback.selection()
+            .sheet(isPresented: $showTypePicker) {
+                PostTypePickerSheet(selectedType: $viewModel.postType)
+                    .presentationDetents([.medium])
+                    .presentationDragIndicator(.visible)
+                    .presentationCornerRadius(28)
+            }
         }
     }
 }
