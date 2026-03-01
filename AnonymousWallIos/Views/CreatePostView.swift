@@ -79,16 +79,18 @@ struct CreatePostView: View {
 
                     // Poll options editor (only in poll mode)
                     if viewModel.isPollMode {
-                        FormSectionCard(title: "Poll Options", systemIcon: "list.bullet.rectangle") {
-                            PollOptionsEditorView(
-                                pollOptions: $viewModel.pollOptions,
-                                maxCharacters: viewModel.maxPollOptionCount,
-                                canAdd: viewModel.canAddPollOption,
-                                canRemove: viewModel.canRemovePollOption,
-                                onAdd: { viewModel.addPollOption() },
-                                onRemove: { viewModel.removePollOption(at: $0) }
-                            )
-                        }
+                        PollOptionsEditorView(
+                            pollOptions: $viewModel.pollOptions,
+                            maxCharacters: viewModel.maxPollOptionCount,
+                            canAdd: viewModel.canAddPollOption,
+                            canRemove: viewModel.canRemovePollOption,
+                            onAdd: { viewModel.addPollOption() },
+                            onRemove: { viewModel.removePollOption(at: $0) }
+                        )
+                        .padding(16)
+                        .background(Color(.systemBackground))
+                        .cornerRadius(16)
+                        .shadow(color: Color.black.opacity(0.06), radius: 8, x: 0, y: 3)
                         .padding(.horizontal)
                     }
 
