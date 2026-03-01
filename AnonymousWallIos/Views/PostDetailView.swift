@@ -433,15 +433,7 @@ struct CommentRowView: View {
                 }
             }
             .padding()
-            .background(
-                Group {
-                    if isOwnComment {
-                        AnyShapeStyle(LinearGradient.brandGradient)
-                    } else {
-                        AnyShapeStyle(Color.surfaceSecondary)
-                    }
-                }
-            )
+            .background(isOwnComment ? AnyShapeStyle(LinearGradient.brandGradient) : AnyShapeStyle(Color.surfaceSecondary))
             .cornerRadius(8)
             
             // Add trailing spacer for other users' comments (push to left)
