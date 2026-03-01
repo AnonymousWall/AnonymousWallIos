@@ -32,6 +32,7 @@ struct MarketView: View {
                     }
                 }
                 .pickerStyle(SegmentedPickerStyle())
+                .tint(.accentPurple)
                 .padding(.horizontal)
                 .padding(.vertical, 8)
                 .accessibilityLabel("Select wall")
@@ -93,14 +94,14 @@ struct MarketView: View {
                             VStack(spacing: 16) {
                                 Image(systemName: "cart.fill")
                                     .font(.system(size: 60))
-                                    .foregroundColor(.gray)
+                                    .foregroundColor(.textSecondary)
                                     .accessibilityHidden(true)
                                 Text("No items yet")
                                     .font(.headline)
-                                    .foregroundColor(.gray)
+                                    .foregroundColor(.textSecondary)
                                 Text("Be the first to list something!")
                                     .font(.subheadline)
-                                    .foregroundColor(.gray)
+                                    .foregroundColor(.textSecondary)
                             }
                             .accessibilityElement(children: .combine)
                             .accessibilityLabel("No items yet. Be the first to list something!")
@@ -147,6 +148,8 @@ struct MarketView: View {
                 .refreshable {
                     await activeViewModel.refreshItems(authState: authState)
                 }
+                .scrollContentBackground(.hidden)
+                .background(Color.appBackground)
 
                 if let errorMessage = activeViewModel.errorMessage {
                     Text(errorMessage)
@@ -204,6 +207,7 @@ struct MarketView: View {
                 }
             }
         }
+        .background(Color.appBackground.ignoresSafeArea())
         .sheet(isPresented: $showCreateItem) {
             CreateMarketplaceView {
                 activeViewModel.loadItems(authState: authState)

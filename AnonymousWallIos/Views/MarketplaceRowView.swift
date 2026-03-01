@@ -52,7 +52,7 @@ struct MarketplaceRowView: View {
                     Text("by Me")
                         .font(.caption)
                         .fontWeight(.medium)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(.textSecondary)
                         .accessibilityLabel("Listed by you")
                 } else {
                     Button(action: {
@@ -62,7 +62,7 @@ struct MarketplaceRowView: View {
                         Text("by \(item.author.profileName)")
                             .font(.caption)
                             .fontWeight(.medium)
-                            .foregroundColor(.blue)
+                            .foregroundColor(.accentBlue)
                             .underline()
                     }
                     .accessibilityLabel("Listed by \(item.author.profileName)")
@@ -90,7 +90,7 @@ struct MarketplaceRowView: View {
             HStack(alignment: .top) {
                 Text(item.title)
                     .font(.title3.bold())
-                    .foregroundColor(.primary)
+                    .foregroundColor(.textPrimary)
                     .fixedSize(horizontal: false, vertical: true)
                     .accessibilityLabel("Item: \(item.title)")
 
@@ -108,10 +108,10 @@ struct MarketplaceRowView: View {
                     let display = conditionDisplayName(condition)
                     Text(display)
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(.textSecondary)
                         .padding(.horizontal, 8)
                         .padding(.vertical, 4)
-                        .background(Color(.systemGray6))
+                        .background(Color.surfaceSecondary)
                         .cornerRadius(8)
                         .accessibilityLabel("Condition: \(display)")
                 }
@@ -119,10 +119,10 @@ struct MarketplaceRowView: View {
                 if let category = item.category, !category.isEmpty {
                     Text(category.capitalized)
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(.textSecondary)
                         .padding(.horizontal, 8)
                         .padding(.vertical, 4)
-                        .background(Color(.systemGray6))
+                        .background(Color.surfaceSecondary)
                         .cornerRadius(8)
                         .accessibilityLabel("Category: \(category)")
                 }
@@ -138,10 +138,10 @@ struct MarketplaceRowView: View {
                 HStack(spacing: 4) {
                     Image(systemName: "clock")
                         .font(.caption2)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(.textSecondary)
                     Text(DateFormatting.formatRelativeTime(item.createdAt))
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(.textSecondary)
                 }
                 .accessibilityElement(children: .combine)
                 .accessibilityLabel("Posted \(DateFormatting.formatRelativeTime(item.createdAt))")
@@ -197,12 +197,12 @@ struct MarketplaceRowView: View {
         .padding(16)
         .background(
             RoundedRectangle(cornerRadius: 16)
-                .fill(Color(.systemBackground))
+                .fill(Color.surfacePrimary)
                 .shadow(color: Color.black.opacity(0.08), radius: 8, x: 0, y: 4)
         )
         .overlay(
             RoundedRectangle(cornerRadius: 16)
-                .stroke(Color(.systemGray5), lineWidth: 0.5)
+                .stroke(Color.surfaceSecondary, lineWidth: 0.5)
         )
         .fullScreenCover(item: $selectedImageViewer) { viewer in
             FullScreenImageViewer(imageURLs: item.imageUrls, initialIndex: viewer.index)

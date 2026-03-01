@@ -48,10 +48,10 @@ struct PollCardView: View {
                 HStack(spacing: 6) {
                     Image(systemName: "person.2.fill")
                         .font(.caption2)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(.textSecondary)
                     Text("\(poll.totalVotes) \(poll.totalVotes == 1 ? "vote" : "votes")")
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(.textSecondary)
                         .accessibilityLabel("\(poll.totalVotes) votes")
 
                     if !poll.resultsVisible {
@@ -72,7 +72,7 @@ struct PollCardView: View {
                                         .fontWeight(.medium)
                                 }
                             }
-                            .foregroundColor(.primaryPurple)
+                            .foregroundColor(.accentPurple)
                         }
                         .disabled(pollViewModel.isLoadingResults)
                         .accessibilityLabel("View poll results")
@@ -125,17 +125,16 @@ private struct PollOptionRow: View {
             onVote()
         }) {
             ZStack(alignment: .leading) {
-                // Background track — systemGray5 is visibly distinct from the
-                // card background in both light and dark mode
+                // Background track
                 RoundedRectangle(cornerRadius: 10)
-                    .fill(Color(.systemGray5))
+                    .fill(Color.surfaceSecondary)
                     .frame(height: 42)
 
                 // Fill bar (only visible when results are available)
                 if resultsVisible {
                     GeometryReader { geo in
                         RoundedRectangle(cornerRadius: 10)
-                            .fill(isVoted ? Color.primaryPurple.opacity(0.45) : Color.primaryPurple.opacity(0.28))
+                            .fill(isVoted ? AnyShapeStyle(LinearGradient(colors: [Color.accentPurple.opacity(0.85), Color.accentPink.opacity(0.85)], startPoint: .topLeading, endPoint: .bottomTrailing)) : AnyShapeStyle(Color.accentPurple.opacity(0.5)))
                             .frame(width: geo.size.width * progressFraction, height: 42)
                             .animation(.easeInOut(duration: 0.4), value: progressFraction)
                     }
@@ -146,7 +145,7 @@ private struct PollOptionRow: View {
                     // Option text
                     Text(option.optionText)
                         .font(.subheadline)
-                        .foregroundColor(.primary)
+                        .foregroundColor(.textPrimary)
                         .lineLimit(2)
 
                     Spacer()
@@ -155,7 +154,7 @@ private struct PollOptionRow: View {
                         ProgressView().controlSize(.mini)
                     } else if isVoted {
                         Image(systemName: "checkmark.circle.fill")
-                            .foregroundColor(.primaryPurple)
+                            .foregroundColor(.accentPurple)
                             .font(.callout)
                             .accessibilityHidden(true)
                     }
@@ -164,7 +163,7 @@ private struct PollOptionRow: View {
                         Text(pct)
                             .font(.caption)
                             .fontWeight(.semibold)
-                            .foregroundColor(isVoted ? .primaryPurple : .secondary)
+                            .foregroundColor(isVoted ? .accentPurple : .textSecondary)
                             .monospacedDigit()
                     }
                 }
