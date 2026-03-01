@@ -42,7 +42,7 @@ struct FormSectionCard<Content: View>: View {
             HStack(spacing: 8) {
                 Image(systemName: systemIcon)
                     .font(.callout)
-                    .foregroundColor(.primaryPurple)
+                    .foregroundColor(.accentPurple)
                     .accessibilityHidden(true)
                 Text(title)
                     .font(.headline)
@@ -52,9 +52,8 @@ struct FormSectionCard<Content: View>: View {
             content()
         }
         .padding(16)
-        .background(Color(.systemBackground))
+        .background(Color.surfacePrimary)
         .cornerRadius(16)
-        .shadow(color: Color.black.opacity(0.06), radius: 8, x: 0, y: 3)
     }
 }
 
@@ -81,7 +80,7 @@ struct StyledTextField: View {
             HStack(spacing: 4) {
                 Image(systemName: icon)
                     .font(.caption)
-                    .foregroundColor(.primaryPurple)
+                    .foregroundColor(.accentPurple)
                     .accessibilityHidden(true)
                 Text(label)
                     .font(.subheadline)
@@ -97,11 +96,11 @@ struct StyledTextField: View {
                 .keyboardType(keyboardType)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 10)
-                .background(Color(.secondarySystemGroupedBackground))
+                .background(Color.surfaceSecondary)
                 .cornerRadius(10)
                 .overlay(
                     RoundedRectangle(cornerRadius: 10)
-                        .stroke(isOverLimit ? Color.red : Color(.separator), lineWidth: 0.5)
+                        .stroke(isOverLimit ? Color.red : Color.borderSubtle, lineWidth: 0.5)
                 )
         }
         .accessibilityElement(children: .combine)
@@ -132,7 +131,7 @@ struct StyledTextEditorField: View {
             HStack(spacing: 4) {
                 Image(systemName: icon)
                     .font(.caption)
-                    .foregroundColor(.primaryPurple)
+                    .foregroundColor(.accentPurple)
                     .accessibilityHidden(true)
                 Text(label)
                     .font(.subheadline)
@@ -148,11 +147,11 @@ struct StyledTextEditorField: View {
                 TextEditor(text: $text)
                     .frame(minHeight: minHeight)
                     .padding(8)
-                    .background(Color(.secondarySystemGroupedBackground))
+                    .background(Color.surfaceSecondary)
                     .cornerRadius(10)
                     .overlay(
                         RoundedRectangle(cornerRadius: 10)
-                            .stroke(isOverLimit ? Color.red : Color(.separator), lineWidth: 0.5)
+                            .stroke(isOverLimit ? Color.red : Color.borderSubtle, lineWidth: 0.5)
                     )
                 if text.isEmpty {
                     Text(placeholder)
@@ -203,7 +202,7 @@ struct CreateFormSubmitButton: View {
         }
         .foregroundColor(.white)
         .cornerRadius(16)
-        .shadow(color: isDisabled ? .clear : Color.primaryPurple.opacity(0.3), radius: 8, x: 0, y: 4)
+        .shadow(color: isDisabled ? .clear : Color.accentPurple.opacity(0.3), radius: 8, x: 0, y: 4)
         .disabled(isDisabled || isLoading)
     }
 }

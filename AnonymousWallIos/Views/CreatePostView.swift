@@ -88,7 +88,7 @@ struct CreatePostView: View {
                             onRemove: { viewModel.removePollOption(at: $0) }
                         )
                         .padding(16)
-                        .background(Color(.systemBackground))
+                        .background(Color.surfacePrimary)
                         .cornerRadius(16)
                         .shadow(color: Color.black.opacity(0.06), radius: 8, x: 0, y: 3)
                         .padding(.horizontal)
@@ -106,9 +106,9 @@ struct CreatePostView: View {
                                 ) {
                                     HStack {
                                         Image(systemName: "plus.circle.fill")
-                                            .foregroundColor(.primaryPurple)
+                                            .foregroundColor(.accentPurple)
                                         Text("Add Photo (\(imageCount)/5)")
-                                            .foregroundColor(.primaryPurple)
+                                            .foregroundColor(.accentPurple)
                                             .fontWeight(.medium)
                                         Spacer()
                                     }
@@ -128,7 +128,7 @@ struct CreatePostView: View {
                             if viewModel.isLoadingImages {
                                 VStack(spacing: 6) {
                                     ProgressView(value: viewModel.imageLoadProgress)
-                                        .tint(.primaryPurple)
+                                        .tint(.accentPurple)
                                     Text(viewModel.imageLoadProgress < 1.0
                                         ? "Downloading from iCloud... \(Int(viewModel.imageLoadProgress * 100))%"
                                         : "Processing...")
@@ -177,7 +177,7 @@ struct CreatePostView: View {
                         : "Double tap to create your post")
                 }
             }
-            .background(Color(.systemGroupedBackground))
+            .background(Color.appBackground.ignoresSafeArea())
             .navigationTitle("New Post")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
