@@ -265,7 +265,7 @@ class PostService: PostServiceProtocol {
     
     // MARK: - Poll Operations
     
-    /// Create a poll post (JSON request — no image upload for poll posts)
+    /// Create a poll post (multipart/form-data — same endpoint as standard posts)
     func createPollPost(
         title: String,
         content: String?,
@@ -274,23 +274,47 @@ class PostService: PostServiceProtocol {
         token: String,
         userId: String
     ) async throws -> Post {
-        let body = CreatePostRequest(
-            title: title,
-            content: content,
-            wall: wall.rawValue,
-            postType: "poll",
-            pollOptions: pollOptions
-        )
-        
-        let request = try APIRequestBuilder()
-            .setPath("/posts")
-            .setMethod(.POST)
-            .setBody(body)
-            .setToken(token)
-            .setUserId(userId)
-            .build()
-        
-        return try await networkClient.performRequest(request)
+        guard let url = URL(string: config.fullAPIBaseURL + "/posts") else {
+            throw NetworkError.invalidURL
+        }
+
+        let boundary = UUID().uuidString
+        var urlRequest = URLRequest(url: url)
+        urlRequest.httpMethod = "POST"
+        urlRequest.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        urlRequest.setValue(userId, forHTTPHeaderField: "X-User-Id")
+        urlRequest.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+        urlRequest.timeoutInterval = 60
+        urlRequest.assumesHTTP3Capable = false
+
+        var body = Data()
+        body.appendFormField(name: "title", value: title, boundary: boundary)
+        body.appendFormField(name: "content", value: content ?? "", boundary: boundary)
+        body.appendFormField(name: "wall", value: wall.rawValue, boundary: boundary)
+        body.appendFormField(name: "postType", value: "poll", boundary: boundary)
+        for option in pollOptions {
+            body.appendFormField(name: "pollOptions", value: option, boundary: boundary)
+        }
+        body.append("--\(boundary)--\r\n".data(using: .utf8)!)
+        urlRequest.httpBody = body
+
+        let sessionConfig = URLSessionConfiguration.ephemeral
+        sessionConfig.waitsForConnectivity = true
+        let session = URLSession(configuration: sessionConfig)
+
+        let (data, response) = try await session.data(for: urlRequest)
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw NetworkError.serverError("Invalid response")
+        }
+        guard (200...299).contains(httpResponse.statusCode) else {
+            if httpResponse.statusCode == 401 { throw NetworkError.unauthorized }
+            if httpResponse.statusCode == 403 { throw NetworkError.forbidden }
+            let message = String(data: data, encoding: .utf8) ?? "Server error"
+            throw NetworkError.serverError(message)
+        }
+
+        return try JSONDecoder().decode(Post.self, from: data)
     }
     
     /// Vote on a poll option
