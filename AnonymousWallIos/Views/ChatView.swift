@@ -147,7 +147,9 @@ struct ChatView: View {
                 .accessibilityLabel("Send message")
             }
             .padding()
+            .background(Color.surfacePrimary)
         }
+        .background(Color.appBackground.ignoresSafeArea())
         .navigationTitle(viewModel.otherUserName)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
@@ -321,9 +323,9 @@ struct MessageBubbleView: View {
                 if !message.content.isEmpty {
                     Text(message.content)
                         .font(.body)
-                        .foregroundColor(isCurrentUser ? .white : .primary)
+                        .foregroundColor(isCurrentUser ? .white : .textPrimary)
                         .padding(12)
-                        .background(isCurrentUser ? Color.accentColor : Color(.systemGray6))
+                        .background(isCurrentUser ? AnyShapeStyle(LinearGradient.brandGradient) : AnyShapeStyle(Color.surfaceSecondary))
                         .cornerRadius(16)
                         .accessibilityLabel("Message: \(message.content)")
                 }
