@@ -7,14 +7,14 @@
 
 import Foundation
 
-struct PollDTO: Codable {
+struct PollDTO: Codable, Equatable {
     let options: [PollOptionDTO]
     let totalVotes: Int
     let userVotedOptionId: UUID?
     let resultsVisible: Bool
 }
 
-struct PollOptionDTO: Codable, Identifiable {
+struct PollOptionDTO: Codable, Identifiable, Equatable {
     let id: UUID
     let optionText: String
     let displayOrder: Int

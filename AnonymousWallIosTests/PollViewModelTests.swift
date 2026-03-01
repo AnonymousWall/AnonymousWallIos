@@ -217,6 +217,30 @@ struct PollViewModelTests {
         #expect(vm.poll?.resultsVisible == true)
     }
 
+    @Test func testUpdatePollUsesIncomingOptionsWhenTheyCarryVoteData() {
+        // If the server snapshot (resultsVisible: false in the list) contains options
+        // that have voteCount populated (e.g. from a personalised endpoint), those
+        // fresher options must be preferred over the locally-cached ones.
+        let optionId = UUID()
+        let localOption = makeOption(id: optionId, text: "A", voteCount: 1, percentage: 100)
+        let localPoll = makePoll(options: [localOption], totalVotes: 1, userVotedOptionId: optionId, resultsVisible: true)
+        let vm = PollViewModel(poll: localPoll)
+
+        // Incoming: resultsVisible false but options still carry voteCount (richer data)
+        let freshOption = makeOption(id: optionId, text: "A", voteCount: 3, percentage: 75)
+        let incomingPoll = makePoll(options: [freshOption], totalVotes: 4, resultsVisible: false)
+        vm.updatePoll(incomingPoll)
+
+        // Incoming options must be used because they have voteCount data
+        #expect(vm.poll?.options.first?.voteCount == 3)
+        #expect(vm.poll?.options.first?.percentage == 75)
+        // totalVotes takes max(local=1, server=4) = 4
+        #expect(vm.poll?.totalVotes == 4)
+        // Voted state preserved
+        #expect(vm.poll?.resultsVisible == true)
+        #expect(vm.poll?.userVotedOptionId == optionId)
+    }
+
     @Test func testUpdatePollSkippedWhileVoting() async {
         let mockService = MockPostService()
         // Keep vote in-flight long enough to call updatePoll concurrently

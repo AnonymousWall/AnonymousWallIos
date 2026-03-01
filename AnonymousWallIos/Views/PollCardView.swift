@@ -92,14 +92,8 @@ struct PollCardView: View {
         }
         .padding(.vertical, 8)
         .padding(.horizontal, 2)
-        .onChange(of: poll.totalVotes) { _ in
-            pollViewModel.updatePoll(poll)
-        }
-        .onChange(of: poll.userVotedOptionId) { _ in
-            pollViewModel.updatePoll(poll)
-        }
-        .onChange(of: poll.resultsVisible) { _ in
-            pollViewModel.updatePoll(poll)
+        .onChange(of: poll) { _, newPoll in
+            pollViewModel.updatePoll(newPoll)
         }
     }
 }
