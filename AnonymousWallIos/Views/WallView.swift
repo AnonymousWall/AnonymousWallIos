@@ -59,14 +59,14 @@ struct WallView: View {
                             VStack(spacing: 16) {
                                 Image(systemName: "bubble.left.and.bubble.right")
                                     .font(.system(size: 60))
-                                    .foregroundColor(.gray)
+                                    .foregroundColor(.textSecondary)
                                     .accessibilityHidden(true)
                                 Text("No posts yet")
                                     .font(.headline)
-                                    .foregroundColor(.gray)
+                                    .foregroundColor(.textSecondary)
                                 Text("Be the first to post!")
                                     .font(.subheadline)
-                                    .foregroundColor(.gray)
+                                    .foregroundColor(.textSecondary)
                             }
                             .accessibilityElement(children: .combine)
                             .accessibilityLabel("No posts yet. Be the first to post!")
@@ -113,6 +113,7 @@ struct WallView: View {
                 .refreshable {
                     await viewModel.refreshPosts(authState: authState)
                 }
+                .tint(.accentPurple)
                 
                 // Error message
                 if let errorMessage = viewModel.errorMessage {
@@ -156,6 +157,7 @@ struct WallView: View {
                 }
             }
         }
+        .background(Color.appBackground.ignoresSafeArea())
         .sheet(isPresented: $showSetPassword) {
             SetPasswordView()
         }

@@ -136,6 +136,7 @@ struct HomeView: View {
                 .refreshable {
                     await viewModel.refreshPosts(authState: authState)
                 }
+                .tint(.accentPurple)
                 
                 // Error message
                 if let errorMessage = viewModel.errorMessage {
@@ -174,6 +175,7 @@ struct HomeView: View {
                 }
             }
         }
+        .background(Color.appBackground.ignoresSafeArea())
         .sheet(isPresented: $coordinator.showSetPassword) {
             SetPasswordView(authService: AuthService.shared)
         }
