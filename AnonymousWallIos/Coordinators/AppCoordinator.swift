@@ -18,4 +18,11 @@ class AppCoordinator: ObservableObject {
     init(authState: AuthState) {
         self.authState = authState
     }
+    
+    /// Navigates to a post by ID, switching to the Home tab immediately.
+    /// PostDetailView fetches the full post data when it appears — no pre-fetch needed.
+    func navigateToPost(id: UUID) {
+        tabCoordinator.selectTab(0)
+        tabCoordinator.homeCoordinator.navigate(to: .postDetailById(id.uuidString))
+    }
 }

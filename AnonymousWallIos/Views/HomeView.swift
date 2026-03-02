@@ -189,6 +189,13 @@ struct HomeView: View {
                             }
                         )
                     }
+                case .postDetailById(let postId):
+                    // Deep-link navigation: no pre-fetched post available.
+                    // PostDetailByIdView holds a mutable @State placeholder so
+                    // PostDetailView.refreshPost can update it on appear.
+                    PostDetailByIdView(postId: postId) { userId, userName in
+                        coordinator.navigateToChatWithUser(userId: userId, userName: userName)
+                    }
                 case .setPassword:
                     EmptyView() // Handled as a sheet
                 }
@@ -233,4 +240,33 @@ struct HomeView: View {
     HomeView(coordinator: HomeCoordinator())
         .environmentObject(AuthState())
         .environmentObject(BlockViewModel())
+}
+
+// MARK: - PostDetailByIdView
+
+/// Wrapper view used when navigating to a post by ID only (e.g. push notification deep link).
+/// Holds a mutable @State placeholder so PostDetailView.refreshPost can populate the full data.
+private struct PostDetailByIdView: View {
+    let onTapAuthor: (String, String) -> Void
+    @State private var post: Post
+
+    init(postId: String, onTapAuthor: @escaping (String, String) -> Void) {
+        self.onTapAuthor = onTapAuthor
+        _post = State(initialValue: Post(
+            id: postId,
+            title: "",
+            content: "",
+            wall: "",
+            likes: 0,
+            comments: 0,
+            liked: false,
+            author: Post.Author(id: "", profileName: "", isAnonymous: true),
+            createdAt: "",
+            updatedAt: ""
+        ))
+    }
+
+    var body: some View {
+        PostDetailView(post: $post, onTapAuthor: onTapAuthor)
+    }
 }
