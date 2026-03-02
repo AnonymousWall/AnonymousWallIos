@@ -54,6 +54,13 @@ struct AnonymousWallIosApp: App {
                 // (e.g. ChatView stuck while backend is down).
                 if !authState.isAuthenticated {
                     NotificationCenter.default.post(name: .resetNavigation, object: nil)
+                } else {
+                    // Re-check permission every time app foregrounds.
+                    // Handles: user denied → went to Settings → enabled notifications.
+                    // If already registered, registerForRemoteNotifications() is a no-op.
+                    Task {
+                        await NotificationService.shared.requestPermissionAndRegister()
+                    }
                 }
             }
             .onChange(of: deepLinkHandler.pendingDestination) { _, destination in
