@@ -92,6 +92,12 @@ This app requires a backend server with the following endpoints at `http://local
 - `DELETE /api/v1/posts/{id}/like` - Unlike a post (requires auth)
 - `DELETE /api/v1/posts/{id}` - Delete a post (requires auth)
 
+### Notifications
+- `GET /api/v1/notifications?page=0&size=20` - List notifications for authenticated user (paginated)
+- `GET /api/v1/notifications/unread-count` - Return unread notification count `{ "count": N }`
+- `POST /api/v1/notifications/mark-all-read` - Mark all notifications as read
+- `POST /api/v1/notifications/{id}/read` - Mark a single notification as read (403 if not owner)
+
 See [API_DOCUMENTATION.md](API_DOCUMENTATION.md) and [POST_FEED_DOCUMENTATION.md](POST_FEED_DOCUMENTATION.md) for complete API specifications.
 
 ## Architecture

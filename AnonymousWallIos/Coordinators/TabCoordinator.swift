@@ -16,7 +16,10 @@ class TabCoordinator: ObservableObject {
     @Published var marketplaceCoordinator = MarketplaceCoordinator()
     @Published var profileCoordinator = ProfileCoordinator()
     @Published var chatCoordinator = ChatCoordinator()
+    @Published var notificationCoordinator = NotificationCoordinator()
     @Published var selectedTab = 0
+    /// Unread notification count for the tab badge. Updated by NotificationInboxView.
+    @Published var notificationUnreadCount: Int = 0
     
     init() {
         // Set up back-references for cross-coordinator navigation
@@ -24,6 +27,7 @@ class TabCoordinator: ObservableObject {
         campusCoordinator.tabCoordinator = self
         internshipCoordinator.tabCoordinator = self
         marketplaceCoordinator.tabCoordinator = self
+        notificationCoordinator.tabCoordinator = self
     }
     
     func selectTab(_ index: Int) {

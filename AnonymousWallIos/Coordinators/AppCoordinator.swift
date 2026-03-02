@@ -20,27 +20,19 @@ class AppCoordinator: ObservableObject {
     }
     
     /// Navigates to the correct screen based on the push notification destination.
+    ///
+    /// Comment/internship/marketplace notifications open the Notifications tab so the user
+    /// sees the full inbox first (TikTok-style), then taps the row to reach the content.
+    /// Chat notifications still deep-link directly to the Messages tab.
     func navigate(to destination: PushNotificationDestination) {
         switch destination {
-        case .post(let postId, let wall):
-                if wall == "campus" {
-                    tabCoordinator.selectTab(1) // Campus tab — verify index against TabCoordinator
-                    tabCoordinator.campusCoordinator.navigate(to: .postDetailById(postId.uuidString))
-                } else {
-                    tabCoordinator.selectTab(0) // National/Home tab
-                    tabCoordinator.homeCoordinator.navigate(to: .postDetailById(postId.uuidString))
-                }
-
-        case .internship(let internshipId):
-            tabCoordinator.selectTab(3)
-            tabCoordinator.internshipCoordinator.navigate(to: .internshipDetailById(internshipId.uuidString))
-
-        case .marketplace(let itemId):
-            tabCoordinator.selectTab(4)
-            tabCoordinator.marketplaceCoordinator.navigate(to: .itemDetailById(itemId.uuidString))
+        case .post, .internship, .marketplace:
+            // Switch to Notifications tab — the inbox shows all received notifications.
+            // Tapping a row in NotificationInboxView navigates to the specific content.
+            tabCoordinator.selectTab(6)
 
         case .chat:
-            tabCoordinator.selectTab(5) // Messages tab
+            tabCoordinator.selectTab(5) // Messages tab — keep direct deep-link for chat
         }
     }
 
