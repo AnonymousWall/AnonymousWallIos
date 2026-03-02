@@ -60,13 +60,14 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
         switch type {
         case "COMMENT":
             if let postIdString = userInfo["postId"] as? String,
-               let postId = UUID(uuidString: postIdString) {
-                NotificationCenter.default.post(
-                    name: .pushNotificationTapped,
-                    object: nil,
-                    userInfo: ["destination": PushNotificationDestination.post(postId)]
-                )
-            }
+                   let postId = UUID(uuidString: postIdString) {
+                    let wall = userInfo["wall"] as? String ?? "national"
+                    NotificationCenter.default.post(
+                        name: .pushNotificationTapped,
+                        object: nil,
+                        userInfo: ["destination": PushNotificationDestination.post(postId, wall: wall)]
+                    )
+                }
 
         case "INTERNSHIP_COMMENT":
             if let internshipIdString = userInfo["internshipId"] as? String,

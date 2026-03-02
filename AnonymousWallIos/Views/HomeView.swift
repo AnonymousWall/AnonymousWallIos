@@ -246,7 +246,7 @@ struct HomeView: View {
 
 /// Wrapper view used when navigating to a post by ID only (e.g. push notification deep link).
 /// Holds a mutable @State placeholder so PostDetailView.refreshPost can populate the full data.
-private struct PostDetailByIdView: View {
+ struct PostDetailByIdView: View {
     let onTapAuthor: (String, String) -> Void
     @State private var post: Post
 

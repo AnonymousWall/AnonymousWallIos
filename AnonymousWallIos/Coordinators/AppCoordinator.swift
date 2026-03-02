@@ -22,9 +22,14 @@ class AppCoordinator: ObservableObject {
     /// Navigates to the correct screen based on the push notification destination.
     func navigate(to destination: PushNotificationDestination) {
         switch destination {
-        case .post(let postId):
-            tabCoordinator.selectTab(0)
-            tabCoordinator.homeCoordinator.navigate(to: .postDetailById(postId.uuidString))
+        case .post(let postId, let wall):
+                if wall == "campus" {
+                    tabCoordinator.selectTab(1) // Campus tab — verify index against TabCoordinator
+                    tabCoordinator.campusCoordinator.navigate(to: .postDetailById(postId.uuidString))
+                } else {
+                    tabCoordinator.selectTab(0) // National/Home tab
+                    tabCoordinator.homeCoordinator.navigate(to: .postDetailById(postId.uuidString))
+                }
 
         case .internship(let internshipId):
             tabCoordinator.selectTab(3)
@@ -38,6 +43,6 @@ class AppCoordinator: ObservableObject {
 
     /// Navigates to a post by ID — convenience wrapper for backwards compatibility.
     func navigateToPost(id: UUID) {
-        navigate(to: .post(id))
+        navigate(to: .post(id, wall: "national"))
     }
 }

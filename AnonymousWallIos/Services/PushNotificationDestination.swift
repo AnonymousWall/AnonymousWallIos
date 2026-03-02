@@ -7,8 +7,8 @@
 
 import Foundation
 
-enum PushNotificationDestination {
-    case post(UUID)
+enum PushNotificationDestination: Equatable {
+    case post(UUID, wall: String)
     case internship(UUID)
     case marketplace(UUID)
 }
