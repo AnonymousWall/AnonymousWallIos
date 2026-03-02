@@ -58,7 +58,7 @@ struct AnonymousWallIosApp: App {
             }
             .onChange(of: deepLinkHandler.pendingPostId) { _, postId in
                 guard let postId, authState.isAuthenticated else { return }
-                appCoordinator.navigateToPost(id: postId, authState: authState)
+                appCoordinator.navigateToPost(id: postId)
                 deepLinkHandler.consume()
             }
         }

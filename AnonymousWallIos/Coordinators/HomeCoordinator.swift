@@ -12,6 +12,8 @@ import SwiftUI
 class HomeCoordinator: Coordinator {
     enum Destination: Hashable {
         case postDetail(Post)
+        /// Navigate to a post using only its ID; PostDetailView fetches the full data on appear.
+        case postDetailById(String)
         case setPassword
     }
     
@@ -38,7 +40,11 @@ class HomeCoordinator: Coordinator {
     func navigate(to destination: Destination) {
         switch destination {
         case .postDetail(let post):
+            // Track selectedPost so the feed can reflect the currently viewed post.
             selectedPost = post
+            path.append(destination)
+        case .postDetailById:
+            // Deep-link navigation: no feed post to track — PostDetailView loads its own data.
             path.append(destination)
         case .setPassword:
             showSetPassword = true
