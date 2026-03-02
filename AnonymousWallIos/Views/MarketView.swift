@@ -221,6 +221,10 @@ struct MarketView: View {
                             }
                         )
                     }
+                case .itemDetailById(let itemId):
+                    MarketplaceItemDetailByIdView(itemId: itemId) { userId, userName in
+                        coordinator.navigateToChatWithUser(userId: userId, userName: userName)
+                    }
                 }
             }
         }
@@ -261,4 +265,46 @@ struct MarketView: View {
         .environmentObject(BlockViewModel())
 }
 
+// MARK: - MarketplaceItemDetailByIdView
 
+/// Wrapper view used when navigating to a marketplace item by ID only (e.g. push notification deep link).
+/// Fetches the full item from the service before displaying MarketplaceDetailView.
+private struct MarketplaceItemDetailByIdView: View {
+    let itemId: String
+    let onTapAuthor: (String, String) -> Void
+    @EnvironmentObject var authState: AuthState
+    @State private var item: MarketplaceItem?
+    @State private var loadFailed = false
+
+    var body: some View {
+        Group {
+            if let binding = Binding($item) {
+                MarketplaceDetailView(
+                    item: binding,
+                    onTapAuthor: onTapAuthor
+                )
+            } else if loadFailed {
+                Text("Failed to load marketplace item.")
+                    .foregroundColor(.textSecondary)
+                    .padding()
+            } else {
+                ProgressView()
+            }
+        }
+        .task { await loadItem() }
+    }
+
+    private func loadItem() async {
+        guard let token = authState.authToken,
+              let userId = authState.currentUser?.id else { return }
+        do {
+            item = try await MarketplaceService.shared.getItem(
+                itemId: itemId,
+                token: token,
+                userId: userId
+            )
+        } catch {
+            loadFailed = true
+        }
+    }
+}

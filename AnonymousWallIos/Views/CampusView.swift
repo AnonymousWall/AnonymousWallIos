@@ -189,6 +189,10 @@ struct CampusView: View {
                             }
                         )
                     }
+                case .postDetailById(let postId):   // ← add this case
+                        PostDetailByIdView(postId: postId) { userId, userName in
+                            coordinator.navigateToChatWithUser(userId: userId, userName: userName)
+                        }
                 case .setPassword:
                     EmptyView() // Handled as a sheet
                 }

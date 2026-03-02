@@ -12,6 +12,7 @@ import SwiftUI
 class CampusCoordinator: Coordinator {
     enum Destination: Hashable {
         case postDetail(Post)
+        case postDetailById(String)
         case setPassword
     }
     
@@ -39,6 +40,8 @@ class CampusCoordinator: Coordinator {
         switch destination {
         case .postDetail(let post):
             selectedPost = post
+            path.append(destination)
+        case .postDetailById:
             path.append(destination)
         case .setPassword:
             showSetPassword = true

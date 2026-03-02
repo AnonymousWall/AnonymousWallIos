@@ -12,6 +12,7 @@ import SwiftUI
 class InternshipCoordinator: Coordinator {
     enum Destination: Hashable {
         case internshipDetail(Internship)
+        case internshipDetailById(String)
     }
 
     @Published var path = NavigationPath()
