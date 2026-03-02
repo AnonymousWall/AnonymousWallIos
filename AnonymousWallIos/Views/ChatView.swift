@@ -184,6 +184,7 @@ struct ChatView: View {
             Text("They will no longer be able to see your content, and you won't see theirs.")
         }
         .onAppear {
+            ActiveConversationTracker.shared.activeConversationId = viewModel.otherUserId
             viewModel.loadMessages(authState: authState)
             viewModel.viewDidAppear()
             Task {
@@ -192,6 +193,7 @@ struct ChatView: View {
             }
         }
         .onDisappear {
+            ActiveConversationTracker.shared.activeConversationId = nil
             viewModel.disconnect()
         }
         .fullScreenCover(item: $selectedImageItem) { _ in

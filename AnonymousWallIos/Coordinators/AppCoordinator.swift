@@ -38,6 +38,9 @@ class AppCoordinator: ObservableObject {
         case .marketplace(let itemId):
             tabCoordinator.selectTab(4)
             tabCoordinator.marketplaceCoordinator.navigate(to: .itemDetailById(itemId.uuidString))
+
+        case .chat:
+            tabCoordinator.selectTab(5) // Messages tab
         }
     }
 
