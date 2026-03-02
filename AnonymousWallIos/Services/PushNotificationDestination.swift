@@ -11,5 +11,5 @@ enum PushNotificationDestination: Equatable {
     case post(UUID, wall: String)
     case internship(UUID)
     case marketplace(UUID)
-    case chat(conversationId: String, senderUserId: String)
+    case chat(senderUserId: String)
 }

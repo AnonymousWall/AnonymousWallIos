@@ -100,15 +100,11 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
             }
 
         case "CHAT_MESSAGE":
-            if let conversationId = userInfo["conversationId"] as? String,
-               let senderUserId = userInfo["senderUserId"] as? String {
+            if let senderUserId = userInfo["senderUserId"] as? String {
                 NotificationCenter.default.post(
                     name: .pushNotificationTapped,
                     object: nil,
-                    userInfo: ["destination": PushNotificationDestination.chat(
-                        conversationId: conversationId,
-                        senderUserId: senderUserId
-                    )]
+                    userInfo: ["destination": PushNotificationDestination.chat(senderUserId: senderUserId)]
                 )
             }
 
