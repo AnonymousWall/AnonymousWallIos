@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		308B487BB8F1D8CA5D92B841 /* RetryUtility.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000A40F3B2FF73139252E427 /* RetryUtility.swift */; };
+		4AC105C42F4EC92B00F944F1 /* Kingfisher in Frameworks */ = {isa = PBXBuildFile; productRef = 4AC105C32F4EC92B00F944F1 /* Kingfisher */; };
 		B38E4D52A8EA0635B03CC47E /* RetryPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8DC843BFBA3C48ABA3356DFE /* RetryPolicy.swift */; };
 /* End PBXBuildFile section */
 
@@ -30,45 +31,41 @@
 
 /* Begin PBXFileReference section */
 		000A40F3B2FF73139252E427 /* RetryUtility.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = RetryUtility.swift; path = AnonymousWallIos/Networking/RetryUtility.swift; sourceTree = SOURCE_ROOT; };
-		0356EC3A0E454FCCAEED4B15 /* UserService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserService.swift; sourceTree = "<group>"; };
-		0476EB80E1BE4AD9B33DB61D /* SetPasswordView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetPasswordView.swift; sourceTree = "<group>"; };
-		06BB00DF1C1E46A296BD60C1 /* MarketView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarketView.swift; sourceTree = "<group>"; };
-		06CD3270308F4C1997CE254B /* CreatePostView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreatePostView.swift; sourceTree = "<group>"; };
-		0B1EC382A6854A589AEADF7E /* AuthState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthState.swift; sourceTree = "<group>"; };
-		10411F1757944F6BAEAC177F /* Post.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Post.swift; sourceTree = "<group>"; };
-		142235876D914D76AD1C4967 /* CampusView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CampusView.swift; sourceTree = "<group>"; };
-		1FA61319FC3D4DDFB8895C54 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
-		26B4614742DE4B053DAB735F /* PostDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PostDetailView.swift; sourceTree = "<group>"; };
-		2C273AE2E8CA4C2CBD41C5DA /* KeychainHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainHelper.swift; sourceTree = "<group>"; };
-		34AEA25B259744AE8ABF3D60 /* InternshipView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InternshipView.swift; sourceTree = "<group>"; };
-		3F403B0F832D86C891753382 /* DateFormatting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DateFormatting.swift; sourceTree = "<group>"; };
-		407A29D40FC7471CA4C04A33 /* AuthenticationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthenticationView.swift; sourceTree = "<group>"; };
 		4A8BB21B2F2DDF2C00DD2A08 /* AnonymousWallIos.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AnonymousWallIos.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		4A8BB22D2F2DDF2E00DD2A08 /* AnonymousWallIosTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AnonymousWallIosTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		4A8BB2372F2DDF2E00DD2A08 /* AnonymousWallIosUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AnonymousWallIosUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		4C5CB64D3ED4483D884F292D /* RegistrationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegistrationView.swift; sourceTree = "<group>"; };
-		4E8A761255D74ECF80639568 /* CreatePostTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreatePostTabView.swift; sourceTree = "<group>"; };
-		53502B71F93F40C080F637E7 /* User.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = User.swift; sourceTree = "<group>"; };
-		548A2654C11949D78138D48A /* ForgotPasswordView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ForgotPasswordView.swift; sourceTree = "<group>"; };
-		5A698F294B7A4212B82A3C8B /* ChangePasswordView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChangePasswordView.swift; sourceTree = "<group>"; };
-		5CA4C2AA1C0C409E973B45FD /* ProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileView.swift; sourceTree = "<group>"; };
-		70A75B17C3134F13A1563A70 /* PostRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PostRowView.swift; sourceTree = "<group>"; };
 		8DC843BFBA3C48ABA3356DFE /* RetryPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = RetryPolicy.swift; path = AnonymousWallIos/Networking/RetryPolicy.swift; sourceTree = SOURCE_ROOT; };
-		936FBA85EFB7463A96960DD8 /* MockUserService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockUserService.swift; sourceTree = "<group>"; };
-		A7330F54BC6A4717B2F7BF5F /* UserServiceProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserServiceProtocol.swift; sourceTree = "<group>"; };
-		CE5E491052D542828CE9DEB8 /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
-		D6119483DD8F4807AAD99A04 /* PostService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PostService.swift; sourceTree = "<group>"; };
-		EC0757A70238462CBAA0B0F4 /* ValidationUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ValidationUtils.swift; sourceTree = "<group>"; };
-		ECE140B1CD5849C4991B2C15 /* PostEnums.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PostEnums.swift; sourceTree = "<group>"; };
-		F0D3BB04711740B68D19221B /* AuthService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthService.swift; sourceTree = "<group>"; };
-		F445C7AB8ECE4A22AF765BA0 /* WallView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WallView.swift; sourceTree = "<group>"; };
-		F90996A7F598455F8C16EB97 /* TabBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabBarView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		4AC105B22F49769500F944F1 /* Exceptions for "AnonymousWallIos" folder in "AnonymousWallIos" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 4A8BB21A2F2DDF2C00DD2A08 /* AnonymousWallIos */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		4A8BB21D2F2DDF2C00DD2A08 /* AnonymousWallIos */ = {isa = PBXFileSystemSynchronizedRootGroup; path = AnonymousWallIos; sourceTree = "<group>"; };
-		4A8BB2302F2DDF2E00DD2A08 /* AnonymousWallIosTests */ = {isa = PBXFileSystemSynchronizedRootGroup; path = AnonymousWallIosTests; sourceTree = "<group>"; };
-		4A8BB23A2F2DDF2E00DD2A08 /* AnonymousWallIosUITests */ = {isa = PBXFileSystemSynchronizedRootGroup; path = AnonymousWallIosUITests; sourceTree = "<group>"; };
+		4A8BB21D2F2DDF2C00DD2A08 /* AnonymousWallIos */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				4AC105B22F49769500F944F1 /* Exceptions for "AnonymousWallIos" folder in "AnonymousWallIos" target */,
+			);
+			path = AnonymousWallIos;
+			sourceTree = "<group>";
+		};
+		4A8BB2302F2DDF2E00DD2A08 /* AnonymousWallIosTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = AnonymousWallIosTests;
+			sourceTree = "<group>";
+		};
+		4A8BB23A2F2DDF2E00DD2A08 /* AnonymousWallIosUITests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = AnonymousWallIosUITests;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -76,6 +73,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				4AC105C42F4EC92B00F944F1 /* Kingfisher in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -96,25 +94,6 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		0C65163EFC8C40AD932970F6 /* Utils */ = {
-			isa = PBXGroup;
-			children = (
-				EC0757A70238462CBAA0B0F4 /* ValidationUtils.swift */,
-				3F403B0F832D86C891753382 /* DateFormatting.swift */,
-				2C273AE2E8CA4C2CBD41C5DA /* KeychainHelper.swift */,
-			);
-			path = Utils;
-			sourceTree = "<group>";
-		};
-		480D1670A25644F4842C2A11 /* Services */ = {
-			isa = PBXGroup;
-			children = (
-				F0D3BB04711740B68D19221B /* AuthService.swift */,
-				D6119483DD8F4807AAD99A04 /* PostService.swift */,
-			);
-			path = Services;
-			sourceTree = "<group>";
-		};
 		4A8BB2122F2DDF2C00DD2A08 = {
 			isa = PBXGroup;
 			children = (
@@ -137,42 +116,6 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
-		594F5A7E8B3C45808AD969ED /* Models */ = {
-			isa = PBXGroup;
-			children = (
-				53502B71F93F40C080F637E7 /* User.swift */,
-				0B1EC382A6854A589AEADF7E /* AuthState.swift */,
-				10411F1757944F6BAEAC177F /* Post.swift */,
-				ECE140B1CD5849C4991B2C15 /* PostEnums.swift */,
-			);
-			path = Models;
-			sourceTree = "<group>";
-		};
-		73B8546AA06B464790E20F59 /* Views */ = {
-			isa = PBXGroup;
-			children = (
-				407A29D40FC7471CA4C04A33 /* AuthenticationView.swift */,
-				4C5CB64D3ED4483D884F292D /* RegistrationView.swift */,
-				CE5E491052D542828CE9DEB8 /* LoginView.swift */,
-				F445C7AB8ECE4A22AF765BA0 /* WallView.swift */,
-				0476EB80E1BE4AD9B33DB61D /* SetPasswordView.swift */,
-				548A2654C11949D78138D48A /* ForgotPasswordView.swift */,
-				5A698F294B7A4212B82A3C8B /* ChangePasswordView.swift */,
-				06CD3270308F4C1997CE254B /* CreatePostView.swift */,
-				70A75B17C3134F13A1563A70 /* PostRowView.swift */,
-				26B4614742DE4B053DAB735F /* PostDetailView.swift */,
-				F90996A7F598455F8C16EB97 /* TabBarView.swift */,
-				1FA61319FC3D4DDFB8895C54 /* HomeView.swift */,
-				142235876D914D76AD1C4967 /* CampusView.swift */,
-				34AEA25B259744AE8ABF3D60 /* InternshipView.swift */,
-				06BB00DF1C1E46A296BD60C1 /* MarketView.swift */,
-				4E8A761255D74ECF80639568 /* CreatePostTabView.swift */,
-				5CA4C2AA1C0C409E973B45FD /* ProfileView.swift */,
-				36F69F587A4E476BB5394A3F,
-			);
-			path = Views;
-			sourceTree = "<group>";
-		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -193,6 +136,7 @@
 			);
 			name = AnonymousWallIos;
 			packageProductDependencies = (
+				4AC105C32F4EC92B00F944F1 /* Kingfisher */,
 			);
 			productName = AnonymousWallIos;
 			productReference = 4A8BB21B2F2DDF2C00DD2A08 /* AnonymousWallIos.app */;
@@ -276,6 +220,9 @@
 			);
 			mainGroup = 4A8BB2122F2DDF2C00DD2A08;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				4AC105C22F4EC8F600F944F1 /* XCRemoteSwiftPackageReference "Kingfisher" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 4A8BB21C2F2DDF2C00DD2A08 /* Products */;
 			projectDirPath = "";
@@ -293,11 +240,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-			
-				24F07C4387334D249A64BC17,
-				24F07C4387334D249A64BC17,
-				6328F8B12FE9463E84120149,
-				6328F8B12FE9463E84120149,);
+			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		4A8BB22B2F2DDF2E00DD2A08 /* Resources */ = {
@@ -321,45 +264,15 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				1D20204075664DBDB555EF52,
-				8CB9F954488749328AB72CB1,
-				3B27DD8C04C946BBA820EA16,
-				FD454F78F48E4E1A9ACDCC3E,
-				8B093C7FEE1844838049EC3C,
-				E178A81D1916BDC969905CAC,
-				3B4C89173668470C9231DB40,
-				7E88795289F3410FBE7F8EA2,
-				AD279A6B8DB5400AA718BE5D,
-				571883650DB94FDDAD392C53,
-				7DEDAAAEE3F21C643FB17113,
-				AF15FA38C1454F258DF6FE69,
-				7834920BCCDA411D96FBB277,
-				F12F96226BD44D7685F52AFA,
-				91D85B6A81BE412099C6C6B5,
-				FB188A2F619F433A9FC6EB5F,
-				14AA7721757643D28E4E374C,
-				19C82E23141648E888CAB099,
-				4D1F15E325244527B8F4013E,
-				9FC81EDEB9F64AC889358F6F,
-				86E36EB37667448D8C2408DE,
-				66C1BE86ABB64C4CA547BA0B,
-				226AF2FF1296400A94CF4AAD,
-				757F41CD2F734F0199914235,
-				CAD4DEB24D214B44B6C141D5,
-				E1811D2EE3D042ACB8611BD7,
-				04A58DE2AC644241BACD93E1,
-				DCB84C2290074EEDB8164997,
-				BE4F4D7E19C643B1A1FB0605,
-				CF9021BEF0674235BBA9D292,
 				B38E4D52A8EA0635B03CC47E /* RetryPolicy.swift in Sources */,
-				308B487BB8F1D8CA5D92B841 /* RetryUtility.swift in Sources */,);
+				308B487BB8F1D8CA5D92B841 /* RetryUtility.swift in Sources */,
+			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		4A8BB2292F2DDF2E00DD2A08 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				CF9021BEF0674235BBA9D292,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -367,7 +280,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				CF9021BEF0674235BBA9D292,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -511,11 +423,14 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = AnonymousWallIos/AnonymousWallIos.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"AnonymousWallIos/Preview Content\"";
+				DEVELOPMENT_TEAM = PJ33CA8LX5;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = AnonymousWallIos/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Anonymous;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.social-networking";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -546,11 +461,14 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = AnonymousWallIos/AnonymousWallIos.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"AnonymousWallIos/Preview Content\"";
+				DEVELOPMENT_TEAM = PJ33CA8LX5;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = AnonymousWallIos/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Anonymous;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.social-networking";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -582,6 +500,7 @@
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = PJ33CA8LX5;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.2;
 				MARKETING_VERSION = 1.0;
@@ -600,6 +519,7 @@
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = PJ33CA8LX5;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.2;
 				MARKETING_VERSION = 1.0;
@@ -617,6 +537,7 @@
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = PJ33CA8LX5;
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.anonymouswall.AnonymousWallIosUITests;
@@ -633,6 +554,7 @@
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = PJ33CA8LX5;
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.anonymouswall.AnonymousWallIosUITests;
@@ -684,6 +606,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		4AC105C22F4EC8F600F944F1 /* XCRemoteSwiftPackageReference "Kingfisher" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/onevcat/Kingfisher";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 8.0.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		4AC105C32F4EC92B00F944F1 /* Kingfisher */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4AC105C22F4EC8F600F944F1 /* XCRemoteSwiftPackageReference "Kingfisher" */;
+			productName = Kingfisher;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 4A8BB2132F2DDF2C00DD2A08 /* Project object */;
 }

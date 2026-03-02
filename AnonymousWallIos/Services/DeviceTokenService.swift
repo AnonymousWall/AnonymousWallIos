@@ -30,9 +30,15 @@ class DeviceTokenService {
                 .setUserId(userId)
                 .build()
 
-            try await networkClient.performRequestWithoutResponse(request)
+            let (_, response) = try await URLSession.shared.data(for: request)
+            if let httpResponse = response as? HTTPURLResponse {
+                if httpResponse.statusCode == 200 {
+                    print("[DeviceToken] Token registered successfully")
+                } else {
+                    print("[DeviceToken] Failed to register token: HTTP \(httpResponse.statusCode)")
+                }
+            }
         } catch {
-            // Non-fatal — log and continue. Token will be re-sent on next launch.
             print("[DeviceToken] Failed to register token: \(error.localizedDescription)")
         }
     }
