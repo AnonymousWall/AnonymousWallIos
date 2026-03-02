@@ -2,7 +2,7 @@
 //  DeepLinkHandler.swift
 //  AnonymousWallIos
 //
-//  Singleton that routes push notification taps to the correct post in the UI
+//  Singleton that routes push notification taps to the correct screen in the UI
 //
 
 import Foundation
@@ -12,7 +12,7 @@ class DeepLinkHandler: ObservableObject {
 
     static let shared = DeepLinkHandler()
 
-    @Published var pendingPostId: UUID? = nil
+    @Published var pendingDestination: PushNotificationDestination? = nil
 
     private var notificationObserver: NSObjectProtocol?
 
@@ -23,9 +23,10 @@ class DeepLinkHandler: ObservableObject {
             queue: .main
         ) { [weak self] notification in
             guard let self,
-                  let postId = notification.userInfo?["postId"] as? UUID else { return }
+                  let destination = notification.userInfo?["destination"] as? PushNotificationDestination
+            else { return }
             Task { @MainActor [weak self] in
-                self?.pendingPostId = postId
+                self?.pendingDestination = destination
             }
         }
     }
@@ -36,10 +37,10 @@ class DeepLinkHandler: ObservableObject {
         }
     }
 
-    /// Consumes and returns the pending post ID, clearing it after retrieval.
-    func consume() -> UUID? {
-        let id = pendingPostId
-        pendingPostId = nil
-        return id
+    /// Consumes and returns the pending destination, clearing it after retrieval.
+    func consume() -> PushNotificationDestination? {
+        let destination = pendingDestination
+        pendingDestination = nil
+        return destination
     }
 }

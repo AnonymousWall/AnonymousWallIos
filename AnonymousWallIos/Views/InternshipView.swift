@@ -201,6 +201,10 @@ struct InternshipView: View {
                             }
                         )
                     }
+                case .internshipDetailById(let internshipId):
+                    InternshipDetailByIdView(internshipId: internshipId) { userId, userName in
+                        coordinator.navigateToChatWithUser(userId: userId, userName: userName)
+                    }
                 }
             }
         }
@@ -240,4 +244,46 @@ struct InternshipView: View {
         .environmentObject(BlockViewModel())
 }
 
+// MARK: - InternshipDetailByIdView
 
+/// Wrapper view used when navigating to an internship by ID only (e.g. push notification deep link).
+/// Fetches the full internship from the service before displaying InternshipDetailView.
+private struct InternshipDetailByIdView: View {
+    let internshipId: String
+    let onTapAuthor: (String, String) -> Void
+    @EnvironmentObject var authState: AuthState
+    @State private var internship: Internship?
+    @State private var loadFailed = false
+
+    var body: some View {
+        Group {
+            if let binding = Binding($internship) {
+                InternshipDetailView(
+                    internship: binding,
+                    onTapAuthor: onTapAuthor
+                )
+            } else if loadFailed {
+                Text("Failed to load internship.")
+                    .foregroundColor(.textSecondary)
+                    .padding()
+            } else {
+                ProgressView()
+            }
+        }
+        .task { await loadInternship() }
+    }
+
+    private func loadInternship() async {
+        guard let token = authState.authToken,
+              let userId = authState.currentUser?.id else { return }
+        do {
+            internship = try await InternshipService.shared.getInternship(
+                internshipId: internshipId,
+                token: token,
+                userId: userId
+            )
+        } catch {
+            loadFailed = true
+        }
+    }
+}

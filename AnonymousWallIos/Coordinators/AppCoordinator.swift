@@ -19,10 +19,25 @@ class AppCoordinator: ObservableObject {
         self.authState = authState
     }
     
-    /// Navigates to a post by ID, switching to the Home tab immediately.
-    /// PostDetailView fetches the full post data when it appears — no pre-fetch needed.
+    /// Navigates to the correct screen based on the push notification destination.
+    func navigate(to destination: PushNotificationDestination) {
+        switch destination {
+        case .post(let postId):
+            tabCoordinator.selectTab(0)
+            tabCoordinator.homeCoordinator.navigate(to: .postDetailById(postId.uuidString))
+
+        case .internship(let internshipId):
+            tabCoordinator.selectTab(3)
+            tabCoordinator.internshipCoordinator.navigate(to: .internshipDetailById(internshipId.uuidString))
+
+        case .marketplace(let itemId):
+            tabCoordinator.selectTab(4)
+            tabCoordinator.marketplaceCoordinator.navigate(to: .itemDetailById(itemId.uuidString))
+        }
+    }
+
+    /// Navigates to a post by ID — convenience wrapper for backwards compatibility.
     func navigateToPost(id: UUID) {
-        tabCoordinator.selectTab(0)
-        tabCoordinator.homeCoordinator.navigate(to: .postDetailById(id.uuidString))
+        navigate(to: .post(id))
     }
 }

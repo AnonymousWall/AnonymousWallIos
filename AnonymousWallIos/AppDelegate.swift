@@ -55,14 +55,43 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
         withCompletionHandler completionHandler: @escaping () -> Void
     ) {
         let userInfo = response.notification.request.content.userInfo
-        if let postIdString = userInfo["postId"] as? String,
-           let postId = UUID(uuidString: postIdString) {
-            NotificationCenter.default.post(
-                name: .pushNotificationTapped,
-                object: nil,
-                userInfo: ["postId": postId]
-            )
+        let type = userInfo["type"] as? String
+
+        switch type {
+        case "COMMENT":
+            if let postIdString = userInfo["postId"] as? String,
+               let postId = UUID(uuidString: postIdString) {
+                NotificationCenter.default.post(
+                    name: .pushNotificationTapped,
+                    object: nil,
+                    userInfo: ["destination": PushNotificationDestination.post(postId)]
+                )
+            }
+
+        case "INTERNSHIP_COMMENT":
+            if let internshipIdString = userInfo["internshipId"] as? String,
+               let internshipId = UUID(uuidString: internshipIdString) {
+                NotificationCenter.default.post(
+                    name: .pushNotificationTapped,
+                    object: nil,
+                    userInfo: ["destination": PushNotificationDestination.internship(internshipId)]
+                )
+            }
+
+        case "MARKETPLACE_COMMENT":
+            if let itemIdString = userInfo["itemId"] as? String,
+               let itemId = UUID(uuidString: itemIdString) {
+                NotificationCenter.default.post(
+                    name: .pushNotificationTapped,
+                    object: nil,
+                    userInfo: ["destination": PushNotificationDestination.marketplace(itemId)]
+                )
+            }
+
+        default:
+            break
         }
+
         completionHandler()
     }
 }

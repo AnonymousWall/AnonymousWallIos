@@ -12,6 +12,7 @@ import SwiftUI
 class MarketplaceCoordinator: Coordinator {
     enum Destination: Hashable {
         case marketplaceDetail(MarketplaceItem)
+        case itemDetailById(String)
     }
 
     @Published var path = NavigationPath()

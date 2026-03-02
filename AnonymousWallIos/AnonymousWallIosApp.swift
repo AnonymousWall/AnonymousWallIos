@@ -56,9 +56,9 @@ struct AnonymousWallIosApp: App {
                     NotificationCenter.default.post(name: .resetNavigation, object: nil)
                 }
             }
-            .onChange(of: deepLinkHandler.pendingPostId) { _, postId in
-                guard let postId, authState.isAuthenticated else { return }
-                appCoordinator.navigateToPost(id: postId)
+            .onChange(of: deepLinkHandler.pendingDestination) { _, destination in
+                guard let destination, authState.isAuthenticated else { return }
+                appCoordinator.navigate(to: destination)
                 deepLinkHandler.consume()
             }
         }
