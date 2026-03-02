@@ -45,6 +45,16 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
         willPresent notification: UNNotification,
         withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
     ) {
+        let userInfo = notification.request.content.userInfo
+        let type = userInfo["type"] as? String
+
+        if type == "CHAT_MESSAGE",
+           let senderUserId = userInfo["senderUserId"] as? String,
+           ActiveConversationTracker.shared.activeConversationId == senderUserId {
+            completionHandler([]) // suppress — user is already in this chat
+            return
+        }
+
         completionHandler([.banner, .sound, .badge])
     }
 
@@ -86,6 +96,19 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
                     name: .pushNotificationTapped,
                     object: nil,
                     userInfo: ["destination": PushNotificationDestination.marketplace(itemId)]
+                )
+            }
+
+        case "CHAT_MESSAGE":
+            if let conversationId = userInfo["conversationId"] as? String,
+               let senderUserId = userInfo["senderUserId"] as? String {
+                NotificationCenter.default.post(
+                    name: .pushNotificationTapped,
+                    object: nil,
+                    userInfo: ["destination": PushNotificationDestination.chat(
+                        conversationId: conversationId,
+                        senderUserId: senderUserId
+                    )]
                 )
             }
 

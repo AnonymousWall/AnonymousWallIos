@@ -12,6 +12,7 @@ import SwiftUI
 class ChatCoordinator: Coordinator {
     enum Destination: Hashable {
         case chatDetail(otherUserId: String, otherUserName: String)
+        case chatDetailById(conversationId: String)
     }
     
     @Published var path = NavigationPath()
@@ -49,6 +50,8 @@ class ChatCoordinator: Coordinator {
         switch destination {
         case .chatDetail(let userId, let userName):
             selectedConversation = (userId, userName)
+            path.append(destination)
+        case .chatDetailById:
             path.append(destination)
         }
     }

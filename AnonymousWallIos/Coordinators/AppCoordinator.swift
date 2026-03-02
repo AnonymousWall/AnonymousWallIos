@@ -38,6 +38,15 @@ class AppCoordinator: ObservableObject {
         case .marketplace(let itemId):
             tabCoordinator.selectTab(4)
             tabCoordinator.marketplaceCoordinator.navigate(to: .itemDetailById(itemId.uuidString))
+
+        case .chat(let conversationId, _):
+            tabCoordinator.selectTab(5) // Messages tab
+            Task { @MainActor in
+                try? await Task.sleep(nanoseconds: 200_000_000)
+                tabCoordinator.chatCoordinator.navigate(
+                    to: .chatDetailById(conversationId: conversationId)
+                )
+            }
         }
     }
 
