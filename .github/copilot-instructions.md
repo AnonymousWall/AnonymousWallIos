@@ -251,7 +251,752 @@ All generated code must reflect senior-level iOS engineering standards.
 
 
 
- on cutting-edge projects with experienced mentors",
+## API Documentation
+
+### Common Response Codes
+
+- `200 OK` - Request successful
+- `201 Created` - Resource created successfully
+- `400 Bad Request` - Invalid request parameters or validation failed
+- `401 Unauthorized` - Missing or invalid authentication token
+- `403 Forbidden` - Access denied (insufficient permissions or blocked user)
+- `404 Not Found` - Resource not found
+- `500 Internal Server Error` - Server error
+
+**Blocked User Response:**
+When a blocked user attempts any authenticated operation, they receive:
+```json
+HTTP/1.1 403 Forbidden
+Content-Type: application/json
+
+{
+    "error": "Access denied. Your account has been blocked."
+}
+```
+
+### Authentication Endpoints
+
+#### 1. Send Email Verification Code
+```http
+POST /api/v1/auth/email/send-code
+Content-Type: application/json
+
+{
+    "email": "student@harvard.edu",
+    "purpose": "register"  // or "login", "reset_password"
+}
+
+Response: 200 OK
+{
+    "message": "Verification code sent to email"
+}
+```
+
+#### 2. Register with Email Code
+```http
+POST /api/v1/auth/register/email
+Content-Type: application/json
+
+{
+    "email": "student@harvard.edu",
+    "code": "123456"
+}
+
+Response: 201 Created
+{
+    "user": {
+        "id": "uuid",
+        "email": "student@harvard.edu",
+        "profileName": "Anonymous",
+        "isVerified": true,
+        "passwordSet": false,
+        "createdAt": "2026-01-28T..."
+    },
+    "accessToken": "jwt-token-here"
+}
+```
+
+#### 3. Login with Email Code
+```http
+POST /api/v1/auth/login/email
+Content-Type: application/json
+
+{
+    "email": "student@harvard.edu",
+    "code": "123456"
+}
+
+Response: 200 OK
+{
+    "user": {...},
+    "accessToken": "jwt-token-here"
+}
+```
+
+#### 4. Login with Password
+```http
+POST /api/v1/auth/login/password
+Content-Type: application/json
+
+{
+    "email": "student@harvard.edu",
+    "password": "secure_password"
+}
+
+Response: 200 OK
+{
+    "user": {...},
+    "accessToken": "jwt-token-here"
+}
+```
+
+#### 5. Set Password (Requires Authentication)
+```http
+POST /api/v1/auth/password/set
+Header: X-User-Id: {userId}
+Authorization: Bearer {jwt-token}
+Content-Type: application/json
+
+{
+    "password": "secure_password"
+}
+
+Response: 200 OK
+{
+    "id": "uuid",
+    "email": "student@harvard.edu",
+    "profileName": "Anonymous",
+    "isVerified": true,
+    "passwordSet": true,
+    "createdAt": "2026-01-28T..."
+}
+```
+
+#### 6. Change Password (Requires Authentication)
+```http
+POST /api/v1/auth/password/change
+Authorization: Bearer {jwt-token}
+Content-Type: application/json
+
+{
+    "oldPassword": "current_password",
+    "newPassword": "new_password"
+}
+
+Response: 200 OK
+{
+    "id": "uuid",
+    "email": "student@harvard.edu",
+    "profileName": "Anonymous",
+    "isVerified": true,
+    "passwordSet": true,
+    "createdAt": "2026-01-28T..."
+}
+```
+
+#### 7. Request Password Reset (Forgot Password)
+```http
+POST /api/v1/auth/password/reset-request
+Content-Type: application/json
+
+{
+    "email": "student@harvard.edu"
+}
+
+Response: 200 OK
+{
+    "message": "Password reset code sent to email"
+}
+```
+
+**Notes:**
+- Sends a 6-digit verification code to the user's email
+- User must provide this code to reset their password
+- Code expires after 15 minutes
+
+#### 8. Reset Password
+```http
+POST /api/v1/auth/password/reset
+Content-Type: application/json
+
+{
+    "email": "student@harvard.edu",
+    "code": "123456",
+    "newPassword": "new_password"
+}
+
+Response: 200 OK
+{
+    "user": {
+        "id": "uuid",
+        "email": "student@harvard.edu",
+        "profileName": "Anonymous",
+        "isVerified": true,
+        "passwordSet": true,
+        "createdAt": "2026-01-28T..."
+    },
+    "accessToken": "jwt-token-here"
+}
+```
+
+**Notes:**
+- Requires valid email verification code
+- Code must not be expired (15 minute expiration)
+- Returns JWT token upon successful password reset
+
+---
+
+### Post Endpoints
+
+#### 1. Create Post
+```http
+POST /api/v1/posts
+Authorization: Bearer {jwt-token}
+Content-Type: multipart/form-data
+
+title=My First Post Title
+content=This is my first post!
+wall=campus
+images[]=<optional binary file 1>
+images[]=<optional binary file 2>
+
+Response: 201 Created
+{
+    "id": "uuid",
+    "title": "My First Post Title",
+    "content": "This is my first post!",
+    "wall": "CAMPUS",
+    "postType": "standard",
+    "totalVotes": null,
+    "poll": null,
+    "likes": 0,
+    "comments": 0,
+    "liked": false,
+    "imageUrls": ["http://localhost:8080/media/posts/uuid1.jpg", "http://localhost:8080/media/posts/uuid2.jpg"],
+    "author": {
+        "id": "uuid",
+        "profileName": "Anonymous",
+        "isAnonymous": true
+    },
+    "createdAt": "2026-01-28T...",
+    "updatedAt": "2026-01-28T..."
+}
+```
+
+**Request Validation:**
+- `title` is **required** (cannot be null, empty, or whitespace-only)
+- `title` maximum length: **255 characters**
+- `content` is **required** for standard posts (cannot be null, empty, or whitespace-only); optional for poll posts
+- `content` maximum length: **5000 characters**
+- `wall` is optional (defaults to "campus"), must be "campus" or "national"
+- `images` is optional; up to **5 images** per post; each must be JPEG, PNG, or WEBP and max **5MB**
+
+**Error Responses:**
+```json
+// Missing or empty title
+400 Bad Request
+{
+    "error": "Post title cannot be empty"
+}
+
+// Title exceeds 255 characters
+400 Bad Request
+{
+    "error": "Post title exceeds maximum length of 255 characters"
+}
+```
+
+#### 2. List Posts
+```http
+GET /api/v1/posts?wall=campus&page=1&limit=20&sort=NEWEST
+Authorization: Bearer {jwt-token}
+
+Response: 200 OK
+{
+    "data": [
+        {
+            "id": "uuid",
+            "title": "Post Title",        // NEW
+            "content": "Post content",
+            "wall": "CAMPUS",
+            "postType": "standard",
+            "totalVotes": null,
+            "poll": null,
+            "likes": 5,
+            "comments": 2,
+            "liked": false,
+            "author": {
+                "id": "uuid",
+                "profileName": "John Doe",
+                "isAnonymous": true
+            },
+            "createdAt": "2026-01-28T...",
+            "updatedAt": "2026-01-28T..."
+        }
+    ],
+    "pagination": {
+        "page": 1,
+        "limit": 20,
+        "total": 150,
+        "totalPages": 8
+    }
+}
+```
+
+**Query Parameters:**
+- `wall` (default: "campus") - Filter by "campus" or "national"
+- `page` (default: 1) - Page number (1-based)
+- `limit` (default: 20) - Posts per page (max: 100)
+- `sort` (default: "NEWEST") - Sort order: NEWEST, OLDEST, MOST_LIKED, LEAST_LIKED, MOST_COMMENTED, LEAST_COMMENTED
+
+#### 3. Get Post by ID
+```http
+GET /api/v1/posts/{postId}
+Authorization: Bearer {jwt-token}
+
+Response: 200 OK
+{
+    "id": "uuid",
+    "title": "Post Title",
+    "content": "Post content",
+    "wall": "CAMPUS",
+    "postType": "standard",
+    "totalVotes": null,
+    "poll": null,
+    "likes": 5,
+    "comments": 2,
+    "liked": false,
+    "author": {
+        "id": "uuid",
+        "profileName": "John Doe",
+        "isAnonymous": true
+    },
+    "createdAt": "2026-01-28T...",
+    "updatedAt": "2026-01-28T..."
+}
+
+Response: 404 Not Found
+{
+    "error": "Post not found"
+}
+
+Response: 403 Forbidden
+{
+    "error": "You do not have access to posts from other schools"
+}
+```
+
+**Notes:**
+- Retrieves a single post by its ID
+- For campus posts: only users from the same school can access
+- For national posts: all authenticated users can access
+- Returns 404 if post does not exist
+- Returns 403 if user doesn't have access to the post
+
+#### 4. Like/Unlike Post (Toggle)
+```http
+POST /api/v1/posts/{postId}/likes
+Authorization: Bearer {jwt-token}
+
+Response: 200 OK
+{
+    "liked": true,
+    "likeCount": 6
+}
+```
+
+**Notes:**
+- Single endpoint that toggles like state (like if not liked, unlike if already liked)
+- Returns both the new like state and total like count for the post
+- For campus posts: only users from the same school can like
+- For national posts: all authenticated users can like
+- Response: `liked` (boolean) indicates post is now liked, `likeCount` is total likes on post
+
+
+#### 5. Add Comment
+```http
+POST /api/v1/posts/{postId}/comments
+Authorization: Bearer {jwt-token}
+Content-Type: application/json
+
+{
+    "text": "Great post!"
+}
+
+Response: 201 Created
+{
+    "id": "uuid",
+    "postId": "uuid",
+    "parentType": "POST",
+    "text": "Great post!",
+    "author": {
+        "id": "uuid",
+        "profileName": "Anonymous",
+        "isAnonymous": true
+    },
+    "createdAt": "2026-01-28T..."
+}
+
+Response: 400 Bad Request
+{
+    "error": "Comment text cannot be empty"
+}
+
+Response: 400 Bad Request
+{
+    "error": "Comment text exceeds maximum length of 5000 characters"
+}
+```
+
+**Validation Rules:**
+- `text` is **required** (cannot be null, empty, or whitespace-only)
+- `text` maximum length: **5000 characters**
+
+#### 6. Get Comments for Post
+```http
+GET /api/v1/posts/{postId}/comments?page=1&limit=20&sort=NEWEST
+Authorization: Bearer {jwt-token}
+
+Response: 200 OK
+{
+    "data": [
+        {
+            "id": "uuid",
+            "postId": "uuid",
+            "parentType": "POST",
+            "text": "Great post!",
+            "author": {
+                "id": "uuid",
+                "profileName": "Jane Smith",
+                "isAnonymous": true
+            },
+            "createdAt": "2026-01-28T..."
+        }
+    ],
+    "pagination": {
+        "page": 1,
+        "limit": 20,
+        "total": 5,
+        "totalPages": 1
+    }
+}
+```
+
+**Query Parameters:**
+- `page` (default: 1) - Page number (1-based)
+- `limit` (default: 20) - Comments per page (max: 100)
+- `sort` (default: "NEWEST") - Sort order: NEWEST, OLDEST
+
+#### 7. Hide Post
+```http
+PATCH /api/v1/posts/{postId}/hide
+Authorization: Bearer {jwt-token}
+
+Response: 200 OK
+{
+    "message": "Post hidden successfully"
+}
+```
+
+**Notes:**
+- Only the post author can hide their own post
+- When a post is hidden, all its comments are also hidden
+- This is a soft-delete operation; data is preserved in the database
+
+#### 8. Unhide Post
+```http
+PATCH /api/v1/posts/{postId}/unhide
+Authorization: Bearer {jwt-token}
+
+Response: 200 OK
+{
+    "message": "Post unhidden successfully"
+}
+```
+
+**Notes:**
+- Only the post author can unhide their own post
+- When a post is unhidden, all its previously hidden comments are also restored
+
+
+#### 9. Hide Comment
+```http
+PATCH /api/v1/posts/{postId}/comments/{commentId}/hide
+Authorization: Bearer {jwt-token}
+
+Response: 200 OK
+{
+    "message": "Comment hidden successfully"
+}
+```
+
+**Notes:**
+- Only the comment author can hide their own comment
+- This is a soft-delete operation; data is preserved in the database
+
+#### 10. Unhide Comment
+```http
+PATCH /api/v1/posts/{postId}/comments/{commentId}/unhide
+Authorization: Bearer {jwt-token}
+
+Response: 200 OK
+{
+    "message": "Comment unhidden successfully"
+}
+```
+
+**Notes:**
+- Only the comment author can unhide their own comment
+
+#### 11. Report Post
+```http
+POST /api/v1/posts/{postId}/reports
+Authorization: Bearer {jwt-token}
+Content-Type: application/json
+
+{
+    "reason": "This post contains inappropriate content"
+}
+
+Response: 201 Created
+{
+    "message": "Post reported successfully"
+}
+```
+
+**Notes:**
+- A user can only report the same post once
+- `reason` is optional (max length: 500 characters)
+- Reporting a post increments the report count for the post author
+- Duplicate reports by the same user will return: `400 Bad Request`
+
+#### 12. Report Comment
+```http
+POST /api/v1/posts/{postId}/comments/{commentId}/reports
+Authorization: Bearer {jwt-token}
+Content-Type: application/json
+
+{
+    "reason": "This comment violates community guidelines"
+}
+
+Response: 201 Created
+{
+    "message": "Comment reported successfully"
+}
+```
+
+**Notes:**
+- A user can only report the same comment once
+- `reason` is optional (max length: 500 characters)
+- Reporting a comment increments the report count for the comment author
+- Duplicate reports by the same user will return: `400 Bad Request`
+
+#### 13. Create Poll Post
+```http
+POST /api/v1/posts
+Authorization: Bearer {jwt-token}
+Content-Type: multipart/form-data
+
+title=What is your favorite language?
+postType=poll
+pollOptions=Java
+pollOptions=Python
+pollOptions=JavaScript
+wall=campus
+
+Response: 201 Created
+{
+    "id": "uuid",
+    "title": "What is your favorite language?",
+    "content": "",
+    "wall": "CAMPUS",
+    "postType": "poll",
+    "totalVotes": 0,
+    "poll": {
+        "options": [
+            {"id": "uuid", "optionText": "Java", "displayOrder": 0, "voteCount": null, "percentage": null},
+            {"id": "uuid", "optionText": "Python", "displayOrder": 1, "voteCount": null, "percentage": null},
+            {"id": "uuid", "optionText": "JavaScript", "displayOrder": 2, "voteCount": null, "percentage": null}
+        ],
+        "totalVotes": 0,
+        "userVotedOptionId": null,
+        "resultsVisible": false
+    },
+    "likes": 0,
+    "comments": 0,
+    "liked": false,
+    "imageUrls": [],
+    "author": {
+        "id": "uuid",
+        "profileName": "Anonymous",
+        "isAnonymous": true
+    },
+    "createdAt": "2026-01-28T...",
+    "updatedAt": "2026-01-28T..."
+}
+```
+
+**Request Validation:**
+- `postType` must be `standard` or `poll` (default: `standard`)
+- `pollOptions` required when `postType=poll`, 2–4 items, each max **100 characters**
+- `content` is optional for poll posts
+- Poll options cannot be edited after creation
+
+#### 14. Vote on a Poll
+```http
+POST /api/v1/posts/{postId}/vote
+Authorization: Bearer {jwt-token}
+Content-Type: application/json
+
+{
+    "optionId": "uuid"
+}
+
+Response: 200 OK
+{
+    "poll": {
+        "options": [
+            {"id": "uuid", "optionText": "Java", "displayOrder": 0, "voteCount": 1, "percentage": 100.0},
+            {"id": "uuid", "optionText": "Python", "displayOrder": 1, "voteCount": 0, "percentage": 0.0}
+        ],
+        "totalVotes": 1,
+        "userVotedOptionId": "uuid",
+        "resultsVisible": true
+    },
+    "message": "Vote cast successfully"
+}
+```
+
+**Notes:**
+- A user can only vote once per poll — second attempt returns `409 Conflict`
+- After voting, results (vote counts and percentages) are always visible to the voter
+- `optionId` must belong to the specified poll post
+
+#### 15. Get Poll Data
+```http
+GET /api/v1/posts/{postId}/poll?viewResults=true
+Authorization: Bearer {jwt-token}
+
+Response: 200 OK
+{
+    "options": [
+        {"id": "uuid", "optionText": "Java", "displayOrder": 0, "voteCount": 5, "percentage": 71.4},
+        {"id": "uuid", "optionText": "Python", "displayOrder": 1, "voteCount": 2, "percentage": 28.6}
+    ],
+    "totalVotes": 7,
+    "userVotedOptionId": null,
+    "resultsVisible": true
+}
+```
+
+**Notes:**
+- `voteCount` and `percentage` are `null` unless the user has voted OR `?viewResults=true` is passed
+- `totalVotes` is always visible regardless of vote/view status
+- Returns `400` if the post is not a poll, `404` if post not found or hidden
+
+### Internship Endpoints
+
+#### 1. Create Internship Posting
+```http
+POST /api/v1/internships
+Authorization: Bearer {jwt-token}
+Content-Type: application/json
+
+{
+    "company": "Google",
+    "role": "Software Engineer Intern",
+    "salary": "$8000/month",
+    "location": "Mountain View, CA",
+    "description": "Work on cutting-edge projects with experienced mentors",
+    "deadline": "2026-06-30",
+    "wall": "campus"
+}
+
+Response: 201 Created
+{
+    "id": "uuid",
+    "company": "Google",
+    "role": "Software Engineer Intern",
+    "salary": "$8000/month",
+    "location": "Mountain View, CA",
+    "description": "Work on cutting-edge projects with experienced mentors",
+    "deadline": "2026-06-30",
+    "wall": "CAMPUS",
+    "comments": 0,
+    "author": {
+        "id": "uuid",
+        "profileName": "John Recruiter",
+        "isAnonymous": false
+    },
+    "createdAt": "2026-02-18T...",
+    "updatedAt": "2026-02-18T..."
+}
+```
+
+**Request Validation:**
+- `company` is **required** (cannot be null, empty, or whitespace-only)
+- `company` maximum length: **255 characters**
+- `role` is **required** (cannot be null, empty, or whitespace-only)
+- `role` maximum length: **255 characters**
+- `salary` is optional (VARCHAR(50))
+- `location` is optional (VARCHAR(255))
+- `description` is optional (TEXT)
+- `deadline` is optional (DATE format: YYYY-MM-DD, defaults to 1 month from creation date)
+- `wall` is optional (defaults to "campus"), must be "campus" or "national"
+
+**Wall Rules:**
+- **Campus wall**: Only users from the same school can see the posting
+- **National wall**: All authenticated users can see the posting
+
+**Error Responses:**
+```json
+// Missing or empty company
+400 Bad Request
+{
+    "error": "Company is required"
+}
+
+// Company exceeds 255 characters
+400 Bad Request
+{
+    "error": "Company name cannot exceed 255 characters"
+}
+
+// Missing or empty role
+400 Bad Request
+{
+    "error": "Role is required"
+}
+
+// Role exceeds 255 characters
+400 Bad Request
+{
+    "error": "Role cannot exceed 255 characters"
+}
+
+// User not found
+400 Bad Request
+{
+    "error": "User not found"
+}
+```
+
+#### 2. List Internship Postings
+```http
+GET /api/v1/internships?wall=campus&page=1&limit=20&sortBy=newest
+Authorization: Bearer {jwt-token}
+
+Response: 200 OK
+{
+    "data": [
+        {
+            "id": "uuid",
+            "company": "Google",
+            "role": "Software Engineer Intern",
+            "salary": "$8000/month",
+            "location": "Mountain View, CA",
+            "description": "Work on cutting-edge projects with experienced mentors",
             "deadline": "2026-06-30",
             "wall": "CAMPUS",
             "comments": 3,
@@ -1161,7 +1906,125 @@ Response: 200 OK
 
 ---
 
-## Chat API Documentation
+## Push Notifications
+
+The backend sends APNs push notifications to iOS devices for the following events:
+
+| Event | Trigger | Payload `type` | Deep-link field |
+|-------|---------|----------------|-----------------|
+| Post comment | Another user comments on your post | `COMMENT` | `postId` |
+| Internship comment | Another user comments on your internship posting | `INTERNSHIP_COMMENT` | `internshipId` |
+| Marketplace comment | Another user comments on your marketplace listing | `MARKETPLACE_COMMENT` | `itemId` |
+
+### Device Token Registration
+
+iOS devices must register their APNs token after login:
+
+```
+POST /api/v1/devices/register
+Authorization: Bearer {token}
+Content-Type: application/json
+
+{
+  "deviceToken": "hex-string-from-apns",
+  "platform": "IOS"
+}
+```
+
+Tokens are automatically deactivated when APNs returns a 410 response (device uninstalled app).
+Self-notifications are suppressed — users do not receive notifications for their own actions.
+
+### Architecture
+
+```
+User Action → Domain Event → NotificationEventListener → persists to DB + ApnsClient → Apple → iOS Device
+Push notification arrives → tapping opens Notifications tab → user sees list → taps item → navigates to content
+```
+
+### Configuration
+
+| Environment Variable | Description |
+|----------------------|-------------|
+| `APNS_TEAM_ID` | Apple Developer Team ID |
+| `APNS_KEY_ID` | APNs Auth Key ID |
+| `APNS_BUNDLE_ID` | App bundle identifier |
+| `APNS_PRIVATE_KEY` | Contents of `.p8` key file (newlines as `\n`) |
+| `APNS_ENVIRONMENT` | `sandbox` (development/TestFlight) or `production` (App Store) |
+
+---
+
+## Notification Inbox
+
+The Notification Inbox allows users to view all received notifications in a paginated list (TikTok-style). Notifications are persisted to the database when comments are created and can be retrieved, counted, and marked as read.
+
+All endpoints require authentication (`Authorization: Bearer {token}`).
+
+### Get Notifications
+
+```http
+GET /api/v1/notifications?page=0&size=20
+Authorization: Bearer {token}
+
+Response: 200 OK
+{
+  "content": [
+    {
+      "id": "uuid",
+      "type": "COMMENT",
+      "entityId": "uuid-of-post",
+      "entityTitle": null,
+      "actorProfileName": null,
+      "read": false,
+      "createdAt": "2024-01-01T12:00:00Z"
+    }
+  ],
+  "totalSize": 5,
+  "pageNumber": 0,
+  "size": 20
+}
+```
+
+**Query parameters:**
+- `page` — zero-based page number (default: `0`)
+- `size` — page size (default: `20`)
+
+**Notification `type` values:**
+- `COMMENT` — someone commented on your post (`entityId` = postId)
+- `INTERNSHIP_COMMENT` — someone commented on your internship posting (`entityId` = internshipId)
+- `MARKETPLACE_COMMENT` — someone commented on your marketplace listing (`entityId` = itemId)
+
+### Get Unread Count
+
+```http
+GET /api/v1/notifications/unread-count
+Authorization: Bearer {token}
+
+Response: 200 OK
+{
+  "count": 3
+}
+```
+
+### Mark All Notifications as Read
+
+```http
+POST /api/v1/notifications/mark-all-read
+Authorization: Bearer {token}
+
+Response: 200 OK
+```
+
+### Mark Single Notification as Read
+
+```http
+POST /api/v1/notifications/{id}/read
+Authorization: Bearer {token}
+
+Response: 200 OK
+         403 Forbidden  — notification does not belong to authenticated user
+```
+
+---
 
 ### Overview
 
