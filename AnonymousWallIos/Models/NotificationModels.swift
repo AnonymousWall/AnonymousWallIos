@@ -15,6 +15,19 @@ struct AppNotification: Codable, Identifiable {
     let read: Bool
     let createdAt: String
 
+    func updated(read: Bool) -> AppNotification {
+        AppNotification(
+            id: id,
+            type: type,
+            entityId: entityId,
+            wall: wall,
+            entityTitle: entityTitle,
+            actorProfileName: actorProfileName,
+            read: read,
+            createdAt: createdAt
+        )
+    }
+
     enum NotificationType: String, Codable {
         case comment = "COMMENT"
         case internshipComment = "INTERNSHIP_COMMENT"

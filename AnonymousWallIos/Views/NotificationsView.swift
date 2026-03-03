@@ -118,7 +118,7 @@ struct NotificationsView: View {
             try? await Task.sleep(nanoseconds: 300_000_000)
             switch notification.type {
             case .comment:
-                let wall = notification.wall ?? "national"
+                let wall = notification.wall ?? WallType.national.rawValue
                 onNavigateToPost?(notification.entityId, wall)
             case .internshipComment:
                 onNavigateToInternship?(notification.entityId)

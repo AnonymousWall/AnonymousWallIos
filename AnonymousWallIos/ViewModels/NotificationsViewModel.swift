@@ -60,18 +60,7 @@ class NotificationsViewModel: ObservableObject {
     func markAllRead(authState: AuthState) async {
         do {
             try await service.markAllRead(authState: authState)
-            notifications = notifications.map { notification in
-                AppNotification(
-                    id: notification.id,
-                    type: notification.type,
-                    entityId: notification.entityId,
-                    wall: notification.wall,
-                    entityTitle: notification.entityTitle,
-                    actorProfileName: notification.actorProfileName,
-                    read: true,
-                    createdAt: notification.createdAt
-                )
-            }
+            notifications = notifications.map { $0.updated(read: true) }
             unreadCount = 0
         } catch {
             errorMessage = "Failed to mark all as read"
@@ -83,17 +72,7 @@ class NotificationsViewModel: ObservableObject {
         do {
             try await service.markRead(notificationId: notification.id, authState: authState)
             if let index = notifications.firstIndex(where: { $0.id == notification.id }) {
-                let n = notifications[index]
-                notifications[index] = AppNotification(
-                    id: n.id,
-                    type: n.type,
-                    entityId: n.entityId,
-                    wall: n.wall,
-                    entityTitle: n.entityTitle,
-                    actorProfileName: n.actorProfileName,
-                    read: true,
-                    createdAt: n.createdAt
-                )
+                notifications[index] = notifications[index].updated(read: true)
             }
             unreadCount = max(0, unreadCount - 1)
         } catch {

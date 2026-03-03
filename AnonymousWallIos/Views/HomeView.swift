@@ -238,7 +238,7 @@ struct HomeView: View {
             NotificationsView(
                 viewModel: notificationsViewModel,
                 onNavigateToPost: { postId, wall in
-                    if wall != "campus" {
+                    if wall != WallType.campus.rawValue {
                         coordinator.navigate(to: .postDetailById(postId))
                     }
                 },
