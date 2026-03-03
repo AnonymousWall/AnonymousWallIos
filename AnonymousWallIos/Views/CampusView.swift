@@ -10,9 +10,11 @@ import SwiftUI
 struct CampusView: View {
     @EnvironmentObject var authState: AuthState
     @EnvironmentObject var blockViewModel: BlockViewModel
+    @EnvironmentObject var notificationsViewModel: NotificationsViewModel
     @StateObject private var viewModel = CampusViewModel()
     @ObservedObject var coordinator: CampusCoordinator
     @State private var showSortPicker = false
+    @State private var showNotifications = false
 
     // Minimum height for scrollable content when list is empty
     private let minimumScrollableHeight: CGFloat = 300
@@ -167,6 +169,33 @@ struct CampusView: View {
             }
             .navigationTitle("Campus")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button {
+                        showNotifications = true
+                    } label: {
+                        ZStack(alignment: .topTrailing) {
+                            Image(systemName: "bell.fill")
+                                .font(.title3)
+                                .foregroundColor(.textPrimary)
+
+                            if notificationsViewModel.unreadCount > 0 {
+                                ZStack {
+                                    Circle()
+                                        .fill(Color.accentRed)
+                                        .frame(width: 16, height: 16)
+                                    Text(notificationsViewModel.unreadCount > 9 ? "9+" : "\(notificationsViewModel.unreadCount)")
+                                        .font(.system(size: 9, weight: .bold))
+                                        .foregroundColor(.white)
+                                }
+                                .offset(x: 8, y: -8)
+                            }
+                        }
+                    }
+                    .accessibilityLabel("Notifications")
+                    .accessibilityValue(notificationsViewModel.unreadCount > 0 ? "\(notificationsViewModel.unreadCount) unread" : "No unread notifications")
+                }
+            }
             .navigationDestination(for: CampusCoordinator.Destination.self) { destination in
                 switch destination {
                 case .postDetail(let post):
@@ -202,6 +231,20 @@ struct CampusView: View {
         .sheet(isPresented: $coordinator.showSetPassword) {
             SetPasswordView(authService: AuthService.shared)
         }
+        .sheet(isPresented: $showNotifications) {
+            NotificationsView(
+                viewModel: notificationsViewModel,
+                onNavigateToPost: { postId, wall in
+                    if wall == "campus" {
+                        coordinator.navigate(to: .postDetailById(postId))
+                    }
+                },
+                onNavigateToInternship: nil,
+                onNavigateToMarketplace: nil
+            )
+            .presentationDragIndicator(.visible)
+            .presentationCornerRadius(28)
+        }
         .sheet(isPresented: $showSortPicker) {
             SortPickerSheet(selectedSort: $viewModel.selectedSortOrder)
                 .presentationDetents([.medium])
@@ -222,6 +265,7 @@ struct CampusView: View {
             
             // Load posts
             viewModel.loadPosts(authState: authState)
+            Task { await notificationsViewModel.fetchUnreadCount(authState: authState) }
         }
         .onDisappear {
             // Cancel any ongoing load task when view disappears
@@ -230,6 +274,9 @@ struct CampusView: View {
         .onReceive(blockViewModel.userBlockedPublisher) { blockedUserId in
             viewModel.removePostsFromUser(blockedUserId)
         }
+        .onReceive(NotificationCenter.default.publisher(for: .openNotificationInbox)) { _ in
+            showNotifications = true
+        }
     }
 }
 
@@ -237,4 +284,5 @@ struct CampusView: View {
     CampusView(coordinator: CampusCoordinator())
         .environmentObject(AuthState())
         .environmentObject(BlockViewModel())
+        .environmentObject(NotificationsViewModel())
 }

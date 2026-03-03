@@ -58,60 +58,13 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
         completionHandler([.banner, .sound, .badge])
     }
 
-    // User tapped notification — extract payload and trigger deep link
+    // User tapped notification — open the notification inbox
     func userNotificationCenter(
         _ center: UNUserNotificationCenter,
         didReceive response: UNNotificationResponse,
         withCompletionHandler completionHandler: @escaping () -> Void
     ) {
-        let userInfo = response.notification.request.content.userInfo
-        let type = userInfo["type"] as? String
-
-        switch type {
-        case "COMMENT":
-            if let postIdString = userInfo["postId"] as? String,
-                   let postId = UUID(uuidString: postIdString) {
-                    let wall = userInfo["wall"] as? String ?? "national"
-                    NotificationCenter.default.post(
-                        name: .pushNotificationTapped,
-                        object: nil,
-                        userInfo: ["destination": PushNotificationDestination.post(postId, wall: wall)]
-                    )
-                }
-
-        case "INTERNSHIP_COMMENT":
-            if let internshipIdString = userInfo["internshipId"] as? String,
-               let internshipId = UUID(uuidString: internshipIdString) {
-                NotificationCenter.default.post(
-                    name: .pushNotificationTapped,
-                    object: nil,
-                    userInfo: ["destination": PushNotificationDestination.internship(internshipId)]
-                )
-            }
-
-        case "MARKETPLACE_COMMENT":
-            if let itemIdString = userInfo["itemId"] as? String,
-               let itemId = UUID(uuidString: itemIdString) {
-                NotificationCenter.default.post(
-                    name: .pushNotificationTapped,
-                    object: nil,
-                    userInfo: ["destination": PushNotificationDestination.marketplace(itemId)]
-                )
-            }
-
-        case "CHAT_MESSAGE":
-            if let senderUserId = userInfo["senderUserId"] as? String {
-                NotificationCenter.default.post(
-                    name: .pushNotificationTapped,
-                    object: nil,
-                    userInfo: ["destination": PushNotificationDestination.chat(senderUserId: senderUserId)]
-                )
-            }
-
-        default:
-            break
-        }
-
+        NotificationCenter.default.post(name: .openNotificationInbox, object: nil)
         completionHandler()
     }
 }
@@ -121,4 +74,5 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
 extension Notification.Name {
     static let apnsTokenReceived      = Notification.Name("apnsTokenReceived")
     static let pushNotificationTapped = Notification.Name("pushNotificationTapped")
+    static let openNotificationInbox  = Notification.Name("openNotificationInbox")
 }

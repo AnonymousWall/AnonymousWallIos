@@ -10,12 +10,14 @@ import SwiftUI
 struct MarketView: View {
     @EnvironmentObject var authState: AuthState
     @EnvironmentObject var blockViewModel: BlockViewModel
+    @EnvironmentObject var notificationsViewModel: NotificationsViewModel
     @ObservedObject var coordinator: MarketplaceCoordinator
     @StateObject private var campusViewModel = MarketplaceFeedViewModel(wallType: .campus)
     @StateObject private var nationalViewModel = MarketplaceFeedViewModel(wallType: .national)
     @State private var selectedWall: WallType = .campus
     @State private var showCreateItem = false
     @State private var showWallPicker = false
+    @State private var showNotifications = false
 
     private var activeViewModel: MarketplaceFeedViewModel {
         selectedWall == .campus ? campusViewModel : nationalViewModel
@@ -179,6 +181,31 @@ struct MarketView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
+                    Button {
+                        showNotifications = true
+                    } label: {
+                        ZStack(alignment: .topTrailing) {
+                            Image(systemName: "bell.fill")
+                                .font(.title3)
+                                .foregroundColor(.textPrimary)
+
+                            if notificationsViewModel.unreadCount > 0 {
+                                ZStack {
+                                    Circle()
+                                        .fill(Color.accentRed)
+                                        .frame(width: 16, height: 16)
+                                    Text(notificationsViewModel.unreadCount > 9 ? "9+" : "\(notificationsViewModel.unreadCount)")
+                                        .font(.system(size: 9, weight: .bold))
+                                        .foregroundColor(.white)
+                                }
+                                .offset(x: 8, y: -8)
+                            }
+                        }
+                    }
+                    .accessibilityLabel("Notifications")
+                    .accessibilityValue(notificationsViewModel.unreadCount > 0 ? "\(notificationsViewModel.unreadCount) unread" : "No unread notifications")
+                }
+                ToolbarItem(placement: .navigationBarTrailing) {
                     Button(action: { showCreateItem = true }) {
                         Image(systemName: "square.and.pencil")
                             .font(.title3)
@@ -234,6 +261,18 @@ struct MarketView: View {
                 activeViewModel.loadItems(authState: authState)
             }
         }
+        .sheet(isPresented: $showNotifications) {
+            NotificationsView(
+                viewModel: notificationsViewModel,
+                onNavigateToPost: nil,
+                onNavigateToInternship: nil,
+                onNavigateToMarketplace: { itemId in
+                    coordinator.navigate(to: .itemDetailById(itemId))
+                }
+            )
+            .presentationDragIndicator(.visible)
+            .presentationCornerRadius(28)
+        }
         .sheet(isPresented: $showWallPicker) {
             WallPickerSheet(selectedWall: $selectedWall)
                 .presentationDetents([.height(260)])
@@ -246,6 +285,7 @@ struct MarketView: View {
         .onAppear {
             campusViewModel.loadItems(authState: authState)
             nationalViewModel.loadItems(authState: authState)
+            Task { await notificationsViewModel.fetchUnreadCount(authState: authState) }
         }
         .onDisappear {
             campusViewModel.cleanup()
@@ -255,6 +295,9 @@ struct MarketView: View {
             campusViewModel.removeItemsFromUser(blockedUserId)
             nationalViewModel.removeItemsFromUser(blockedUserId)
         }
+        .onReceive(NotificationCenter.default.publisher(for: .openNotificationInbox)) { _ in
+            showNotifications = true
+        }
     }
 
 }
@@ -263,6 +306,7 @@ struct MarketView: View {
     MarketView(coordinator: MarketplaceCoordinator())
         .environmentObject(AuthState())
         .environmentObject(BlockViewModel())
+        .environmentObject(NotificationsViewModel())
 }
 
 // MARK: - MarketplaceItemDetailByIdView

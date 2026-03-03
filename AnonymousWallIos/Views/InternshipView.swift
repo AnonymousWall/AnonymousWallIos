@@ -10,12 +10,14 @@ import SwiftUI
 struct InternshipView: View {
     @EnvironmentObject var authState: AuthState
     @EnvironmentObject var blockViewModel: BlockViewModel
+    @EnvironmentObject var notificationsViewModel: NotificationsViewModel
     @ObservedObject var coordinator: InternshipCoordinator
     @StateObject private var campusViewModel = InternshipFeedViewModel(wallType: .campus)
     @StateObject private var nationalViewModel = InternshipFeedViewModel(wallType: .national)
     @State private var selectedWall: WallType = .campus
     @State private var showCreateInternship = false
     @State private var showWallPicker = false
+    @State private var showNotifications = false
 
     private var activeViewModel: InternshipFeedViewModel {
         selectedWall == .campus ? campusViewModel : nationalViewModel
@@ -159,6 +161,31 @@ struct InternshipView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
+                    Button {
+                        showNotifications = true
+                    } label: {
+                        ZStack(alignment: .topTrailing) {
+                            Image(systemName: "bell.fill")
+                                .font(.title3)
+                                .foregroundColor(.textPrimary)
+
+                            if notificationsViewModel.unreadCount > 0 {
+                                ZStack {
+                                    Circle()
+                                        .fill(Color.accentRed)
+                                        .frame(width: 16, height: 16)
+                                    Text(notificationsViewModel.unreadCount > 9 ? "9+" : "\(notificationsViewModel.unreadCount)")
+                                        .font(.system(size: 9, weight: .bold))
+                                        .foregroundColor(.white)
+                                }
+                                .offset(x: 8, y: -8)
+                            }
+                        }
+                    }
+                    .accessibilityLabel("Notifications")
+                    .accessibilityValue(notificationsViewModel.unreadCount > 0 ? "\(notificationsViewModel.unreadCount) unread" : "No unread notifications")
+                }
+                ToolbarItem(placement: .navigationBarTrailing) {
                     Button(action: { showCreateInternship = true }) {
                         Image(systemName: "square.and.pencil")
                             .font(.title3)
@@ -214,6 +241,18 @@ struct InternshipView: View {
                 activeViewModel.loadInternships(authState: authState)
             }
         }
+        .sheet(isPresented: $showNotifications) {
+            NotificationsView(
+                viewModel: notificationsViewModel,
+                onNavigateToPost: nil,
+                onNavigateToInternship: { internshipId in
+                    coordinator.navigate(to: .internshipDetailById(internshipId))
+                },
+                onNavigateToMarketplace: nil
+            )
+            .presentationDragIndicator(.visible)
+            .presentationCornerRadius(28)
+        }
         .sheet(isPresented: $showWallPicker) {
             WallPickerSheet(selectedWall: $selectedWall)
                 .presentationDetents([.height(260)])
@@ -226,6 +265,7 @@ struct InternshipView: View {
         .onAppear {
             campusViewModel.loadInternships(authState: authState)
             nationalViewModel.loadInternships(authState: authState)
+            Task { await notificationsViewModel.fetchUnreadCount(authState: authState) }
         }
         .onDisappear {
             campusViewModel.cleanup()
@@ -235,6 +275,9 @@ struct InternshipView: View {
             campusViewModel.removeInternshipsFromUser(blockedUserId)
             nationalViewModel.removeInternshipsFromUser(blockedUserId)
         }
+        .onReceive(NotificationCenter.default.publisher(for: .openNotificationInbox)) { _ in
+            showNotifications = true
+        }
     }
 }
 
@@ -242,6 +285,7 @@ struct InternshipView: View {
     InternshipView(coordinator: InternshipCoordinator())
         .environmentObject(AuthState())
         .environmentObject(BlockViewModel())
+        .environmentObject(NotificationsViewModel())
 }
 
 // MARK: - InternshipDetailByIdView

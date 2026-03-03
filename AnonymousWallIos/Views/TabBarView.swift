@@ -15,6 +15,7 @@ struct TabBarView: View {
         TabView(selection: $coordinator.selectedTab) {
             // Tab 1: Home (National Wall)
             HomeView(coordinator: coordinator.homeCoordinator)
+                .environmentObject(coordinator.notificationsViewModel)
                 .tabItem {
                     Label("Home", systemImage: coordinator.selectedTab == 0 ? "house.fill" : "house")
                 }
@@ -22,6 +23,7 @@ struct TabBarView: View {
             
             // Tab 2: Campus Wall
             CampusView(coordinator: coordinator.campusCoordinator)
+                .environmentObject(coordinator.notificationsViewModel)
                 .tabItem {
                     Label("Campus", systemImage: coordinator.selectedTab == 1 ? "building.2.fill" : "building.2")
                 }
@@ -36,6 +38,7 @@ struct TabBarView: View {
             
             // Tab 4: Internship
             InternshipView(coordinator: coordinator.internshipCoordinator)
+                .environmentObject(coordinator.notificationsViewModel)
                 .tabItem {
                     Label("Internship", systemImage: coordinator.selectedTab == 3 ? "briefcase.fill" : "briefcase")
                 }
@@ -43,6 +46,7 @@ struct TabBarView: View {
             
             // Tab 5: Market
             MarketView(coordinator: coordinator.marketplaceCoordinator)
+                .environmentObject(coordinator.notificationsViewModel)
                 .tabItem {
                     Label("Market", systemImage: coordinator.selectedTab == 4 ? "cart.fill" : "cart")
                 }
