@@ -50,10 +50,6 @@ struct NotificationsView: View {
         .background(Color.appBackground.ignoresSafeArea())
         .task {
             await viewModel.loadNotifications(authState: authState)
-            // Mark all as read as soon as the inbox is opened so the badge clears.
-            if viewModel.unreadCount > 0 {
-                await viewModel.markAllRead(authState: authState)
-            }
         }
         .refreshable {
             await viewModel.refresh(authState: authState)
