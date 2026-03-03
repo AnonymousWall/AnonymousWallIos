@@ -199,6 +199,9 @@ struct HomeView: View {
                         )
                     }
                 case .postDetailById(let postId):
+                    // Deep-link navigation: no pre-fetched post available.
+                    // PostDetailByIdView holds a mutable @State placeholder so
+                    // PostDetailView.refreshPost can update it on appear.
                     PostDetailByIdView(postId: postId) { userId, userName in
                         coordinator.navigateToChatWithUser(userId: userId, userName: userName)
                     }
@@ -220,29 +223,18 @@ struct HomeView: View {
         .sheet(isPresented: $showNotifications) {
             NotificationsView(
                 viewModel: notificationsViewModel,
-                onNavigateToPost: { postId, _ in
-                    coordinator.navigate(to: .postDetailById(postId))
-                },
-                onNavigateToInternship: { internshipId in
-                    coordinator.tabCoordinator?.selectTab(3)
-                    Task { @MainActor in
-                        try? await Task.sleep(nanoseconds: 200_000_000)
-                        coordinator.tabCoordinator?.internshipCoordinator.navigate(to: .internshipDetailById(internshipId))
+                onNavigateToPost: { postId, wall in
+                    if wall != "campus" {
+                        coordinator.navigate(to: .postDetailById(postId))
                     }
                 },
-                onNavigateToMarketplace: { itemId in
-                    coordinator.tabCoordinator?.selectTab(4)
-                    Task { @MainActor in
-                        try? await Task.sleep(nanoseconds: 200_000_000)
-                        coordinator.tabCoordinator?.marketplaceCoordinator.navigate(to: .itemDetailById(itemId))
-                    }
-                }
+                onNavigateToInternship: nil,
+                onNavigateToMarketplace: nil
             )
             .presentationDragIndicator(.visible)
             .presentationCornerRadius(28)
         }
         .onReceive(NotificationCenter.default.publisher(for: .openNotificationInbox)) { _ in
-            guard coordinator.tabCoordinator?.selectedTab == 0 else { return }
             showNotifications = true
         }
         .onChange(of: viewModel.selectedSortOrder) { _, _ in
@@ -282,40 +274,28 @@ struct HomeView: View {
 // MARK: - PostDetailByIdView
 
 /// Wrapper view used when navigating to a post by ID only (e.g. push notification deep link).
-/// Fetches the full post from the service before displaying PostDetailView.
-struct PostDetailByIdView: View {
-    let postId: String
+/// Holds a mutable @State placeholder so PostDetailView.refreshPost can populate the full data.
+ struct PostDetailByIdView: View {
     let onTapAuthor: (String, String) -> Void
-    @EnvironmentObject var authState: AuthState
-    @State private var post: Post?
-    @State private var loadFailed = false
+    @State private var post: Post
 
-    var body: some View {
-        Group {
-            if let binding = Binding($post) {
-                PostDetailView(post: binding, onTapAuthor: onTapAuthor)
-            } else if loadFailed {
-                Text("Failed to load post.")
-                    .foregroundColor(.textSecondary)
-                    .padding()
-            } else {
-                ProgressView()
-            }
-        }
-        .task { await loadPost() }
+    init(postId: String, onTapAuthor: @escaping (String, String) -> Void) {
+        self.onTapAuthor = onTapAuthor
+        _post = State(initialValue: Post(
+            id: postId,
+            title: "",
+            content: "",
+            wall: "",
+            likes: 0,
+            comments: 0,
+            liked: false,
+            author: Post.Author(id: "", profileName: "", isAnonymous: true),
+            createdAt: "",
+            updatedAt: ""
+        ))
     }
 
-    private func loadPost() async {
-        guard let token = authState.authToken,
-              let userId = authState.currentUser?.id else { return }
-        do {
-            post = try await PostService.shared.getPost(
-                postId: postId,
-                token: token,
-                userId: userId
-            )
-        } catch {
-            loadFailed = true
-        }
+    var body: some View {
+        PostDetailView(post: $post, onTapAuthor: onTapAuthor)
     }
 }

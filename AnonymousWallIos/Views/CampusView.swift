@@ -220,29 +220,18 @@ struct CampusView: View {
         .sheet(isPresented: $showNotifications) {
             NotificationsView(
                 viewModel: notificationsViewModel,
-                onNavigateToPost: { postId, _ in
-                    coordinator.navigate(to: .postDetailById(postId))
-                },
-                onNavigateToInternship: { internshipId in
-                    coordinator.tabCoordinator?.selectTab(3)
-                    Task { @MainActor in
-                        try? await Task.sleep(nanoseconds: 200_000_000)
-                        coordinator.tabCoordinator?.internshipCoordinator.navigate(to: .internshipDetailById(internshipId))
+                onNavigateToPost: { postId, wall in
+                    if wall == "campus" {
+                        coordinator.navigate(to: .postDetailById(postId))
                     }
                 },
-                onNavigateToMarketplace: { itemId in
-                    coordinator.tabCoordinator?.selectTab(4)
-                    Task { @MainActor in
-                        try? await Task.sleep(nanoseconds: 200_000_000)
-                        coordinator.tabCoordinator?.marketplaceCoordinator.navigate(to: .itemDetailById(itemId))
-                    }
-                }
+                onNavigateToInternship: nil,
+                onNavigateToMarketplace: nil
             )
             .presentationDragIndicator(.visible)
             .presentationCornerRadius(28)
         }
         .onReceive(NotificationCenter.default.publisher(for: .openNotificationInbox)) { _ in
-            guard coordinator.tabCoordinator?.selectedTab == 1 else { return }
             showNotifications = true
         }
         .onChange(of: viewModel.selectedSortOrder) { _, _ in

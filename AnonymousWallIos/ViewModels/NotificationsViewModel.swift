@@ -73,20 +73,14 @@ class NotificationsViewModel: ObservableObject {
 
     func markRead(_ notification: AppNotification, authState: AuthState) async {
         guard !notification.read else { return }
-        // Optimistically update the badge and row immediately so the UI responds
-        // without waiting for the network round-trip.
-        if let index = notifications.firstIndex(where: { $0.id == notification.id }) {
-            notifications[index] = notifications[index].copying(read: true)
-        }
-        unreadCount = max(0, unreadCount - 1)
         do {
             try await service.markRead(notificationId: notification.id, authState: authState)
-        } catch {
-            // Revert optimistic update on failure
             if let index = notifications.firstIndex(where: { $0.id == notification.id }) {
-                notifications[index] = notifications[index].copying(read: false)
+                notifications[index] = notifications[index].copying(read: true)
             }
-            unreadCount += 1
+            unreadCount = max(0, unreadCount - 1)
+        } catch {
+            // Silently fail — not critical
         }
     }
 
