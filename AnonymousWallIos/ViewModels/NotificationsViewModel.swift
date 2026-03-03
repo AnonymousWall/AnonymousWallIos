@@ -31,7 +31,7 @@ class NotificationsViewModel: ObservableObject {
         do {
             let response = try await service.getNotifications(page: 0, authState: authState)
             notifications = response.content
-            hasMore = !response.last
+            hasMore = notifications.count < response.totalSize
             currentPage = 1
         } catch {
             errorMessage = "Failed to load notifications"
@@ -47,7 +47,7 @@ class NotificationsViewModel: ObservableObject {
         do {
             let response = try await service.getNotifications(page: currentPage, authState: authState)
             notifications.append(contentsOf: response.content)
-            hasMore = !response.last
+            hasMore = notifications.count < response.totalSize
             currentPage += 1
         } catch {
             // Silently fail for pagination
