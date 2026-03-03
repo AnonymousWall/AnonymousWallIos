@@ -12,7 +12,9 @@ struct HomeView: View {
     @EnvironmentObject var blockViewModel: BlockViewModel
     @StateObject private var viewModel = HomeViewModel()
     @ObservedObject var coordinator: HomeCoordinator
+    @ObservedObject var notificationsViewModel: NotificationsViewModel
     @State private var showSortPicker = false
+    @State private var showNotifications = false
 
     // Minimum height for scrollable content when list is empty
     private let minimumScrollableHeight: CGFloat = 300
@@ -167,6 +169,13 @@ struct HomeView: View {
             }
             .navigationTitle("National")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    NotificationBellButton(viewModel: notificationsViewModel) {
+                        showNotifications = true
+                    }
+                }
+            }
             .navigationDestination(for: HomeCoordinator.Destination.self) { destination in
                 switch destination {
                 case .postDetail(let post):
@@ -211,6 +220,23 @@ struct HomeView: View {
                 .presentationDragIndicator(.hidden)
                 .presentationCornerRadius(28)
         }
+        .sheet(isPresented: $showNotifications) {
+            NotificationsView(
+                viewModel: notificationsViewModel,
+                onNavigateToPost: { postId, wall in
+                    if wall != "campus" {
+                        coordinator.navigate(to: .postDetailById(postId))
+                    }
+                },
+                onNavigateToInternship: nil,
+                onNavigateToMarketplace: nil
+            )
+            .presentationDragIndicator(.visible)
+            .presentationCornerRadius(28)
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .openNotificationInbox)) { _ in
+            showNotifications = true
+        }
         .onChange(of: viewModel.selectedSortOrder) { _, _ in
             viewModel.sortOrderChanged(authState: authState)
         }
@@ -225,6 +251,9 @@ struct HomeView: View {
             
             // Load posts
             viewModel.loadPosts(authState: authState)
+
+            // Refresh unread notification count
+            Task { await notificationsViewModel.fetchUnreadCount(authState: authState) }
         }
         .onDisappear {
             // Cancel any ongoing load task when view disappears
@@ -237,7 +266,7 @@ struct HomeView: View {
 }
 
 #Preview {
-    HomeView(coordinator: HomeCoordinator())
+    HomeView(coordinator: HomeCoordinator(), notificationsViewModel: NotificationsViewModel())
         .environmentObject(AuthState())
         .environmentObject(BlockViewModel())
 }

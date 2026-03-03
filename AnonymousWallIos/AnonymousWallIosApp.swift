@@ -60,6 +60,8 @@ struct AnonymousWallIosApp: App {
                     // If already registered, registerForRemoteNotifications() is a no-op.
                     Task {
                         await NotificationService.shared.requestPermissionAndRegister()
+                        await appCoordinator.tabCoordinator.notificationsViewModel
+                            .fetchUnreadCount(authState: authState)
                     }
                 }
             }

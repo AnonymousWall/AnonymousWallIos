@@ -17,6 +17,8 @@ class TabCoordinator: ObservableObject {
     @Published var profileCoordinator = ProfileCoordinator()
     @Published var chatCoordinator = ChatCoordinator()
     @Published var selectedTab = 0
+
+    let notificationsViewModel = NotificationsViewModel()
     
     init() {
         // Set up back-references for cross-coordinator navigation
