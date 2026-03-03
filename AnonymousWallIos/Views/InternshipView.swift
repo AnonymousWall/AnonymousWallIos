@@ -224,7 +224,13 @@ struct InternshipView: View {
         .sheet(isPresented: $showNotifications) {
             NotificationsView(
                 viewModel: notificationsViewModel,
-                onNavigateToPost: nil,
+                onNavigateToPost: { postId, _ in
+                    coordinator.tabCoordinator?.selectTab(0)
+                    Task { @MainActor in
+                        try? await Task.sleep(nanoseconds: 200_000_000)
+                        coordinator.tabCoordinator?.homeCoordinator.navigate(to: .postDetailById(postId))
+                    }
+                },
                 onNavigateToInternship: { internshipId in
                     coordinator.navigate(to: .internshipDetailById(internshipId))
                 },

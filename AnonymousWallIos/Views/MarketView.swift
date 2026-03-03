@@ -244,7 +244,13 @@ struct MarketView: View {
         .sheet(isPresented: $showNotifications) {
             NotificationsView(
                 viewModel: notificationsViewModel,
-                onNavigateToPost: nil,
+                onNavigateToPost: { postId, _ in
+                    coordinator.tabCoordinator?.selectTab(0)
+                    Task { @MainActor in
+                        try? await Task.sleep(nanoseconds: 200_000_000)
+                        coordinator.tabCoordinator?.homeCoordinator.navigate(to: .postDetailById(postId))
+                    }
+                },
                 onNavigateToInternship: nil,
                 onNavigateToMarketplace: { itemId in
                     coordinator.navigate(to: .itemDetailById(itemId))

@@ -223,10 +223,8 @@ struct HomeView: View {
         .sheet(isPresented: $showNotifications) {
             NotificationsView(
                 viewModel: notificationsViewModel,
-                onNavigateToPost: { postId, wall in
-                    if wall != "campus" {
-                        coordinator.navigate(to: .postDetailById(postId))
-                    }
+                onNavigateToPost: { postId, _ in
+                    coordinator.navigate(to: .postDetailById(postId))
                 },
                 onNavigateToInternship: nil,
                 onNavigateToMarketplace: nil
