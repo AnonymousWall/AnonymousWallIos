@@ -50,6 +50,4 @@ struct UnreadCountResponse: Codable {
 struct NotificationListResponse: Codable {
     let content: [AppNotification]
     let totalSize: Int
-    let pageNumber: Int
-    let size: Int
 }
