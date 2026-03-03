@@ -234,12 +234,19 @@ struct InternshipView: View {
                 onNavigateToInternship: { internshipId in
                     coordinator.navigate(to: .internshipDetailById(internshipId))
                 },
-                onNavigateToMarketplace: nil
+                onNavigateToMarketplace: { itemId in
+                    coordinator.tabCoordinator?.selectTab(4)
+                    Task { @MainActor in
+                        try? await Task.sleep(nanoseconds: 200_000_000)
+                        coordinator.tabCoordinator?.marketplaceCoordinator.navigate(to: .itemDetailById(itemId))
+                    }
+                }
             )
             .presentationDragIndicator(.visible)
             .presentationCornerRadius(28)
         }
         .onReceive(NotificationCenter.default.publisher(for: .openNotificationInbox)) { _ in
+            guard coordinator.tabCoordinator?.selectedTab == 3 else { return }
             showNotifications = true
         }
         .sheet(isPresented: $showWallPicker) {

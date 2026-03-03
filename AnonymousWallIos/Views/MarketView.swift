@@ -251,7 +251,13 @@ struct MarketView: View {
                         coordinator.tabCoordinator?.homeCoordinator.navigate(to: .postDetailById(postId))
                     }
                 },
-                onNavigateToInternship: nil,
+                onNavigateToInternship: { internshipId in
+                    coordinator.tabCoordinator?.selectTab(3)
+                    Task { @MainActor in
+                        try? await Task.sleep(nanoseconds: 200_000_000)
+                        coordinator.tabCoordinator?.internshipCoordinator.navigate(to: .internshipDetailById(internshipId))
+                    }
+                },
                 onNavigateToMarketplace: { itemId in
                     coordinator.navigate(to: .itemDetailById(itemId))
                 }
@@ -260,6 +266,7 @@ struct MarketView: View {
             .presentationCornerRadius(28)
         }
         .onReceive(NotificationCenter.default.publisher(for: .openNotificationInbox)) { _ in
+            guard coordinator.tabCoordinator?.selectedTab == 4 else { return }
             showNotifications = true
         }
         .sheet(isPresented: $showWallPicker) {
