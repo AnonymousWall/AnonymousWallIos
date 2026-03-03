@@ -11,11 +11,13 @@ struct InternshipView: View {
     @EnvironmentObject var authState: AuthState
     @EnvironmentObject var blockViewModel: BlockViewModel
     @ObservedObject var coordinator: InternshipCoordinator
+    @ObservedObject var notificationsViewModel: NotificationsViewModel
     @StateObject private var campusViewModel = InternshipFeedViewModel(wallType: .campus)
     @StateObject private var nationalViewModel = InternshipFeedViewModel(wallType: .national)
     @State private var selectedWall: WallType = .campus
     @State private var showCreateInternship = false
     @State private var showWallPicker = false
+    @State private var showNotifications = false
 
     private var activeViewModel: InternshipFeedViewModel {
         selectedWall == .campus ? campusViewModel : nationalViewModel
@@ -159,6 +161,10 @@ struct InternshipView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
+                    NotificationBellButton(notificationsViewModel: notificationsViewModel,
+                                          showNotifications: $showNotifications)
+                }
+                ToolbarItem(placement: .navigationBarTrailing) {
                     Button(action: { showCreateInternship = true }) {
                         Image(systemName: "square.and.pencil")
                             .font(.title3)
@@ -214,6 +220,18 @@ struct InternshipView: View {
                 activeViewModel.loadInternships(authState: authState)
             }
         }
+        .sheet(isPresented: $showNotifications) {
+            NotificationsView(
+                viewModel: notificationsViewModel,
+                onNavigateToPost: nil,
+                onNavigateToInternship: { internshipId in
+                    coordinator.navigate(to: .internshipDetailById(internshipId))
+                },
+                onNavigateToMarketplace: nil
+            )
+            .presentationDragIndicator(.visible)
+            .presentationCornerRadius(28)
+        }
         .sheet(isPresented: $showWallPicker) {
             WallPickerSheet(selectedWall: $selectedWall)
                 .presentationDetents([.height(260)])
@@ -226,10 +244,14 @@ struct InternshipView: View {
         .onAppear {
             campusViewModel.loadInternships(authState: authState)
             nationalViewModel.loadInternships(authState: authState)
+            Task { await notificationsViewModel.fetchUnreadCount(authState: authState) }
         }
         .onDisappear {
             campusViewModel.cleanup()
             nationalViewModel.cleanup()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .openNotificationInbox)) { _ in
+            showNotifications = true
         }
         .onReceive(blockViewModel.userBlockedPublisher) { blockedUserId in
             campusViewModel.removeInternshipsFromUser(blockedUserId)
@@ -239,7 +261,7 @@ struct InternshipView: View {
 }
 
 #Preview {
-    InternshipView(coordinator: InternshipCoordinator())
+    InternshipView(coordinator: InternshipCoordinator(), notificationsViewModel: NotificationsViewModel())
         .environmentObject(AuthState())
         .environmentObject(BlockViewModel())
 }

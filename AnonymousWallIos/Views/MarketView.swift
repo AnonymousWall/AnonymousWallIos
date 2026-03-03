@@ -11,11 +11,13 @@ struct MarketView: View {
     @EnvironmentObject var authState: AuthState
     @EnvironmentObject var blockViewModel: BlockViewModel
     @ObservedObject var coordinator: MarketplaceCoordinator
+    @ObservedObject var notificationsViewModel: NotificationsViewModel
     @StateObject private var campusViewModel = MarketplaceFeedViewModel(wallType: .campus)
     @StateObject private var nationalViewModel = MarketplaceFeedViewModel(wallType: .national)
     @State private var selectedWall: WallType = .campus
     @State private var showCreateItem = false
     @State private var showWallPicker = false
+    @State private var showNotifications = false
 
     private var activeViewModel: MarketplaceFeedViewModel {
         selectedWall == .campus ? campusViewModel : nationalViewModel
@@ -179,6 +181,10 @@ struct MarketView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
+                    NotificationBellButton(notificationsViewModel: notificationsViewModel,
+                                          showNotifications: $showNotifications)
+                }
+                ToolbarItem(placement: .navigationBarTrailing) {
                     Button(action: { showCreateItem = true }) {
                         Image(systemName: "square.and.pencil")
                             .font(.title3)
@@ -234,6 +240,18 @@ struct MarketView: View {
                 activeViewModel.loadItems(authState: authState)
             }
         }
+        .sheet(isPresented: $showNotifications) {
+            NotificationsView(
+                viewModel: notificationsViewModel,
+                onNavigateToPost: nil,
+                onNavigateToInternship: nil,
+                onNavigateToMarketplace: { itemId in
+                    coordinator.navigate(to: .itemDetailById(itemId))
+                }
+            )
+            .presentationDragIndicator(.visible)
+            .presentationCornerRadius(28)
+        }
         .sheet(isPresented: $showWallPicker) {
             WallPickerSheet(selectedWall: $selectedWall)
                 .presentationDetents([.height(260)])
@@ -246,10 +264,14 @@ struct MarketView: View {
         .onAppear {
             campusViewModel.loadItems(authState: authState)
             nationalViewModel.loadItems(authState: authState)
+            Task { await notificationsViewModel.fetchUnreadCount(authState: authState) }
         }
         .onDisappear {
             campusViewModel.cleanup()
             nationalViewModel.cleanup()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .openNotificationInbox)) { _ in
+            showNotifications = true
         }
         .onReceive(blockViewModel.userBlockedPublisher) { blockedUserId in
             campusViewModel.removeItemsFromUser(blockedUserId)
@@ -260,7 +282,7 @@ struct MarketView: View {
 }
 
 #Preview {
-    MarketView(coordinator: MarketplaceCoordinator())
+    MarketView(coordinator: MarketplaceCoordinator(), notificationsViewModel: NotificationsViewModel())
         .environmentObject(AuthState())
         .environmentObject(BlockViewModel())
 }

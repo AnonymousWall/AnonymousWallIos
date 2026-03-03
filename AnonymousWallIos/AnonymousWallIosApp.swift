@@ -52,15 +52,17 @@ struct AnonymousWallIosApp: App {
                 // Reset all navigation stacks to root when the app becomes active
                 // without a valid session, preventing a stale/frozen navigation state
                 // (e.g. ChatView stuck while backend is down).
-                if !authState.isAuthenticated {
-                    NotificationCenter.default.post(name: .resetNavigation, object: nil)
-                } else {
+                if authState.isAuthenticated {
                     // Re-check permission every time app foregrounds.
                     // Handles: user denied → went to Settings → enabled notifications.
                     // If already registered, registerForRemoteNotifications() is a no-op.
                     Task {
                         await NotificationService.shared.requestPermissionAndRegister()
+                        await appCoordinator.tabCoordinator.notificationsViewModel
+                            .fetchUnreadCount(authState: authState)
                     }
+                } else {
+                    NotificationCenter.default.post(name: .resetNavigation, object: nil)
                 }
             }
             .onChange(of: deepLinkHandler.pendingDestination) { _, destination in

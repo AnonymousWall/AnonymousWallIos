@@ -12,7 +12,9 @@ struct CampusView: View {
     @EnvironmentObject var blockViewModel: BlockViewModel
     @StateObject private var viewModel = CampusViewModel()
     @ObservedObject var coordinator: CampusCoordinator
+    @ObservedObject var notificationsViewModel: NotificationsViewModel
     @State private var showSortPicker = false
+    @State private var showNotifications = false
 
     // Minimum height for scrollable content when list is empty
     private let minimumScrollableHeight: CGFloat = 300
@@ -167,6 +169,12 @@ struct CampusView: View {
             }
             .navigationTitle("Campus")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    NotificationBellButton(notificationsViewModel: notificationsViewModel,
+                                          showNotifications: $showNotifications)
+                }
+            }
             .navigationDestination(for: CampusCoordinator.Destination.self) { destination in
                 switch destination {
                 case .postDetail(let post):
@@ -202,6 +210,18 @@ struct CampusView: View {
         .sheet(isPresented: $coordinator.showSetPassword) {
             SetPasswordView(authService: AuthService.shared)
         }
+        .sheet(isPresented: $showNotifications) {
+            NotificationsView(
+                viewModel: notificationsViewModel,
+                onNavigateToPost: { postId in
+                    coordinator.navigate(to: .postDetailById(postId))
+                },
+                onNavigateToInternship: nil,
+                onNavigateToMarketplace: nil
+            )
+            .presentationDragIndicator(.visible)
+            .presentationCornerRadius(28)
+        }
         .sheet(isPresented: $showSortPicker) {
             SortPickerSheet(selectedSort: $viewModel.selectedSortOrder)
                 .presentationDetents([.medium])
@@ -222,10 +242,14 @@ struct CampusView: View {
             
             // Load posts
             viewModel.loadPosts(authState: authState)
+            Task { await notificationsViewModel.fetchUnreadCount(authState: authState) }
         }
         .onDisappear {
             // Cancel any ongoing load task when view disappears
             viewModel.cleanup()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .openNotificationInbox)) { _ in
+            showNotifications = true
         }
         .onReceive(blockViewModel.userBlockedPublisher) { blockedUserId in
             viewModel.removePostsFromUser(blockedUserId)
@@ -234,7 +258,7 @@ struct CampusView: View {
 }
 
 #Preview {
-    CampusView(coordinator: CampusCoordinator())
+    CampusView(coordinator: CampusCoordinator(), notificationsViewModel: NotificationsViewModel())
         .environmentObject(AuthState())
         .environmentObject(BlockViewModel())
 }
