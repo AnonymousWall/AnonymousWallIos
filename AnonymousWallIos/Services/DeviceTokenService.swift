@@ -16,8 +16,8 @@ class DeviceTokenService {
     }
 
     func registerToken(_ token: String, authState: AuthState) async {
-        guard let jwtToken = authState.authToken,
-              let userId = authState.currentUser?.id else { return }
+        guard let jwtToken = await authState.authToken,
+              let userId = await authState.currentUser?.id else { return }
 
         let body = RegisterDeviceRequest(deviceToken: token, platform: "IOS")
 
