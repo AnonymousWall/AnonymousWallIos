@@ -15,7 +15,6 @@ struct InternshipView: View {
     @StateObject private var campusViewModel = InternshipFeedViewModel(wallType: .campus)
     @StateObject private var nationalViewModel = InternshipFeedViewModel(wallType: .national)
     @State private var selectedWall: WallType = .campus
-    @State private var showCreateInternship = false
     @State private var showWallPicker = false
     @State private var showNotifications = false
 
@@ -164,14 +163,6 @@ struct InternshipView: View {
                     NotificationBellButton(notificationsViewModel: notificationsViewModel,
                                           showNotifications: $showNotifications)
                 }
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button(action: { showCreateInternship = true }) {
-                        Image(systemName: "square.and.pencil")
-                            .font(.title3)
-                    }
-                    .accessibilityLabel("Post internship")
-                    .accessibilityHint("Double tap to post a new internship opportunity")
-                }
             }
             .navigationDestination(for: InternshipCoordinator.Destination.self) { destination in
                 switch destination {
@@ -215,11 +206,6 @@ struct InternshipView: View {
             }
         }
         .background(Color.appBackground.ignoresSafeArea())
-        .sheet(isPresented: $showCreateInternship) {
-            CreateInternshipView {
-                activeViewModel.loadInternships(authState: authState)
-            }
-        }
         .sheet(isPresented: $showNotifications, onDismiss: {
             // Refresh badge as soon as sheet closes
             Task { await notificationsViewModel.fetchUnreadCount(authState: authState) }

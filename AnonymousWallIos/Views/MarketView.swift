@@ -15,7 +15,6 @@ struct MarketView: View {
     @StateObject private var campusViewModel = MarketplaceFeedViewModel(wallType: .campus)
     @StateObject private var nationalViewModel = MarketplaceFeedViewModel(wallType: .national)
     @State private var selectedWall: WallType = .campus
-    @State private var showCreateItem = false
     @State private var showWallPicker = false
     @State private var showNotifications = false
 
@@ -184,14 +183,6 @@ struct MarketView: View {
                     NotificationBellButton(notificationsViewModel: notificationsViewModel,
                                           showNotifications: $showNotifications)
                 }
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button(action: { showCreateItem = true }) {
-                        Image(systemName: "square.and.pencil")
-                            .font(.title3)
-                    }
-                    .accessibilityLabel("List item")
-                    .accessibilityHint("Double tap to create a new marketplace listing")
-                }
             }
             .navigationDestination(for: MarketplaceCoordinator.Destination.self) { destination in
                 switch destination {
@@ -235,11 +226,6 @@ struct MarketView: View {
             }
         }
         .background(Color.appBackground.ignoresSafeArea())
-        .sheet(isPresented: $showCreateItem) {
-            CreateMarketplaceView {
-                activeViewModel.loadItems(authState: authState)
-            }
-        }
         .sheet(isPresented: $showNotifications, onDismiss: {
             // Refresh badge as soon as sheet closes
             Task { await notificationsViewModel.fetchUnreadCount(authState: authState) }
