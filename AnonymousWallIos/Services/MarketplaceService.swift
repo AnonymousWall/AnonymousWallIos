@@ -120,6 +120,7 @@ class MarketplaceService: MarketplaceServiceProtocol {
         let sessionConfig = URLSessionConfiguration.ephemeral
         sessionConfig.waitsForConnectivity = true
         let session = URLSession(configuration: sessionConfig)
+        defer { session.invalidateAndCancel() }
 
         let (data, response) = try await session.data(for: urlRequest)
 
