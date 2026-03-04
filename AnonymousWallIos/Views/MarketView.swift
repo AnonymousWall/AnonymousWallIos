@@ -11,11 +11,12 @@ struct MarketView: View {
     @EnvironmentObject var authState: AuthState
     @EnvironmentObject var blockViewModel: BlockViewModel
     @ObservedObject var coordinator: MarketplaceCoordinator
+    @ObservedObject var notificationsViewModel: NotificationsViewModel
     @StateObject private var campusViewModel = MarketplaceFeedViewModel(wallType: .campus)
     @StateObject private var nationalViewModel = MarketplaceFeedViewModel(wallType: .national)
     @State private var selectedWall: WallType = .campus
-    @State private var showCreateItem = false
     @State private var showWallPicker = false
+    @State private var showNotifications = false
 
     private var activeViewModel: MarketplaceFeedViewModel {
         selectedWall == .campus ? campusViewModel : nationalViewModel
@@ -179,12 +180,8 @@ struct MarketView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button(action: { showCreateItem = true }) {
-                        Image(systemName: "square.and.pencil")
-                            .font(.title3)
-                    }
-                    .accessibilityLabel("List item")
-                    .accessibilityHint("Double tap to create a new marketplace listing")
+                    NotificationBellButton(notificationsViewModel: notificationsViewModel,
+                                          showNotifications: $showNotifications)
                 }
             }
             .navigationDestination(for: MarketplaceCoordinator.Destination.self) { destination in
@@ -229,10 +226,34 @@ struct MarketView: View {
             }
         }
         .background(Color.appBackground.ignoresSafeArea())
-        .sheet(isPresented: $showCreateItem) {
-            CreateMarketplaceView {
-                activeViewModel.loadItems(authState: authState)
+        .sheet(isPresented: $showNotifications, onDismiss: {
+            // Refresh badge as soon as sheet closes
+            Task { await notificationsViewModel.fetchUnreadCount(authState: authState) }
+            guard let pending = notificationsViewModel.pendingNavigation else { return }
+            notificationsViewModel.pendingNavigation = nil
+            switch pending.type {
+            case .comment:
+                coordinator.tabCoordinator?.selectTab(0)
+                Task { @MainActor in
+                    try? await Task.sleep(nanoseconds: 200_000_000)
+                    coordinator.tabCoordinator?.homeCoordinator
+                        .navigate(to: .postDetailById(pending.entityId))
+                }
+            case .internshipComment:
+                coordinator.tabCoordinator?.selectTab(3)
+                Task { @MainActor in
+                    try? await Task.sleep(nanoseconds: 200_000_000)
+                    coordinator.tabCoordinator?.internshipCoordinator
+                        .navigate(to: .internshipDetailById(pending.entityId))
+                }
+            case .marketplaceComment:
+                coordinator.navigate(to: .itemDetailById(pending.entityId))
+            case .unknown: break
             }
+        }) {
+            NotificationsView(viewModel: notificationsViewModel)
+            .presentationDragIndicator(.visible)
+            .presentationCornerRadius(28)
         }
         .sheet(isPresented: $showWallPicker) {
             WallPickerSheet(selectedWall: $selectedWall)
@@ -246,10 +267,15 @@ struct MarketView: View {
         .onAppear {
             campusViewModel.loadItems(authState: authState)
             nationalViewModel.loadItems(authState: authState)
+            Task { await notificationsViewModel.fetchUnreadCount(authState: authState) }
         }
         .onDisappear {
             campusViewModel.cleanup()
             nationalViewModel.cleanup()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .openNotificationInbox)) { _ in
+            guard coordinator.tabCoordinator?.selectedTab == 4 else { return }
+            showNotifications = true
         }
         .onReceive(blockViewModel.userBlockedPublisher) { blockedUserId in
             campusViewModel.removeItemsFromUser(blockedUserId)
@@ -260,7 +286,7 @@ struct MarketView: View {
 }
 
 #Preview {
-    MarketView(coordinator: MarketplaceCoordinator())
+    MarketView(coordinator: MarketplaceCoordinator(), notificationsViewModel: NotificationsViewModel())
         .environmentObject(AuthState())
         .environmentObject(BlockViewModel())
 }

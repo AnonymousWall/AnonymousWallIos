@@ -11,11 +11,12 @@ struct InternshipView: View {
     @EnvironmentObject var authState: AuthState
     @EnvironmentObject var blockViewModel: BlockViewModel
     @ObservedObject var coordinator: InternshipCoordinator
+    @ObservedObject var notificationsViewModel: NotificationsViewModel
     @StateObject private var campusViewModel = InternshipFeedViewModel(wallType: .campus)
     @StateObject private var nationalViewModel = InternshipFeedViewModel(wallType: .national)
     @State private var selectedWall: WallType = .campus
-    @State private var showCreateInternship = false
     @State private var showWallPicker = false
+    @State private var showNotifications = false
 
     private var activeViewModel: InternshipFeedViewModel {
         selectedWall == .campus ? campusViewModel : nationalViewModel
@@ -159,12 +160,8 @@ struct InternshipView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button(action: { showCreateInternship = true }) {
-                        Image(systemName: "square.and.pencil")
-                            .font(.title3)
-                    }
-                    .accessibilityLabel("Post internship")
-                    .accessibilityHint("Double tap to post a new internship opportunity")
+                    NotificationBellButton(notificationsViewModel: notificationsViewModel,
+                                          showNotifications: $showNotifications)
                 }
             }
             .navigationDestination(for: InternshipCoordinator.Destination.self) { destination in
@@ -209,10 +206,34 @@ struct InternshipView: View {
             }
         }
         .background(Color.appBackground.ignoresSafeArea())
-        .sheet(isPresented: $showCreateInternship) {
-            CreateInternshipView {
-                activeViewModel.loadInternships(authState: authState)
+        .sheet(isPresented: $showNotifications, onDismiss: {
+            // Refresh badge as soon as sheet closes
+            Task { await notificationsViewModel.fetchUnreadCount(authState: authState) }
+            guard let pending = notificationsViewModel.pendingNavigation else { return }
+            notificationsViewModel.pendingNavigation = nil
+            switch pending.type {
+            case .comment:
+                coordinator.tabCoordinator?.selectTab(0)
+                Task { @MainActor in
+                    try? await Task.sleep(nanoseconds: 200_000_000)
+                    coordinator.tabCoordinator?.homeCoordinator
+                        .navigate(to: .postDetailById(pending.entityId))
+                }
+            case .internshipComment:
+                coordinator.navigate(to: .internshipDetailById(pending.entityId))
+            case .marketplaceComment:
+                coordinator.tabCoordinator?.selectTab(4)
+                Task { @MainActor in
+                    try? await Task.sleep(nanoseconds: 200_000_000)
+                    coordinator.tabCoordinator?.marketplaceCoordinator
+                        .navigate(to: .itemDetailById(pending.entityId))
+                }
+            case .unknown: break
             }
+        }) {
+            NotificationsView(viewModel: notificationsViewModel)
+            .presentationDragIndicator(.visible)
+            .presentationCornerRadius(28)
         }
         .sheet(isPresented: $showWallPicker) {
             WallPickerSheet(selectedWall: $selectedWall)
@@ -226,10 +247,15 @@ struct InternshipView: View {
         .onAppear {
             campusViewModel.loadInternships(authState: authState)
             nationalViewModel.loadInternships(authState: authState)
+            Task { await notificationsViewModel.fetchUnreadCount(authState: authState) }
         }
         .onDisappear {
             campusViewModel.cleanup()
             nationalViewModel.cleanup()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .openNotificationInbox)) { _ in
+            guard coordinator.tabCoordinator?.selectedTab == 3 else { return }
+            showNotifications = true
         }
         .onReceive(blockViewModel.userBlockedPublisher) { blockedUserId in
             campusViewModel.removeInternshipsFromUser(blockedUserId)
@@ -239,7 +265,7 @@ struct InternshipView: View {
 }
 
 #Preview {
-    InternshipView(coordinator: InternshipCoordinator())
+    InternshipView(coordinator: InternshipCoordinator(), notificationsViewModel: NotificationsViewModel())
         .environmentObject(AuthState())
         .environmentObject(BlockViewModel())
 }

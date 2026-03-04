@@ -67,39 +67,7 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
         let userInfo = response.notification.request.content.userInfo
         let type = userInfo["type"] as? String
 
-        switch type {
-        case "COMMENT":
-            if let postIdString = userInfo["postId"] as? String,
-                   let postId = UUID(uuidString: postIdString) {
-                    let wall = userInfo["wall"] as? String ?? "national"
-                    NotificationCenter.default.post(
-                        name: .pushNotificationTapped,
-                        object: nil,
-                        userInfo: ["destination": PushNotificationDestination.post(postId, wall: wall)]
-                    )
-                }
-
-        case "INTERNSHIP_COMMENT":
-            if let internshipIdString = userInfo["internshipId"] as? String,
-               let internshipId = UUID(uuidString: internshipIdString) {
-                NotificationCenter.default.post(
-                    name: .pushNotificationTapped,
-                    object: nil,
-                    userInfo: ["destination": PushNotificationDestination.internship(internshipId)]
-                )
-            }
-
-        case "MARKETPLACE_COMMENT":
-            if let itemIdString = userInfo["itemId"] as? String,
-               let itemId = UUID(uuidString: itemIdString) {
-                NotificationCenter.default.post(
-                    name: .pushNotificationTapped,
-                    object: nil,
-                    userInfo: ["destination": PushNotificationDestination.marketplace(itemId)]
-                )
-            }
-
-        case "CHAT_MESSAGE":
+        if type == "CHAT_MESSAGE" {
             if let senderUserId = userInfo["senderUserId"] as? String {
                 NotificationCenter.default.post(
                     name: .pushNotificationTapped,
@@ -107,9 +75,13 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
                     userInfo: ["destination": PushNotificationDestination.chat(senderUserId: senderUserId)]
                 )
             }
-
-        default:
-            break
+        } else {
+            // Delay so the feed views finish mounting before receiving the signal.
+            // Without this, the app opens from background and posts the notification
+            // before any .onReceive subscriber is attached.
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+                NotificationCenter.default.post(name: .openNotificationInbox, object: nil)
+            }
         }
 
         completionHandler()
@@ -121,4 +93,5 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
 extension Notification.Name {
     static let apnsTokenReceived      = Notification.Name("apnsTokenReceived")
     static let pushNotificationTapped = Notification.Name("pushNotificationTapped")
+    static let openNotificationInbox  = Notification.Name("openNotificationInbox")
 }

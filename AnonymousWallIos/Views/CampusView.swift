@@ -12,7 +12,9 @@ struct CampusView: View {
     @EnvironmentObject var blockViewModel: BlockViewModel
     @StateObject private var viewModel = CampusViewModel()
     @ObservedObject var coordinator: CampusCoordinator
+    @ObservedObject var notificationsViewModel: NotificationsViewModel
     @State private var showSortPicker = false
+    @State private var showNotifications = false
 
     // Minimum height for scrollable content when list is empty
     private let minimumScrollableHeight: CGFloat = 300
@@ -167,6 +169,12 @@ struct CampusView: View {
             }
             .navigationTitle("Campus")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    NotificationBellButton(notificationsViewModel: notificationsViewModel,
+                                          showNotifications: $showNotifications)
+                }
+            }
             .navigationDestination(for: CampusCoordinator.Destination.self) { destination in
                 switch destination {
                 case .postDetail(let post):
@@ -202,6 +210,35 @@ struct CampusView: View {
         .sheet(isPresented: $coordinator.showSetPassword) {
             SetPasswordView(authService: AuthService.shared)
         }
+        .sheet(isPresented: $showNotifications, onDismiss: {
+            // Refresh badge as soon as sheet closes
+            Task { await notificationsViewModel.fetchUnreadCount(authState: authState) }
+            guard let pending = notificationsViewModel.pendingNavigation else { return }
+            notificationsViewModel.pendingNavigation = nil
+            switch pending.type {
+            case .comment:
+                coordinator.navigate(to: .postDetailById(pending.entityId))
+            case .internshipComment:
+                coordinator.tabCoordinator?.selectTab(3)
+                Task { @MainActor in
+                    try? await Task.sleep(nanoseconds: 200_000_000)
+                    coordinator.tabCoordinator?.internshipCoordinator
+                        .navigate(to: .internshipDetailById(pending.entityId))
+                }
+            case .marketplaceComment:
+                coordinator.tabCoordinator?.selectTab(4)
+                Task { @MainActor in
+                    try? await Task.sleep(nanoseconds: 200_000_000)
+                    coordinator.tabCoordinator?.marketplaceCoordinator
+                        .navigate(to: .itemDetailById(pending.entityId))
+                }
+            case .unknown: break
+            }
+        }) {
+            NotificationsView(viewModel: notificationsViewModel)
+            .presentationDragIndicator(.visible)
+            .presentationCornerRadius(28)
+        }
         .sheet(isPresented: $showSortPicker) {
             SortPickerSheet(selectedSort: $viewModel.selectedSortOrder)
                 .presentationDetents([.medium])
@@ -222,10 +259,15 @@ struct CampusView: View {
             
             // Load posts
             viewModel.loadPosts(authState: authState)
+            Task { await notificationsViewModel.fetchUnreadCount(authState: authState) }
         }
         .onDisappear {
             // Cancel any ongoing load task when view disappears
             viewModel.cleanup()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .openNotificationInbox)) { _ in
+            guard coordinator.tabCoordinator?.selectedTab == 1 else { return }
+            showNotifications = true
         }
         .onReceive(blockViewModel.userBlockedPublisher) { blockedUserId in
             viewModel.removePostsFromUser(blockedUserId)
@@ -234,7 +276,7 @@ struct CampusView: View {
 }
 
 #Preview {
-    CampusView(coordinator: CampusCoordinator())
+    CampusView(coordinator: CampusCoordinator(), notificationsViewModel: NotificationsViewModel())
         .environmentObject(AuthState())
         .environmentObject(BlockViewModel())
 }
