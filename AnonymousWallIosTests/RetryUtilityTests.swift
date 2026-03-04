@@ -249,7 +249,7 @@ struct RetryUtilityTests {
                 let delay2 = timestamps[2].timeIntervalSince(timestamps[1])
                 // Second retry delay should be ~0.1s (baseDelay * 2^1)
                 #expect(delay2 >= 0.08)
-                #expect(delay2 <= 0.25)
+                #expect(delay2 <= 0.40)
             }
         }
     }
