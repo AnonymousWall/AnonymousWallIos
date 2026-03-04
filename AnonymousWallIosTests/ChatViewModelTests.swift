@@ -229,6 +229,10 @@ struct ChatViewModelTests {
     @Test func testSendTypingIndicator() async throws {
         let (viewModel, _, mockWebSocket) = createTestViewModel()
         
+        // Connect first so the repository guard allows typing indicators
+        mockWebSocket.connect(token: "test-token", userId: "user1")
+        try await Task.sleep(nanoseconds: 200_000_000)
+        
         // Execute
         viewModel.sendTypingIndicator()
         
@@ -239,6 +243,10 @@ struct ChatViewModelTests {
     
     @Test func testOnTextChangedSendsTypingIndicator() async throws {
         let (viewModel, _, mockWebSocket) = createTestViewModel()
+        
+        // Connect first so the repository guard allows typing indicators
+        mockWebSocket.connect(token: "test-token", userId: "user1")
+        try await Task.sleep(nanoseconds: 200_000_000)
         
         // Execute
         viewModel.onTextChanged()
