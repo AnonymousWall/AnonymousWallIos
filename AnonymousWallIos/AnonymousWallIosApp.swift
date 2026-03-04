@@ -25,6 +25,9 @@ struct AnonymousWallIosApp: App {
             NetworkClient.shared.configureBlockedUserHandler { [weak authState] in
                 authState?.handleBlockedUser()
             }
+            NetworkClient.shared.configureUnauthorizedHandler { [weak authState] in
+                authState?.logout()
+            }
         }
 
         // Configure global UIKit appearance for dark theme
