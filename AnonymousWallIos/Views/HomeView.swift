@@ -213,15 +213,32 @@ struct HomeView: View {
         .sheet(isPresented: $coordinator.showSetPassword) {
             SetPasswordView(authService: AuthService.shared)
         }
-        .sheet(isPresented: $showNotifications) {
-            NotificationsView(
-                viewModel: notificationsViewModel,
-                onNavigateToPost: { postId in
-                    coordinator.navigate(to: .postDetailById(postId))
-                },
-                onNavigateToInternship: nil,
-                onNavigateToMarketplace: nil
-            )
+        .sheet(isPresented: $showNotifications, onDismiss: {
+            // Refresh badge as soon as sheet closes
+            Task { await notificationsViewModel.fetchUnreadCount(authState: authState) }
+            guard let pending = notificationsViewModel.pendingNavigation else { return }
+            notificationsViewModel.pendingNavigation = nil
+            switch pending.type {
+            case .comment:
+                coordinator.navigate(to: .postDetailById(pending.entityId))
+            case .internshipComment:
+                coordinator.tabCoordinator?.selectTab(3)
+                Task { @MainActor in
+                    try? await Task.sleep(nanoseconds: 200_000_000)
+                    coordinator.tabCoordinator?.internshipCoordinator
+                        .navigate(to: .internshipDetailById(pending.entityId))
+                }
+            case .marketplaceComment:
+                coordinator.tabCoordinator?.selectTab(4)
+                Task { @MainActor in
+                    try? await Task.sleep(nanoseconds: 200_000_000)
+                    coordinator.tabCoordinator?.marketplaceCoordinator
+                        .navigate(to: .itemDetailById(pending.entityId))
+                }
+            case .unknown: break
+            }
+        }) {
+            NotificationsView(viewModel: notificationsViewModel)
             .presentationDragIndicator(.visible)
             .presentationCornerRadius(28)
         }
@@ -252,6 +269,7 @@ struct HomeView: View {
             viewModel.cleanup()
         }
         .onReceive(NotificationCenter.default.publisher(for: .openNotificationInbox)) { _ in
+            guard coordinator.tabCoordinator?.selectedTab == 0 else { return }
             showNotifications = true
         }
         .onReceive(blockViewModel.userBlockedPublisher) { blockedUserId in
@@ -270,27 +288,43 @@ struct HomeView: View {
 
 /// Wrapper view used when navigating to a post by ID only (e.g. push notification deep link).
 /// Holds a mutable @State placeholder so PostDetailView.refreshPost can populate the full data.
- struct PostDetailByIdView: View {
-    let onTapAuthor: (String, String) -> Void
-    @State private var post: Post
+// MARK: - PostDetailByIdView
 
-    init(postId: String, onTapAuthor: @escaping (String, String) -> Void) {
-        self.onTapAuthor = onTapAuthor
-        _post = State(initialValue: Post(
-            id: postId,
-            title: "",
-            content: "",
-            wall: "",
-            likes: 0,
-            comments: 0,
-            liked: false,
-            author: Post.Author(id: "", profileName: "", isAnonymous: true),
-            createdAt: "",
-            updatedAt: ""
-        ))
-    }
+/// Wrapper view used when navigating to a post by ID only (e.g. push notification deep link).
+/// Fetches the full post from the service before displaying PostDetailView.
+struct PostDetailByIdView: View {
+    let postId: String
+    let onTapAuthor: (String, String) -> Void
+    @EnvironmentObject var authState: AuthState
+    @State private var post: Post?
+    @State private var loadFailed = false
 
     var body: some View {
-        PostDetailView(post: $post, onTapAuthor: onTapAuthor)
+        Group {
+            if let binding = Binding($post) {
+                PostDetailView(post: binding, onTapAuthor: onTapAuthor)
+            } else if loadFailed {
+                Text("Failed to load post.")
+                    .foregroundColor(.textSecondary)
+                    .padding()
+            } else {
+                ProgressView()
+            }
+        }
+        .task { await loadPost() }
+    }
+
+    private func loadPost() async {
+        guard let token = authState.authToken,
+              let userId = authState.currentUser?.id else { return }
+        do {
+            post = try await PostService.shared.getPost(
+                postId: postId,
+                token: token,
+                userId: userId
+            )
+        } catch {
+            loadFailed = true
+        }
     }
 }

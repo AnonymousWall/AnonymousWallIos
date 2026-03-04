@@ -220,15 +220,32 @@ struct InternshipView: View {
                 activeViewModel.loadInternships(authState: authState)
             }
         }
-        .sheet(isPresented: $showNotifications) {
-            NotificationsView(
-                viewModel: notificationsViewModel,
-                onNavigateToPost: nil,
-                onNavigateToInternship: { internshipId in
-                    coordinator.navigate(to: .internshipDetailById(internshipId))
-                },
-                onNavigateToMarketplace: nil
-            )
+        .sheet(isPresented: $showNotifications, onDismiss: {
+            // Refresh badge as soon as sheet closes
+            Task { await notificationsViewModel.fetchUnreadCount(authState: authState) }
+            guard let pending = notificationsViewModel.pendingNavigation else { return }
+            notificationsViewModel.pendingNavigation = nil
+            switch pending.type {
+            case .comment:
+                coordinator.tabCoordinator?.selectTab(0)
+                Task { @MainActor in
+                    try? await Task.sleep(nanoseconds: 200_000_000)
+                    coordinator.tabCoordinator?.homeCoordinator
+                        .navigate(to: .postDetailById(pending.entityId))
+                }
+            case .internshipComment:
+                coordinator.navigate(to: .internshipDetailById(pending.entityId))
+            case .marketplaceComment:
+                coordinator.tabCoordinator?.selectTab(4)
+                Task { @MainActor in
+                    try? await Task.sleep(nanoseconds: 200_000_000)
+                    coordinator.tabCoordinator?.marketplaceCoordinator
+                        .navigate(to: .itemDetailById(pending.entityId))
+                }
+            case .unknown: break
+            }
+        }) {
+            NotificationsView(viewModel: notificationsViewModel)
             .presentationDragIndicator(.visible)
             .presentationCornerRadius(28)
         }
@@ -251,6 +268,7 @@ struct InternshipView: View {
             nationalViewModel.cleanup()
         }
         .onReceive(NotificationCenter.default.publisher(for: .openNotificationInbox)) { _ in
+            guard coordinator.tabCoordinator?.selectedTab == 3 else { return }
             showNotifications = true
         }
         .onReceive(blockViewModel.userBlockedPublisher) { blockedUserId in

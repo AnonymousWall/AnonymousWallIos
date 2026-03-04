@@ -120,23 +120,7 @@ struct NotificationsView: View {
 
     private func handleTap(_ notification: AppNotification) {
         Task { await viewModel.markRead(notification, authState: authState) }
+        viewModel.pendingNavigation = notification
         dismiss()
-
-        // Delay to let sheet dismiss animation complete before pushing navigation
-        Task {
-            try? await Task.sleep(nanoseconds: sheetDismissalDelay)
-            switch notification.type {
-            case .comment:
-                // No wall field available — route through home (national) coordinator.
-                // PostDetailView fetches by ID and works regardless of tab.
-                onNavigateToPost?(notification.entityId)
-            case .internshipComment:
-                onNavigateToInternship?(notification.entityId)
-            case .marketplaceComment:
-                onNavigateToMarketplace?(notification.entityId)
-            case .unknown:
-                break
-            }
-        }
     }
 }

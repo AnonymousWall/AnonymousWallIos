@@ -76,7 +76,12 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
                 )
             }
         } else {
-            NotificationCenter.default.post(name: .openNotificationInbox, object: nil)
+            // Delay so the feed views finish mounting before receiving the signal.
+            // Without this, the app opens from background and posts the notification
+            // before any .onReceive subscriber is attached.
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+                NotificationCenter.default.post(name: .openNotificationInbox, object: nil)
+            }
         }
 
         completionHandler()

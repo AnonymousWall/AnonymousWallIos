@@ -16,6 +16,8 @@ class NotificationsViewModel: ObservableObject {
     private var currentPage = 1   // 1-based — next page to fetch
     private var hasMore = true
     private let service = NotificationsService.shared
+    
+    @Published var pendingNavigation: AppNotification? = nil
 
     func loadNotifications(authState: AuthState) async {
         guard !isLoading else { return }
