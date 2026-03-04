@@ -114,7 +114,7 @@ class MarketplaceService: MarketplaceServiceProtocol {
             }
         }
 
-        body.append("--\(boundary)--\r\n".data(using: .utf8)!)
+        body.append("--\(boundary)--\r\n".data(using: .utf8) ?? Data())
         urlRequest.httpBody = body
 
         let sessionConfig = URLSessionConfiguration.ephemeral

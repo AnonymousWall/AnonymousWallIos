@@ -9,6 +9,7 @@ import Foundation
 import Testing
 @testable import AnonymousWallIos
 
+@MainActor
 struct AnonymousWallIosTests {
 
     @Test func testAuthStateInitialization() async throws {

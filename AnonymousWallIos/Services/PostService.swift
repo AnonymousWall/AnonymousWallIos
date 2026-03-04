@@ -107,7 +107,7 @@ class PostService: PostServiceProtocol {
                 }
             }
 
-            body.append("--\(boundary)--\r\n".data(using: .utf8)!)
+            body.append("--\(boundary)--\r\n".data(using: .utf8) ?? Data())
             urlRequest.httpBody = body
 
             let sessionConfig = URLSessionConfiguration.ephemeral
@@ -295,7 +295,7 @@ class PostService: PostServiceProtocol {
         for option in pollOptions {
             body.appendFormField(name: "pollOptions", value: option, boundary: boundary)
         }
-        body.append("--\(boundary)--\r\n".data(using: .utf8)!)
+        body.append("--\(boundary)--\r\n".data(using: .utf8) ?? Data())
         urlRequest.httpBody = body
 
         let sessionConfig = URLSessionConfiguration.ephemeral

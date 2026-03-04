@@ -36,7 +36,7 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
         _ application: UIApplication,
         didFailToRegisterForRemoteNotificationsWithError error: Error
     ) {
-        print("[APNs] Registration failed: \(error.localizedDescription)")
+        Logger.network.error("APNs registration failed: \(error.localizedDescription)")
     }
 
     // Foreground notification — show banner even when app is open

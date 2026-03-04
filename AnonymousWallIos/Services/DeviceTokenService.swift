@@ -33,13 +33,13 @@ class DeviceTokenService {
             let (_, response) = try await URLSession.shared.data(for: request)
             if let httpResponse = response as? HTTPURLResponse {
                 if httpResponse.statusCode == 200 {
-                    print("[DeviceToken] Token registered successfully")
+                    Logger.network.info("Device token registered successfully")
                 } else {
-                    print("[DeviceToken] Failed to register token: HTTP \(httpResponse.statusCode)")
+                    Logger.network.warning("Failed to register device token: HTTP \(httpResponse.statusCode)")
                 }
             }
         } catch {
-            print("[DeviceToken] Failed to register token: \(error.localizedDescription)")
+            Logger.network.error("Failed to register device token: \(error.localizedDescription)")
         }
     }
 }
