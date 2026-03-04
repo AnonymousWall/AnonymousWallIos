@@ -11,8 +11,13 @@ import Foundation
 
 /// Thread-safe mutable wrapper for use in concurrent test closures
 private final class MutableBox<T>: @unchecked Sendable {
-    var value: T
-    init(_ value: T) { self.value = value }
+    private let lock = NSLock()
+    private var _value: T
+    var value: T {
+        get { lock.lock(); defer { lock.unlock() }; return _value }
+        set { lock.lock(); defer { lock.unlock() }; _value = newValue }
+    }
+    init(_ value: T) { self._value = value }
 }
 
 struct RetryIntegrationTests {
