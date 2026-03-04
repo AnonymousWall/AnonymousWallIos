@@ -205,6 +205,7 @@ enum WebSocketConnectionState: Equatable {
              (.reconnecting, .reconnecting):
             return true
         case (.failed, .failed):
+            // Errors are compared by case identity only; Error doesn't conform to Equatable.
             return true
         default:
             return false
