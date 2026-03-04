@@ -9,6 +9,12 @@ import Testing
 @testable import AnonymousWallIos
 import Foundation
 
+/// Thread-safe mutable wrapper for use in concurrent test closures
+private final class MutableBox<T>: @unchecked Sendable {
+    var value: T
+    init(_ value: T) { self.value = value }
+}
+
 struct RetryUtilityTests {
     
     // MARK: - Success Tests
@@ -304,18 +310,18 @@ struct RetryUtilityTests {
             let count: Int
         }
         
-        var attemptCount = 0
+        let attemptCount = MutableBox(0)
         let expected = ComplexResult(id: "test-123", count: 42)
         
         let result = try await RetryUtility.execute(policy: .default) {
-            attemptCount += 1
-            if attemptCount < 2 {
+            attemptCount.value += 1
+            if attemptCount.value < 2 {
                 throw NetworkError.noConnection
             }
             return expected
         }
         
         #expect(result == expected)
-        #expect(attemptCount == 2)
+        #expect(attemptCount.value == 2)
     }
 }

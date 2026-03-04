@@ -5,6 +5,7 @@
 //  Tests for MessageStore actor - deduplication, ordering, thread safety
 //
 
+import Foundation
 import Testing
 @testable import AnonymousWallIos
 
@@ -161,7 +162,7 @@ struct MessageStoreTests {
         ]
         
         await store.addMessages(messages, for: "user1")
-        await store.markAllAsRead(for: "user1")
+        await store.markAllAsRead(for: "user1", currentUserId: "user2")
         
         let storedMessages = await store.getMessages(for: "user1")
         for message in storedMessages {

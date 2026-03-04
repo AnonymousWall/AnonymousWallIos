@@ -211,11 +211,11 @@ struct TokenExpirationTests {
         let mockPostService = MockPostService()
         mockPostService.getPostBehavior = .failure(NetworkError.forbidden)
         
-        let viewModel = PostDetailViewModel(postService: mockPostService)
-        let authState = createMockAuthState()
+        _ = PostDetailViewModel(postService: mockPostService)
+        _ = createMockAuthState()
         
         // Create a mock post to pass as a binding
-        let mockPost = createMockPost(id: "test-post-id", title: "Test Post")
+        _ = createMockPost(id: "test-post-id", title: "Test Post")
         
         // PostDetailViewModel doesn't have a loadPost method that takes just authState
         // Instead it loads comments for a post. Skip this test as it's testing incorrect API

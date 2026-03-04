@@ -9,6 +9,12 @@ import Testing
 @testable import AnonymousWallIos
 import Foundation
 
+/// Thread-safe mutable wrapper for use in concurrent test closures
+private final class MutableBox<T>: @unchecked Sendable {
+    var value: T
+    init(_ value: T) { self.value = value }
+}
+
 struct RetryIntegrationTests {
     
     // MARK: - Mock URLProtocol for Testing
@@ -58,7 +64,7 @@ struct RetryIntegrationTests {
     private func createMockNetworkClient() -> NetworkClient {
         let configuration = URLSessionConfiguration.ephemeral
         configuration.protocolClasses = [MockURLProtocol.self]
-        let session = URLSession(configuration: configuration)
+        _ = URLSession(configuration: configuration)
         
         // We need to access the internal initializer
         // For this test, we'll test the retry behavior through public API
@@ -186,33 +192,33 @@ struct RetryIntegrationTests {
     
     @Test func testRetryUtilityRespectsStructuredConcurrency() async throws {
         // Test that retry utility works with async/await
-        var callCount = 0
+        let callCount = MutableBox(0)
         
         let result = try await RetryUtility.execute(policy: .none) {
-            callCount += 1
+            callCount.value += 1
             return "Success"
         }
         
         #expect(result == "Success")
-        #expect(callCount == 1)
+        #expect(callCount.value == 1)
     }
     
     @Test func testRetryUtilityWithAsyncOperation() async throws {
         // Test that retry utility handles async operations correctly
-        var attemptCount = 0
+        let attemptCount = MutableBox(0)
         
         let result = try await RetryUtility.execute(
             policy: RetryPolicy(maxAttempts: 2, baseDelay: 0.01, maxDelay: 0.1)
         ) {
-            attemptCount += 1
-            if attemptCount < 2 {
+            attemptCount.value += 1
+            if attemptCount.value < 2 {
                 throw NetworkError.timeout
             }
             return 42
         }
         
         #expect(result == 42)
-        #expect(attemptCount == 2)
+        #expect(attemptCount.value == 2)
     }
     
     // MARK: - Documentation Tests
