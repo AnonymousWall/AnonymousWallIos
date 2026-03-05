@@ -12,8 +12,8 @@ class NotificationsService {
 
     /// Page is 1-based. First call passes page=1.
     func getNotifications(page: Int, size: Int = 20, authState: AuthState) async throws -> NotificationListResponse {
-        guard let token = authState.authToken,
-              let userId = authState.currentUser?.id else {
+        guard let token = await authState.authToken,
+              let userId = await authState.currentUser?.id else {
             throw URLError(.userAuthenticationRequired)
         }
         let request = try APIRequestBuilder()
@@ -26,8 +26,8 @@ class NotificationsService {
     }
 
     func getUnreadCount(authState: AuthState) async throws -> Int {
-        guard let token = authState.authToken,
-              let userId = authState.currentUser?.id else {
+        guard let token = await authState.authToken,
+              let userId = await authState.currentUser?.id else {
             throw URLError(.userAuthenticationRequired)
         }
         let request = try APIRequestBuilder()
@@ -41,8 +41,8 @@ class NotificationsService {
     }
 
     func markAllRead(authState: AuthState) async throws {
-        guard let token = authState.authToken,
-              let userId = authState.currentUser?.id else {
+        guard let token = await authState.authToken,
+              let userId = await authState.currentUser?.id else {
             throw URLError(.userAuthenticationRequired)
         }
         let request = try APIRequestBuilder()
@@ -55,8 +55,8 @@ class NotificationsService {
     }
 
     func markRead(notificationId: String, authState: AuthState) async throws {
-        guard let token = authState.authToken,
-              let userId = authState.currentUser?.id else {
+        guard let token = await authState.authToken,
+              let userId = await authState.currentUser?.id else {
             throw URLError(.userAuthenticationRequired)
         }
         let request = try APIRequestBuilder()

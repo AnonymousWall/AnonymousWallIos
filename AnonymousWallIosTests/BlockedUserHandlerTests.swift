@@ -93,6 +93,7 @@ struct BlockedUserHandlerTests {
 
 // MARK: - Auth State Blocked User Tests
 
+@MainActor
 struct AuthStateBlockedUserTests {
     
     @Test func testHandleBlockedUserLogsOutUser() {

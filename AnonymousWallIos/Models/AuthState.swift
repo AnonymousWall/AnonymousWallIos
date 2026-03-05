@@ -8,6 +8,7 @@
 import Foundation
 import SwiftUI
 
+@MainActor
 class AuthState: ObservableObject {
     @Published var isAuthenticated = false
     @Published var currentUser: User?
@@ -167,22 +168,20 @@ class AuthState: ObservableObject {
             boolKeys: [keys.isAuthenticated, keys.needsPasswordSetup, keys.userIsVerified]
         )
         
-        // Update published properties on main actor
-        await MainActor.run {
-            self.isAuthenticated = result.bools[keys.isAuthenticated] ?? false
-            self.needsPasswordSetup = result.bools[keys.needsPasswordSetup] ?? false
-            
-            // Load token from Keychain
-            self.authToken = KeychainHelper.shared.get(keychainAuthTokenKey)
-            
-            if let userId = result.strings[keys.userId] as? String,
-               let userEmail = result.strings[keys.userEmail] as? String {
-                let isVerified = result.bools[keys.userIsVerified] ?? false
-                let profileName = (result.strings[keys.userProfileName] as? String) ?? "Anonymous"
-                // passwordSet is the inverse of needsPasswordSetup
-                let passwordSet = !self.needsPasswordSetup
-                self.currentUser = User(id: userId, email: userEmail, profileName: profileName, isVerified: isVerified, passwordSet: passwordSet, createdAt: "")
-            }
+        // Update published properties (already on @MainActor)
+        self.isAuthenticated = result.bools[keys.isAuthenticated] ?? false
+        self.needsPasswordSetup = result.bools[keys.needsPasswordSetup] ?? false
+        
+        // Load token from Keychain
+        self.authToken = KeychainHelper.shared.get(keychainAuthTokenKey)
+        
+        if let userId = result.strings[keys.userId] as? String,
+           let userEmail = result.strings[keys.userEmail] as? String {
+            let isVerified = result.bools[keys.userIsVerified] ?? false
+            let profileName = (result.strings[keys.userProfileName] as? String) ?? "Anonymous"
+            // passwordSet is the inverse of needsPasswordSetup
+            let passwordSet = !self.needsPasswordSetup
+            self.currentUser = User(id: userId, email: userEmail, profileName: profileName, isVerified: isVerified, passwordSet: passwordSet, createdAt: "")
         }
         
         // Re-register with APNs on launch if already authenticated

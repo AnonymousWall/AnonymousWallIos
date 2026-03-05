@@ -9,6 +9,7 @@ import Foundation
 import Testing
 @testable import AnonymousWallIos
 
+@MainActor
 struct AnonymousWallIosTests {
 
     @Test func testAuthStateInitialization() async throws {
@@ -387,7 +388,7 @@ struct AnonymousWallIosTests {
     
     @Test func testCreatePostRequestEncoding() async throws {
         // Test that CreatePostRequest includes title field
-        let request = CreatePostRequest(title: "Test Title", content: "Test content", wall: "campus")
+        let request = CreatePostRequest(title: "Test Title", content: "Test content", wall: "campus", postType: nil, pollOptions: nil)
         let encoder = JSONEncoder()
         
         let data = try encoder.encode(request)

@@ -19,6 +19,10 @@ class NetworkClient: NetworkClientProtocol {
     private let config = AppConfiguration.shared
     private let blockedUserHandler = BlockedUserHandler()
     
+    /// Closure invoked on @MainActor when the server returns 401.
+    /// Configured at app startup to trigger logout.
+    private var onUnauthorized: (@MainActor () -> Void)?
+    
     private init(session: URLSession = .shared) {
         self.session = session
     }
@@ -26,6 +30,16 @@ class NetworkClient: NetworkClientProtocol {
     /// Configure the handler for blocked user responses
     func configureBlockedUserHandler(onBlockedUser: @escaping @MainActor () -> Void) {
         blockedUserHandler.onBlockedUser = onBlockedUser
+    }
+    
+    /// Configure the handler for unauthorized (401) responses
+    func configureUnauthorizedHandler(onUnauthorized: @escaping @MainActor () -> Void) {
+        self.onUnauthorized = onUnauthorized
+    }
+    
+    /// Triggers logout for 401 responses from services that bypass executeRequest (e.g. multipart uploads).
+    func handleUnauthorized() async {
+        await MainActor.run { onUnauthorized?() }
     }
     
     // MARK: - Request Execution
@@ -74,6 +88,7 @@ class NetworkClient: NetworkClientProtocol {
                 }
                 
             case HTTPStatus.unauthorized:
+                await MainActor.run { onUnauthorized?() }
                 throw NetworkError.unauthorized
                 
             case HTTPStatus.forbidden:

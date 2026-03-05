@@ -312,11 +312,12 @@ class ChatWebSocketManager: ChatWebSocketManagerProtocol {
             
             let urlMessage = URLSessionWebSocketTask.Message.string(text)
             
-            Task {
+            Task { [weak self] in
                 do {
                     try await webSocketTask.send(urlMessage)
                 } catch {
                     Logger.chat.error("Failed to send WebSocket message: \(error)")
+                    self?.handleConnectionFailure(error: error)
                 }
             }
         } catch {

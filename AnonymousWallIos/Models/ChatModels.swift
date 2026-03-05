@@ -190,12 +190,27 @@ enum WebSocketMessageType: String, Codable {
 
 // MARK: - WebSocket Connection State
 
-enum WebSocketConnectionState {
+enum WebSocketConnectionState: Equatable {
     case disconnected
     case connecting
     case connected
     case reconnecting
     case failed(Error)
+
+    static func == (lhs: WebSocketConnectionState, rhs: WebSocketConnectionState) -> Bool {
+        switch (lhs, rhs) {
+        case (.disconnected, .disconnected),
+             (.connecting, .connecting),
+             (.connected, .connected),
+             (.reconnecting, .reconnecting):
+            return true
+        case (.failed, .failed):
+            // Errors are compared by case identity only; Error doesn't conform to Equatable.
+            return true
+        default:
+            return false
+        }
+    }
 }
 
 // MARK: - Temporary Message

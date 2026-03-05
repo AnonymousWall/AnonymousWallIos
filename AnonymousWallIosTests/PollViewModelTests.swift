@@ -5,6 +5,7 @@
 //  Tests for PollViewModel - voting and result loading logic
 //
 
+import Foundation
 import Testing
 @testable import AnonymousWallIos
 

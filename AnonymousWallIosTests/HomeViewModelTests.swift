@@ -189,7 +189,7 @@ struct HomeViewModelTests {
         // Setup
         let mockPostService = MockPostService()
         let viewModel = HomeViewModel(postService: mockPostService)
-        let mockAuthState = createMockAuthState()
+        _ = createMockAuthState()
         
         // Verify initial sort order
         #expect(viewModel.selectedSortOrder == .newest)

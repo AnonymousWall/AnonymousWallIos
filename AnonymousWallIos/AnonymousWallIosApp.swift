@@ -21,9 +21,12 @@ struct AnonymousWallIosApp: App {
         _appCoordinator = StateObject(wrappedValue: AppCoordinator(authState: authState))
         
         // Configure blocked user handler at app startup
-        Task { @MainActor in
-            NetworkClient.shared.configureBlockedUserHandler {
-                authState.handleBlockedUser()
+        Task { @MainActor [weak authState] in
+            NetworkClient.shared.configureBlockedUserHandler { [weak authState] in
+                authState?.handleBlockedUser()
+            }
+            NetworkClient.shared.configureUnauthorizedHandler { [weak authState] in
+                authState?.logout()
             }
         }
 

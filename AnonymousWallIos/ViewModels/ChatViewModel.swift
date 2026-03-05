@@ -208,6 +208,7 @@ class ChatViewModel: ObservableObject {
     
     func disconnect() {
         isViewActive = false
+        repository.disconnect()
     }
     
     func retry(authState: AuthState) {

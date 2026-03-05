@@ -66,6 +66,7 @@ class AccessibilityTests: XCTestCase {
         let comment = Comment(
             id: "1",
             postId: "post1",
+            parentType: "POST",
             text: "This is a test comment",
             author: Post.Author(id: "user1", profileName: "TestUser", isAnonymous: false),
             createdAt: ISO8601DateFormatter().string(from: Date())

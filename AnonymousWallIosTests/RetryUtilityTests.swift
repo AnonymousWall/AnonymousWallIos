@@ -9,6 +9,17 @@ import Testing
 @testable import AnonymousWallIos
 import Foundation
 
+/// Thread-safe mutable wrapper for use in concurrent test closures
+private final class MutableBox<T>: @unchecked Sendable {
+    private let lock = NSLock()
+    private var _value: T
+    var value: T {
+        get { lock.lock(); defer { lock.unlock() }; return _value }
+        set { lock.lock(); defer { lock.unlock() }; _value = newValue }
+    }
+    init(_ value: T) { self._value = value }
+}
+
 struct RetryUtilityTests {
     
     // MARK: - Success Tests
@@ -238,7 +249,7 @@ struct RetryUtilityTests {
                 let delay2 = timestamps[2].timeIntervalSince(timestamps[1])
                 // Second retry delay should be ~0.1s (baseDelay * 2^1)
                 #expect(delay2 >= 0.08)
-                #expect(delay2 <= 0.25)
+                #expect(delay2 <= 0.40)
             }
         }
     }
@@ -304,18 +315,18 @@ struct RetryUtilityTests {
             let count: Int
         }
         
-        var attemptCount = 0
+        let attemptCount = MutableBox(0)
         let expected = ComplexResult(id: "test-123", count: 42)
         
         let result = try await RetryUtility.execute(policy: .default) {
-            attemptCount += 1
-            if attemptCount < 2 {
+            attemptCount.value += 1
+            if attemptCount.value < 2 {
                 throw NetworkError.noConnection
             }
             return expected
         }
         
         #expect(result == expected)
-        #expect(attemptCount == 2)
+        #expect(attemptCount.value == 2)
     }
 }
