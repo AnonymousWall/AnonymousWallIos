@@ -6,7 +6,6 @@
 //
 
 import SwiftUI
-import Kingfisher
 
 /// Identifiable wrapper used to present FullScreenImageViewer via fullScreenCover(item:)
 struct ImageViewerItem: Identifiable {
@@ -153,13 +152,7 @@ struct FullScreenImageViewer: View {
 
     @ViewBuilder
     private func imageCell(for index: Int, geometry: GeometryProxy) -> some View {
-        KFImage(URL(string: imageURLs[index]))
-            .placeholder {
-                ProgressView().tint(.white)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-            }
-            .resizable()
-            .scaledToFit()
+        AuthenticatedImageView(objectName: imageURLs[index], contentMode: .fit)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .scaleEffect(index == currentIndex ? liveScale : 1.0)
             .offset(index == currentIndex ? currentOffset(in: geometry.size) : .zero)

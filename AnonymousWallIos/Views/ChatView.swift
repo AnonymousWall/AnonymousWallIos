@@ -7,7 +7,6 @@
 
 import SwiftUI
 import PhotosUI
-import Kingfisher
 
 struct ChatView: View {
     @EnvironmentObject var authState: AuthState
@@ -304,15 +303,7 @@ struct MessageBubbleView: View {
             VStack(alignment: isCurrentUser ? .trailing : .leading, spacing: 4) {
                 // Image bubble
                 if let imageUrl = message.imageUrl {
-                    KFImage(URL(string: imageUrl))
-                        .placeholder {
-                            RoundedRectangle(cornerRadius: 12)
-                                .fill(Color.gray.opacity(0.1))
-                                .frame(width: 200, height: 200)
-                                .overlay(ProgressView())
-                        }
-                        .resizable()
-                        .scaledToFill()
+                    AuthenticatedImageView(objectName: imageUrl, contentMode: .fill)
                         .frame(width: 200, height: 200)
                         .clipped()
                         .cornerRadius(12)
