@@ -79,9 +79,36 @@ struct AuthenticatedImageView: View {
                 .build()
 
             let (data, response) = try await URLSession.shared.data(for: request)
+            var statusCode = (response as? HTTPURLResponse)?.statusCode ?? -1
 
-            guard let httpResponse = response as? HTTPURLResponse,
-                  httpResponse.statusCode == 200 else {
+            // If 401, attempt silent refresh and retry once
+            if statusCode == 401 {
+                let refreshed = await NetworkClient.shared.refreshAccessToken()
+                if refreshed,
+                   let newToken = KeychainHelper.shared.get(
+                       AppConfiguration.shared.authTokenKey) {
+                    var retryRequest = request
+                    retryRequest.setValue("Bearer \(newToken)",
+                                          forHTTPHeaderField: "Authorization")
+                    let (retryData, retryResponse) = try await URLSession.shared.data(
+                        for: retryRequest)
+                    statusCode = (retryResponse as? HTTPURLResponse)?.statusCode ?? -1
+                    if statusCode == 200 {
+                        imageData = retryData
+                        isLoading = false
+                        return
+                    }
+                }
+                // Refresh failed — show placeholder silently.
+                // The image view does not force-logout; a concurrent request through
+                // NetworkClient.executeRequest() on the same 401 burst will have
+                // called unauthorizedHandler if the refresh truly failed.
+                isLoading = false
+                loadFailed = true
+                return
+            }
+
+            guard statusCode == 200 else {
                 isLoading = false
                 loadFailed = true
                 return

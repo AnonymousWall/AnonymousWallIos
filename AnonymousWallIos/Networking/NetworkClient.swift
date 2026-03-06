@@ -23,6 +23,9 @@ class NetworkClient: NetworkClientProtocol {
     /// Configured at app startup to trigger logout.
     private var onUnauthorized: (@MainActor () -> Void)?
     
+    /// Coalesces concurrent refresh attempts so only one runs at a time.
+    private var refreshTask: Task<Bool, Never>?
+    
     private init(session: URLSession = .shared) {
         self.session = session
     }
@@ -38,8 +41,66 @@ class NetworkClient: NetworkClientProtocol {
     }
     
     /// Triggers logout for 401 responses from services that bypass executeRequest (e.g. multipart uploads).
+    /// Attempts a silent token refresh before forcing logout.
     func handleUnauthorized() async {
-        await MainActor.run { onUnauthorized?() }
+        let refreshed = await refreshAccessToken()
+        if !refreshed {
+            await MainActor.run { onUnauthorized?() }
+        }
+    }
+    
+    // MARK: - Token Refresh
+    
+    /// Attempts a silent token refresh. Coalesces concurrent calls so only one refresh runs at a time.
+    /// - Returns: `true` if the refresh succeeded and new tokens were saved to Keychain, `false` otherwise.
+    func refreshAccessToken() async -> Bool {
+        // If a refresh is already in progress, wait for its result
+        if let existing = refreshTask {
+            return await existing.value
+        }
+        
+        let task = Task<Bool, Never> {
+            defer { self.refreshTask = nil }
+            return await self.performTokenRefresh()
+        }
+        
+        refreshTask = task
+        return await task.value
+    }
+    
+    private func performTokenRefresh() async -> Bool {
+        guard let refreshToken = KeychainHelper.shared.get(config.refreshTokenKey) else {
+            Logger.auth.debug("No refresh token found in Keychain — cannot refresh")
+            return false
+        }
+        
+        guard let url = URL(string: config.fullAPIBaseURL + "/auth/refresh") else {
+            return false
+        }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        do {
+            request.httpBody = try JSONEncoder().encode(TokenRefreshRequest(refreshToken: refreshToken))
+            let (data, response) = try await URLSession.shared.data(for: request)
+            
+            guard let httpResponse = response as? HTTPURLResponse,
+                  httpResponse.statusCode == 200 else {
+                Logger.auth.debug("Token refresh failed — server returned non-200 response")
+                return false
+            }
+            
+            let tokenResponse = try JSONDecoder().decode(TokenRefreshResponse.self, from: data)
+            KeychainHelper.shared.save(tokenResponse.accessToken, forKey: config.authTokenKey)
+            KeychainHelper.shared.save(tokenResponse.refreshToken, forKey: config.refreshTokenKey)
+            Logger.auth.debug("Token refresh succeeded — new tokens saved to Keychain")
+            return true
+        } catch {
+            Logger.auth.debug("Token refresh failed with error: \(error.localizedDescription)")
+            return false
+        }
     }
     
     // MARK: - Request Execution
@@ -88,8 +149,48 @@ class NetworkClient: NetworkClientProtocol {
                 }
                 
             case HTTPStatus.unauthorized:
-                await MainActor.run { onUnauthorized?() }
-                throw NetworkError.unauthorized
+                // Attempt silent token refresh before giving up
+                let refreshed = await refreshAccessToken()
+                
+                if refreshed {
+                    // Rebuild the request with the new access token and retry once
+                    var retryRequest = request
+                    if let newToken = KeychainHelper.shared.get(config.authTokenKey) {
+                        retryRequest.setValue(
+                            "Bearer \(newToken)",
+                            forHTTPHeaderField: "Authorization")
+                    }
+                    // Re-attach X-User-Id header if present on original request
+                    if let userId = request.value(forHTTPHeaderField: "X-User-Id") {
+                        retryRequest.setValue(userId, forHTTPHeaderField: "X-User-Id")
+                    }
+                    
+                    let (retryData, retryResponse) = try await session.data(for: retryRequest)
+                    guard let retryHttpResponse = retryResponse as? HTTPURLResponse else {
+                        throw NetworkError.invalidResponse
+                    }
+                    // If the retried request also fails, force logout — do not refresh again
+                    if retryHttpResponse.statusCode == HTTPStatus.unauthorized {
+                        await MainActor.run { onUnauthorized?() }
+                        throw NetworkError.unauthorized
+                    }
+                    // Treat the retry response as the authoritative result
+                    if HTTPStatus.successRange ~= retryHttpResponse.statusCode {
+                        do {
+                            let decoder = JSONDecoder()
+                            let result = try decoder.decode(T.self, from: retryData)
+                            return result
+                        } catch {
+                            throw NetworkError.decodingError(error)
+                        }
+                    }
+                    let errorMessage = extractErrorMessage(from: retryData) ?? "Server error: \(retryHttpResponse.statusCode)"
+                    throw NetworkError.serverError(errorMessage)
+                } else {
+                    // Refresh failed — session truly expired, force logout
+                    await MainActor.run { onUnauthorized?() }
+                    throw NetworkError.unauthorized
+                }
                 
             case HTTPStatus.forbidden:
                 // Only trigger the blocked-user logout flow if the response body

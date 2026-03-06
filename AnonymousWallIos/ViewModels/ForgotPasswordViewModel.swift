@@ -86,7 +86,7 @@ class ForgotPasswordViewModel: ObservableObject {
                 showSuccess = true
                 
                 // Log the user in with the new credentials
-                authState.login(user: response.user, token: response.accessToken)
+                authState.login(user: response.user, token: response.accessToken, refreshToken: response.refreshToken)
                 
                 try? await Task.sleep(nanoseconds: 1_000_000_000)
                 onSuccess()

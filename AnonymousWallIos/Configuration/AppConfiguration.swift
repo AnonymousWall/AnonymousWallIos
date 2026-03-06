@@ -96,6 +96,10 @@ struct AppConfiguration {
         return "\(keychainService).authToken"
     }
     
+    var refreshTokenKey: String {
+        return "\(keychainService).refreshToken"
+    }
+    
     // MARK: - UserDefaults Keys
     
     struct UserDefaultsKeys {

@@ -156,4 +156,17 @@ class AuthService: AuthServiceProtocol {
         
         return try await networkClient.performRequest(request)
     }
+    
+    // MARK: - Session Management
+    
+    /// Logout and revoke refresh token on the server
+    func logout(token: String, userId: String) async throws {
+        let request = try APIRequestBuilder()
+            .setPath("/auth/logout")
+            .setMethod(.POST)
+            .setToken(token)
+            .setUserId(userId)
+            .build()
+        try await networkClient.performRequestWithoutResponse(request, retryPolicy: .none)
+    }
 }

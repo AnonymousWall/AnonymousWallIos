@@ -27,7 +27,23 @@ struct User: Codable, Identifiable {
 
 struct AuthResponse: Codable {
     let accessToken: String
+    let refreshToken: String?
     let user: User
+    
+    init(accessToken: String, refreshToken: String? = nil, user: User) {
+        self.accessToken = accessToken
+        self.refreshToken = refreshToken
+        self.user = user
+    }
+}
+
+struct TokenRefreshResponse: Decodable {
+    let accessToken: String
+    let refreshToken: String
+}
+
+struct TokenRefreshRequest: Encodable {
+    let refreshToken: String
 }
 
 struct VerificationCodeResponse: Codable {
