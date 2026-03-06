@@ -3,12 +3,11 @@
 //  AnonymousWallIos
 //
 //  Reusable horizontal image gallery used by post and marketplace views.
-//  Uses Kingfisher (KFImage) for in-memory and disk caching to reduce
-//  redundant network requests and lower memory pressure.
+//  Uses AuthenticatedImageView to load images from the private OCI bucket
+//  via the authenticated media proxy endpoint.
 //
 
 import SwiftUI
-import Kingfisher
 
 struct PostImageGallery: View {
     let imageUrls: [String]
@@ -35,7 +34,7 @@ struct PostImageGallery: View {
     }
 }
 
-/// Single cached image cell with proper loading, failure, and accessibility states.
+/// Single authenticated image cell with proper loading, failure, and accessibility states.
 private struct PostImageGalleryCell: View {
     let url: String
     let width: CGFloat
@@ -43,35 +42,13 @@ private struct PostImageGalleryCell: View {
     let total: Int
     let onTap: () -> Void
 
-    @State private var loadFailed = false
-
     var body: some View {
-        if loadFailed {
-            RoundedRectangle(cornerRadius: 8)
-                .fill(Color.gray.opacity(0.2))
-                .frame(width: width, height: 200)
-                .overlay(
-                    Image(systemName: "photo")
-                        .foregroundStyle(.gray)
-                )
-                .accessibilityLabel("Image failed to load")
-        } else {
-            KFImage(URL(string: url))
-                .placeholder {
-                    RoundedRectangle(cornerRadius: 8)
-                        .fill(Color.gray.opacity(0.1))
-                        .frame(width: width, height: 200)
-                        .overlay(ProgressView())
-                }
-                .onFailure { _ in loadFailed = true }
-                .resizable()
-                .scaledToFill()
-                .frame(width: width, height: 200)
-                .clipped()
-                .cornerRadius(8)
-                .onTapGesture(perform: onTap)
-                .accessibilityLabel("Image \(index + 1) of \(total)")
-                .accessibilityHint("Double tap to view full screen")
-        }
+        AuthenticatedImageView(objectName: url, contentMode: .fill)
+            .frame(width: width, height: 200)
+            .clipped()
+            .cornerRadius(8)
+            .onTapGesture(perform: onTap)
+            .accessibilityLabel("Image \(index + 1) of \(total)")
+            .accessibilityHint("Double tap to view full screen")
     }
 }

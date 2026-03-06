@@ -32,6 +32,12 @@ struct AnonymousWallIosApp: App {
 
         // Configure global UIKit appearance for dark theme
         configureAppAppearance()
+        
+        // 50MB memory, 200MB disk cache for authenticated media images
+        URLCache.shared = URLCache(
+            memoryCapacity: 50 * 1024 * 1024,
+            diskCapacity: 200 * 1024 * 1024
+        )
     }
 
     var body: some Scene {
