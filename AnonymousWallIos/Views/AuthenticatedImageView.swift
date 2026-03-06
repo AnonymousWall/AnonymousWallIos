@@ -68,7 +68,7 @@ struct AuthenticatedImageView: View {
         // `.urlPathAllowed` preserves `/` separators (e.g. "posts/uuid.jpg") while
         // encoding characters that are not valid in a URL path component.
         let encodedName = objectName.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? objectName
-        let path = "/api/v1/media/\(encodedName)"
+        let path = "/media/\(encodedName)"
 
         do {
             let request = try APIRequestBuilder()
