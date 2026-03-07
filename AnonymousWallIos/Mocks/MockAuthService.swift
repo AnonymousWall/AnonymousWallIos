@@ -60,6 +60,7 @@ class MockAuthService: AuthServiceProtocol {
     var changePasswordCalled = false
     var requestPasswordResetCalled = false
     var resetPasswordCalled = false
+    var logoutCalled = false
     
     // MARK: - Configurable Behavior
     
@@ -71,6 +72,7 @@ class MockAuthService: AuthServiceProtocol {
     var changePasswordBehavior: MockBehavior = .success
     var requestPasswordResetBehavior: MockBehavior = .success
     var resetPasswordBehavior: MockBehavior = .success
+    var logoutBehavior: MockBehavior = .success
     
     // MARK: - Configurable Responses
     
@@ -271,6 +273,18 @@ class MockAuthService: AuthServiceProtocol {
         }
     }
     
+    func logout(token: String, userId: String) async throws {
+        logoutCalled = true
+        switch logoutBehavior {
+        case .success:
+            return
+        case .failure(let error):
+            throw error
+        case .emptyState:
+            return
+        }
+    }
+    
     // MARK: - Helper Methods
     
     /// Reset all call tracking flags
@@ -283,6 +297,7 @@ class MockAuthService: AuthServiceProtocol {
         changePasswordCalled = false
         requestPasswordResetCalled = false
         resetPasswordCalled = false
+        logoutCalled = false
     }
     
     /// Reset all behaviors to success
@@ -295,6 +310,7 @@ class MockAuthService: AuthServiceProtocol {
         changePasswordBehavior = .success
         requestPasswordResetBehavior = .success
         resetPasswordBehavior = .success
+        logoutBehavior = .success
     }
     
     /// Configure all methods to fail with specific error
@@ -307,6 +323,7 @@ class MockAuthService: AuthServiceProtocol {
         changePasswordBehavior = .failure(error)
         requestPasswordResetBehavior = .failure(error)
         resetPasswordBehavior = .failure(error)
+        logoutBehavior = .failure(error)
     }
     
     /// Configure all methods to return empty state
@@ -319,5 +336,6 @@ class MockAuthService: AuthServiceProtocol {
         changePasswordBehavior = .emptyState
         requestPasswordResetBehavior = .emptyState
         resetPasswordBehavior = .emptyState
+        logoutBehavior = .emptyState
     }
 }

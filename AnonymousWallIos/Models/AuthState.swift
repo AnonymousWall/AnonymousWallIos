@@ -19,12 +19,14 @@ class AuthState: ObservableObject {
     
     private let config = AppConfiguration.shared
     private let keychainAuthTokenKey: String
+    private let keychainRefreshTokenKey: String
     private let preferencesStore: PreferencesStore
     private let deviceTokenService: DeviceTokenService
     private var apnsTokenObserver: NSObjectProtocol?
     
     init(loadPersistedState: Bool = true, preferencesStore: PreferencesStore = .shared, deviceTokenService: DeviceTokenService = DeviceTokenService()) {
         self.keychainAuthTokenKey = config.authTokenKey
+        self.keychainRefreshTokenKey = config.refreshTokenKey
         self.preferencesStore = preferencesStore
         self.deviceTokenService = deviceTokenService
         setupAPNsTokenObserver()
@@ -43,13 +45,18 @@ class AuthState: ObservableObject {
         }
     }
     
-    func login(user: User, token: String) {
+    func login(user: User, token: String, refreshToken: String? = nil) {
         self.currentUser = user
         self.authToken = token
         self.isAuthenticated = true
         // needsPasswordSetup is the inverse of passwordSet from the API
         // If passwordSet is nil or false, then we need password setup
         self.needsPasswordSetup = !(user.passwordSet ?? false)
+        
+        // Save refresh token to Keychain if provided
+        if let refreshToken = refreshToken {
+            KeychainHelper.shared.save(refreshToken, forKey: keychainRefreshTokenKey)
+        }
         
         // Persist state asynchronously - fire-and-forget is acceptable here because:
         // 1. UI state (@Published properties) updates synchronously above
@@ -100,6 +107,18 @@ class AuthState: ObservableObject {
     }
     
     func logout() {
+        // Fire-and-forget — call server to revoke refresh token.
+        // Do not await — local state clears immediately regardless of outcome.
+        // If AuthState is deallocated before the task completes (unlikely for a
+        // singleton-like object held by the root App), the server call may fail
+        // silently, which is acceptable: refresh tokens expire on their own after
+        // 30 days, and the local session is already cleared.
+        if let token = authToken, let userId = currentUser?.id {
+            Task {
+                try? await AuthService.shared.logout(token: token, userId: userId)
+            }
+        }
+
         self.currentUser = nil
         self.authToken = nil
         self.isAuthenticated = false
@@ -204,7 +223,8 @@ class AuthState: ObservableObject {
             keys.userProfileName
         ])
         
-        // Clear Keychain
+        // Clear both tokens from Keychain
         KeychainHelper.shared.delete(keychainAuthTokenKey)
+        KeychainHelper.shared.delete(keychainRefreshTokenKey)
     }
 }

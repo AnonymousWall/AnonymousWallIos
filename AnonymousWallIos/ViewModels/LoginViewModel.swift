@@ -97,7 +97,7 @@ class LoginViewModel: ObservableObject {
                 HapticFeedback.success()
                 isLoading = false
                 // User is logging in - passwordSet from API indicates password status
-                authState.login(user: response.user, token: response.accessToken)
+                authState.login(user: response.user, token: response.accessToken, refreshToken: response.refreshToken)
             } catch {
                 isLoading = false
                 errorMessage = error.localizedDescription
