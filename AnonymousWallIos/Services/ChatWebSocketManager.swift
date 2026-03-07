@@ -23,6 +23,7 @@ protocol ChatWebSocketManagerProtocol {
     func sendMessage(receiverId: String, content: String)
     func sendTypingIndicator(receiverId: String)
     func markAsRead(messageId: String)
+    func updateToken(_ token: String)
 }
 
 /// WebSocket manager for real-time chat with automatic reconnection
@@ -107,6 +108,13 @@ class ChatWebSocketManager: ChatWebSocketManagerProtocol {
         reconnectAttempts = 0
         
         establishConnection()
+    }
+
+    /// Updates the stored token used for WebSocket reconnections.
+    /// Called by ChatRepository when NetworkClient silently refreshes the
+    /// access token so reconnects use the fresh token.
+    func updateToken(_ token: String) {
+        self.token = token
     }
     
     /// Disconnect from WebSocket

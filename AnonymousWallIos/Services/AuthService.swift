@@ -156,4 +156,16 @@ class AuthService: AuthServiceProtocol {
         
         return try await networkClient.performRequest(request)
     }
+
+    /// Logout and revoke server-side refresh tokens
+    func logout(token: String, userId: String) async throws {
+        let request = try APIRequestBuilder()
+            .setPath("/auth/logout")
+            .setMethod(.POST)
+            .setToken(token)
+            .setUserId(userId)
+            .build()
+
+        try await networkClient.performRequestWithoutResponse(request)
+    }
 }

@@ -42,4 +42,7 @@ protocol AuthServiceProtocol {
     
     /// Reset password with verification code
     func resetPassword(email: String, code: String, newPassword: String) async throws -> AuthResponse
+
+    /// Logout and revoke refresh tokens on the server
+    func logout(token: String, userId: String) async throws
 }

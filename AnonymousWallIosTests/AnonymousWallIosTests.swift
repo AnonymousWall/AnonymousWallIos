@@ -36,6 +36,23 @@ struct AnonymousWallIosTests {
         #expect(authState.authToken == "test-token-abc")
         #expect(authState.needsPasswordSetup == true) // passwordSet is false
     }
+
+    @Test func testAuthStateLoginStoresRefreshTokenAndForcedLogoutClearsIt() async throws {
+        let authState = AuthState(loadPersistedState: false)
+        let refreshTokenKey = AppConfiguration.shared.refreshTokenKey
+        let refreshToken = "refresh-token-123"
+        let testUser = User(id: "test-123", email: "test@example.com", profileName: "Test User", isVerified: true, passwordSet: true, createdAt: "2026-01-31T00:00:00Z")
+
+        KeychainHelper.shared.delete(refreshTokenKey)
+
+        authState.login(user: testUser, token: "access-token", refreshToken: refreshToken)
+        #expect(KeychainHelper.shared.get(refreshTokenKey) == refreshToken)
+
+        authState.logout(revokeServerToken: false)
+        try await Task.sleep(nanoseconds: 100_000_000)
+
+        #expect(KeychainHelper.shared.get(refreshTokenKey) == nil)
+    }
     
     @Test func testAuthStateLogout() async throws {
         // Test that logout clears authentication state
@@ -84,6 +101,7 @@ struct AnonymousWallIosTests {
         let json = """
         {
             "accessToken": "jwt-token-here",
+            "refreshToken": "refresh-token-here",
             "user": {
                 "id": "user-789",
                 "email": "success@test.com",
@@ -100,6 +118,7 @@ struct AnonymousWallIosTests {
         
         let response = try decoder.decode(AuthResponse.self, from: data)
         #expect(response.accessToken == "jwt-token-here")
+        #expect(response.refreshToken == "refresh-token-here")
         #expect(response.user.id == "user-789")
         #expect(response.user.email == "success@test.com")
         #expect(response.user.profileName == "Anonymous")

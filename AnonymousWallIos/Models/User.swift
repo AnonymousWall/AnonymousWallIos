@@ -27,6 +27,7 @@ struct User: Codable, Identifiable {
 
 struct AuthResponse: Codable {
     let accessToken: String
+    let refreshToken: String?
     let user: User
 }
 
