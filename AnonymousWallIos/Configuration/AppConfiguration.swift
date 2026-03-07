@@ -39,11 +39,11 @@ struct AppConfiguration {
     var apiBaseURL: String {
         switch environment {
         case .development:
-            return "http://localhost:8080"
+            return "https://api.echo-talk.com"
         case .staging:
-            return "https://staging-api.anonymouswall.com"
+            return "https://api.echo-talk.com"
         case .production:
-            return "https://api.anonymouswall.com"
+            return "https://api.echo-talk.com"
         }
     }
     
