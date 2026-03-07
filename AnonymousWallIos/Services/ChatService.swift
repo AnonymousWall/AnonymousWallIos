@@ -78,26 +78,7 @@ class ChatService: ChatServiceProtocol {
         body.append(closingBoundary)
         urlRequest.httpBody = body
         
-        let sessionConfig = URLSessionConfiguration.ephemeral
-        sessionConfig.waitsForConnectivity = true
-        let session = URLSession(configuration: sessionConfig)
-        defer { session.invalidateAndCancel() }
-        
-        let (data, response) = try await session.data(for: urlRequest)
-        
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw NetworkError.serverError("Invalid response")
-        }
-        guard (200...299).contains(httpResponse.statusCode) else {
-            if httpResponse.statusCode == 401 {
-                await NetworkClient.shared.handleUnauthorized()
-                throw NetworkError.unauthorized
-            }
-            if httpResponse.statusCode == 403 { throw NetworkError.forbidden }
-            let message = String(data: data, encoding: .utf8) ?? "Upload failed"
-            throw NetworkError.serverError(message)
-        }
-        
+        let data = try await NetworkClient.shared.performMultipartRequest(urlRequest)
         struct UploadResponse: Decodable { let url: String }
         return try JSONDecoder().decode(UploadResponse.self, from: data).url
     }

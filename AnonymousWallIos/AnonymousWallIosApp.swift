@@ -26,7 +26,15 @@ struct AnonymousWallIosApp: App {
                 authState?.handleBlockedUser()
             }
             NetworkClient.shared.configureUnauthorizedHandler { [weak authState] in
-                authState?.logout()
+                authState?.logout(revokeServerToken: false)
+            }
+            NetworkClient.shared.configureTokenRefreshHandler { [weak authState] newToken in
+                authState?.authToken = newToken
+                NotificationCenter.default.post(
+                    name: .tokenRefreshed,
+                    object: nil,
+                    userInfo: ["token": newToken]
+                )
             }
         }
 

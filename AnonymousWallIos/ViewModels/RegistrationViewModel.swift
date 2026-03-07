@@ -74,7 +74,7 @@ class RegistrationViewModel: ObservableObject {
                 showingSuccess = true
                 
                 // Auto-login after successful registration
-                authState.login(user: response.user, token: response.accessToken)
+                authState.login(user: response.user, token: response.accessToken, refreshToken: response.refreshToken)
             } catch {
                 isLoading = false
                 errorMessage = error.localizedDescription

@@ -110,26 +110,7 @@ class PostService: PostServiceProtocol {
             body.append("--\(boundary)--\r\n".data(using: .utf8) ?? Data())
             urlRequest.httpBody = body
 
-            let sessionConfig = URLSessionConfiguration.ephemeral
-            sessionConfig.waitsForConnectivity = true
-            let session = URLSession(configuration: sessionConfig)
-            defer { session.invalidateAndCancel() }
-
-            let (data, response) = try await session.data(for: urlRequest)
-
-            guard let httpResponse = response as? HTTPURLResponse else {
-                throw NetworkError.serverError("Invalid response")
-            }
-            guard (200...299).contains(httpResponse.statusCode) else {
-                if httpResponse.statusCode == 401 {
-                    await NetworkClient.shared.handleUnauthorized()
-                    throw NetworkError.unauthorized
-                }
-                if httpResponse.statusCode == 403 { throw NetworkError.forbidden }
-                let message = String(data: data, encoding: .utf8) ?? "Server error"
-                throw NetworkError.serverError(message)
-            }
-
+            let data = try await NetworkClient.shared.performMultipartRequest(urlRequest)
             return try JSONDecoder().decode(Post.self, from: data)
         }
 
@@ -302,26 +283,7 @@ class PostService: PostServiceProtocol {
         body.append("--\(boundary)--\r\n".data(using: .utf8) ?? Data())
         urlRequest.httpBody = body
 
-        let sessionConfig = URLSessionConfiguration.ephemeral
-        sessionConfig.waitsForConnectivity = true
-        let session = URLSession(configuration: sessionConfig)
-        defer { session.invalidateAndCancel() }
-
-        let (data, response) = try await session.data(for: urlRequest)
-
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw NetworkError.serverError("Invalid response")
-        }
-        guard (200...299).contains(httpResponse.statusCode) else {
-            if httpResponse.statusCode == 401 {
-                await NetworkClient.shared.handleUnauthorized()
-                throw NetworkError.unauthorized
-            }
-            if httpResponse.statusCode == 403 { throw NetworkError.forbidden }
-            let message = String(data: data, encoding: .utf8) ?? "Server error"
-            throw NetworkError.serverError(message)
-        }
-
+        let data = try await NetworkClient.shared.performMultipartRequest(urlRequest)
         return try JSONDecoder().decode(Post.self, from: data)
     }
     

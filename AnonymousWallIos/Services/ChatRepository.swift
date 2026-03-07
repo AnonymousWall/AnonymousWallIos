@@ -20,6 +20,7 @@ class ChatRepository {
     private let messageStore: MessageStore
     
     private var cancellables = Set<AnyCancellable>()
+    private var tokenRefreshObserver: NSObjectProtocol?
     
     // Track pending temporary messages for reconciliation
     private var pendingTemporaryMessages: [String: String] = [:] // [tempId: receiverId]
@@ -75,6 +76,12 @@ class ChatRepository {
         
         setupWebSocketObservers()
     }
+
+    deinit {
+        if let tokenRefreshObserver {
+            NotificationCenter.default.removeObserver(tokenRefreshObserver)
+        }
+    }
     
     // MARK: - Connection Management
     
@@ -86,6 +93,13 @@ class ChatRepository {
     
     func disconnect() {
         webSocketManager.disconnect()
+    }
+
+    /// Updates the cached token used for WebSocket recovery and REST fallback calls.
+    /// Called when NetworkClient silently refreshes the access token.
+    func updateCachedToken(_ token: String) {
+        cachedToken = token
+        webSocketManager.updateToken(token)
     }
     
     // MARK: - Message Operations
@@ -345,6 +359,16 @@ class ChatRepository {
                 }
             }
             .store(in: &cancellables)
+
+        tokenRefreshObserver = NotificationCenter.default.addObserver(
+            forName: .tokenRefreshed,
+            object: nil,
+            queue: .main
+        ) { [weak self] notification in
+            guard let self,
+                  let newToken = notification.userInfo?["token"] as? String else { return }
+            self.updateCachedToken(newToken)
+        }
     }
     
     private func updateReadReceiptForMessage(messageId: String) async {
