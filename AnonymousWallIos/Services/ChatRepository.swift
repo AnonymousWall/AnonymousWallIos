@@ -367,9 +367,7 @@ class ChatRepository {
         ) { [weak self] notification in
             guard let self,
                   let newToken = notification.userInfo?["token"] as? String else { return }
-            Task { @MainActor in
-                self.updateCachedToken(newToken)
-            }
+            self.updateCachedToken(newToken)
         }
     }
     

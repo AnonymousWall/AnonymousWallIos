@@ -114,7 +114,7 @@ class NetworkClient: NetworkClientProtocol {
             KeychainHelper.shared.save(tokenResponse.refreshToken, forKey: config.refreshTokenKey)
 
             let newToken = tokenResponse.accessToken
-            Task { @MainActor in
+            await MainActor.run {
                 self.onTokenRefreshed?(newToken)
             }
 

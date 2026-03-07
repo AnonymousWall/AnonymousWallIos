@@ -108,7 +108,11 @@ class AuthState: ObservableObject {
     func logout(revokeServerToken: Bool = true) {
         if revokeServerToken, let token = authToken, let userId = currentUser?.id {
             Task {
-                try? await AuthService.shared.logout(token: token, userId: userId)
+                do {
+                    try await AuthService.shared.logout(token: token, userId: userId)
+                } catch {
+                    Logger.auth.debug("Server logout failed: \(error.localizedDescription)")
+                }
             }
         }
 

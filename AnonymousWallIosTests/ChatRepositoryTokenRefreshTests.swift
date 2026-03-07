@@ -24,8 +24,6 @@ struct ChatRepositoryTokenRefreshTests {
             userInfo: ["token": "new-access-token"]
         )
 
-        try await Task.sleep(nanoseconds: 100_000_000)
-
         #expect(mockWebSocket.updateTokenCalled == true)
         #expect(mockWebSocket.updatedToken == "new-access-token")
     }
