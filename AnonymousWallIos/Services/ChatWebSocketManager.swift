@@ -105,7 +105,7 @@ class ChatWebSocketManager: ChatWebSocketManagerProtocol {
         default:
             return // Already connecting or connected
         }
-        
+        reconnectTask?.cancel()
         connectionStateSubject.send(.connecting)
         reconnectAttempts = 0
         

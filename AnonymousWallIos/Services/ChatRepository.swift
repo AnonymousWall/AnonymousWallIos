@@ -104,11 +104,10 @@ class ChatRepository {
         cachedToken = token
         webSocketManager.updateToken(token)
 
-        guard shouldMaintainConnection,
-              let userId = cachedUserId else { return }
+        guard shouldMaintainConnection, let userId = cachedUserId else { return }
 
         switch webSocketManager.connectionState {
-        case .disconnected, .failed:
+        case .disconnected, .failed, .reconnecting:
             webSocketManager.connect(token: token, userId: userId)
         default:
             break
