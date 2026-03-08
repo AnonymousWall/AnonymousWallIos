@@ -114,6 +114,10 @@ class ChatRepository {
         }
     }
     
+    func disconnectForBackground() {
+        webSocketManager.disconnect()
+    }
+    
     // MARK: - Message Operations
     
     func loadMessagesAndConnect(otherUserId: String, token: String, userId: String, page: Int = 1, limit: Int = 50) async throws -> [Message] {
@@ -325,6 +329,9 @@ class ChatRepository {
                                     userId: userId
                                 )
                                 if !recovered.isEmpty {
+                                    for message in recovered {
+                                        self.messageSubject.send((message, conversationUserId))
+                                    }
                                     Logger.chat.info("Recovered \(recovered.count) messages for conversation: \(conversationUserId)")
                                 }
                             } catch {

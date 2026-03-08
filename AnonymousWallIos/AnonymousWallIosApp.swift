@@ -84,6 +84,11 @@ struct AnonymousWallIosApp: App {
                     NotificationCenter.default.post(name: .resetNavigation, object: nil)
                 }
             }
+            .onReceive(NotificationCenter.default.publisher(for: UIApplication.didEnterBackgroundNotification)) { _ in
+                if authState.isAuthenticated {
+                    appCoordinator.disconnectChatForBackground()
+                }
+            }
             .onChange(of: deepLinkHandler.pendingDestination) { _, destination in
                 guard let destination, authState.isAuthenticated else { return }
                 appCoordinator.navigate(to: destination)

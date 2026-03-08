@@ -363,6 +363,10 @@ class ChatWebSocketManager: ChatWebSocketManagerProtocol {
     }
     
     private func handleConnectionFailure(error: Error) {
+        if case .disconnected = connectionState {
+                Logger.chat.debug("Connection failure ignored — already disconnected")
+                return
+        }
         if shouldPauseUntilTokenRefresh(for: error) {
             Logger.chat.warning("WebSocket handshake rejected — pausing until token refresh")
             reconnectTask?.cancel()

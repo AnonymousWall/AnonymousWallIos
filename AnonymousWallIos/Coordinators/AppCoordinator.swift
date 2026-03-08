@@ -52,4 +52,8 @@ class AppCoordinator: ObservableObject {
     func disconnectChat() {
         tabCoordinator.chatCoordinator.chatRepository.disconnect()
     }
+    
+    func disconnectChatForBackground() {
+        tabCoordinator.chatCoordinator.chatRepository.disconnectForBackground()
+    }
 }
