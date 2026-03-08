@@ -27,6 +27,7 @@ class ChatRepository {
     
     // Track active conversations that need recovery on reconnect
     private var activeConversations: Set<String> = []
+    private var shouldMaintainConnection = false
     
     // Store auth credentials for recovery
     private var cachedToken: String?
@@ -88,10 +89,12 @@ class ChatRepository {
     func connect(token: String, userId: String) {
         cachedToken = token
         cachedUserId = userId
+        shouldMaintainConnection = true
         webSocketManager.connect(token: token, userId: userId)
     }
     
     func disconnect() {
+        shouldMaintainConnection = false
         webSocketManager.disconnect()
     }
 
@@ -100,6 +103,16 @@ class ChatRepository {
     func updateCachedToken(_ token: String) {
         cachedToken = token
         webSocketManager.updateToken(token)
+
+        guard shouldMaintainConnection,
+              let userId = cachedUserId else { return }
+
+        switch webSocketManager.connectionState {
+        case .disconnected, .failed:
+            webSocketManager.connect(token: token, userId: userId)
+        default:
+            break
+        }
     }
     
     // MARK: - Message Operations

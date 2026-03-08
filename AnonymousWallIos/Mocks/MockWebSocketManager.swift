@@ -47,6 +47,7 @@ class MockWebSocketManager: ChatWebSocketManagerProtocol {
     // MARK: - State Tracking
     
     var connectCalled = false
+    var connectCallCount = 0
     var disconnectCalled = false
     var sendMessageCalled = false
     var sendTypingIndicatorCalled = false
@@ -54,6 +55,7 @@ class MockWebSocketManager: ChatWebSocketManagerProtocol {
     var updateTokenCalled = false
     
     var lastSentMessage: (receiverId: String, content: String)?
+    var lastConnectedCredentials: (token: String, userId: String)?
     var lastTypingReceiverId: String?
     var lastMarkReadMessageId: String?
     var updatedToken: String?
@@ -67,6 +69,8 @@ class MockWebSocketManager: ChatWebSocketManagerProtocol {
     
     func connect(token: String, userId: String) {
         connectCalled = true
+        connectCallCount += 1
+        lastConnectedCredentials = (token, userId)
         
         if simulateConnectionFailure {
             connectionStateSubject.send(.failed(NetworkError.serverError("Connection failed")))
@@ -136,12 +140,14 @@ class MockWebSocketManager: ChatWebSocketManagerProtocol {
     /// Reset all tracking state
     func reset() {
         connectCalled = false
+        connectCallCount = 0
         disconnectCalled = false
         sendMessageCalled = false
         sendTypingIndicatorCalled = false
         markAsReadCalled = false
         updateTokenCalled = false
         lastSentMessage = nil
+        lastConnectedCredentials = nil
         lastTypingReceiverId = nil
         lastMarkReadMessageId = nil
         updatedToken = nil

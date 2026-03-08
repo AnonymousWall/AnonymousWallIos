@@ -16,13 +16,13 @@ class NetworkClient: NetworkClientProtocol {
     static let shared = NetworkClient()
 
     private actor RefreshCoordinator {
-        private var currentTask: Task<Bool, Never>?
+        private var currentTask: Task<TokenRefreshResult, Never>?
 
-        func refresh(using performer: @escaping () async -> Bool) async -> Bool {
+        func refresh(using performer: @escaping () async -> TokenRefreshResult) async -> TokenRefreshResult {
             if let existing = currentTask {
                 return await existing.value
             }
-            let task = Task<Bool, Never> {
+            let task = Task<TokenRefreshResult, Never> {
                 let result = await performer()
                 return result
             }
@@ -80,17 +80,25 @@ class NetworkClient: NetworkClientProtocol {
     // MARK: - Token Refresh
 
     func refreshAccessToken() async -> Bool {
-        return await refreshCoordinator.refresh(using: performTokenRefresh)
+        if case .refreshed = await refreshAccessTokenResult() {
+            return true
+        }
+        return false
     }
 
-    private func performTokenRefresh() async -> Bool {
+    private func refreshAccessTokenResult() async -> TokenRefreshResult {
+        await refreshCoordinator.refresh(using: performTokenRefresh)
+    }
+
+    private func performTokenRefresh() async -> TokenRefreshResult {
         guard let refreshToken = KeychainHelper.shared.get(config.refreshTokenKey) else {
             Logger.auth.debug("No refresh token in Keychain — cannot refresh")
-            return false
+            return .failedAuthentication
         }
 
         guard let url = URL(string: config.fullAPIBaseURL + "/auth/refresh") else {
-            return false
+            Logger.auth.debug("Token refresh failed — invalid refresh URL")
+            return .failedTransport(.invalidURL)
         }
 
         var request = URLRequest(url: url)
@@ -103,13 +111,39 @@ class NetworkClient: NetworkClientProtocol {
             )
             let (data, response) = try await URLSession.shared.data(for: request)
 
-            guard let httpResponse = response as? HTTPURLResponse,
-                  httpResponse.statusCode == HTTPStatus.ok else {
-                Logger.auth.debug("Token refresh failed — non-200 response")
-                return false
+            guard let httpResponse = response as? HTTPURLResponse else {
+                Logger.auth.debug("Token refresh failed — invalid response")
+                return .failedTransport(.invalidResponse)
             }
 
-            let tokenResponse = try JSONDecoder().decode(TokenRefreshResponse.self, from: data)
+            guard httpResponse.statusCode == HTTPStatus.ok else {
+                let errorMessage = extractErrorMessage(from: data) ?? "Token refresh failed"
+
+                switch httpResponse.statusCode {
+                case HTTPStatus.unauthorized, HTTPStatus.forbidden, HTTPStatus.notFound, 400:
+                    Logger.auth.debug("Token refresh rejected: \(errorMessage)")
+                    return .failedAuthentication
+                case HTTPStatus.timeout:
+                    Logger.auth.debug("Token refresh timed out")
+                    return .failedTransport(.timeout)
+                case HTTPStatus.serverErrorRange:
+                    Logger.auth.debug("Token refresh server error: \(errorMessage)")
+                    return .failedTransport(
+                        .serverError5xx(errorMessage, statusCode: httpResponse.statusCode)
+                    )
+                default:
+                    Logger.auth.debug("Token refresh transient failure: \(errorMessage)")
+                    return .failedTransport(.serverError(errorMessage))
+                }
+            }
+
+            let tokenResponse: TokenRefreshResponse
+            do {
+                tokenResponse = try JSONDecoder().decode(TokenRefreshResponse.self, from: data)
+            } catch {
+                Logger.auth.debug("Token refresh decode error: \(error.localizedDescription)")
+                return .failedTransport(.decodingError(error))
+            }
             KeychainHelper.shared.save(tokenResponse.accessToken, forKey: config.authTokenKey)
             KeychainHelper.shared.save(tokenResponse.refreshToken, forKey: config.refreshTokenKey)
 
@@ -119,10 +153,23 @@ class NetworkClient: NetworkClientProtocol {
             }
 
             Logger.auth.debug("Token refresh succeeded — new tokens saved")
-            return true
+            return .refreshed
+        } catch let error as URLError {
+            let networkError: NetworkError
+            if error.code == .cancelled {
+                networkError = .cancelled
+            } else if error.code == .notConnectedToInternet || error.code == .networkConnectionLost {
+                networkError = .noConnection
+            } else if error.code == .timedOut {
+                networkError = .timeout
+            } else {
+                networkError = .networkError(error)
+            }
+            Logger.auth.debug("Token refresh transport error: \(error.localizedDescription)")
+            return .failedTransport(networkError)
         } catch {
             Logger.auth.debug("Token refresh error: \(error.localizedDescription)")
-            return false
+            return .failedTransport(.networkError(error))
         }
     }
 
@@ -143,9 +190,10 @@ class NetworkClient: NetworkClientProtocol {
         }
 
         if httpResponse.statusCode == HTTPStatus.unauthorized {
-            let refreshed = await refreshAccessToken()
+            let refreshResult = await refreshAccessTokenResult()
 
-            if refreshed, let newToken = KeychainHelper.shared.get(config.authTokenKey) {
+            if case .refreshed = refreshResult,
+               let newToken = KeychainHelper.shared.get(config.authTokenKey) {
                 var retryRequest = urlRequest
                 retryRequest.setValue("Bearer \(newToken)", forHTTPHeaderField: "Authorization")
 
@@ -163,8 +211,12 @@ class NetworkClient: NetworkClientProtocol {
                 }
                 let message = String(data: retryData, encoding: .utf8) ?? "Server error"
                 throw NetworkError.serverError(message)
-            } else {
+            } else if case .failedAuthentication = refreshResult {
                 await MainActor.run { onUnauthorized?() }
+                throw NetworkError.unauthorized
+            } else if case .failedTransport(let error) = refreshResult {
+                throw error
+            } else {
                 throw NetworkError.unauthorized
             }
         }
@@ -223,9 +275,9 @@ class NetworkClient: NetworkClientProtocol {
                 }
                 
             case HTTPStatus.unauthorized:
-                let refreshed = await refreshAccessToken()
+                let refreshResult = await refreshAccessTokenResult()
 
-                if refreshed {
+                if case .refreshed = refreshResult {
                     var retryRequest = request
                     if let newToken = KeychainHelper.shared.get(config.authTokenKey) {
                         retryRequest.setValue(
@@ -263,8 +315,12 @@ class NetworkClient: NetworkClientProtocol {
                     let errorMessage = extractErrorMessage(from: retryData)
                         ?? "Server error: \(retryHttpResponse.statusCode)"
                     throw NetworkError.serverError(errorMessage)
-                } else {
+                } else if case .failedAuthentication = refreshResult {
                     await MainActor.run { onUnauthorized?() }
+                    throw NetworkError.unauthorized
+                } else if case .failedTransport(let error) = refreshResult {
+                    throw error
+                } else {
                     throw NetworkError.unauthorized
                 }
                 
@@ -385,4 +441,10 @@ private struct TokenRefreshRequest: Codable {
 private struct TokenRefreshResponse: Codable {
     let accessToken: String
     let refreshToken: String
+}
+
+private enum TokenRefreshResult {
+    case refreshed
+    case failedAuthentication
+    case failedTransport(NetworkError)
 }
