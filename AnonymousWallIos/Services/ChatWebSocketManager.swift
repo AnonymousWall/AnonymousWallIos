@@ -356,6 +356,16 @@ class ChatWebSocketManager: ChatWebSocketManagerProtocol {
     }
     
     private func handleConnectionFailure(error: Error) {
+        if shouldPauseUntilTokenRefresh(for: error) {
+            Logger.chat.warning("WebSocket handshake rejected — pausing until token refresh")
+            heartbeatTask?.cancel()
+            receiveTask?.cancel()
+            webSocketTask?.cancel(with: .goingAway, reason: nil)
+            webSocketTask = nil
+            connectionStateSubject.send(.disconnected)
+            return
+        }
+
         connectionStateSubject.send(.failed(error))
         
         // Attempt reconnection with exponential backoff
@@ -375,6 +385,23 @@ class ChatWebSocketManager: ChatWebSocketManagerProtocol {
             disconnect()
         }
     }
+
+    /// URLSession surfaces a rejected WebSocket HTTP upgrade handshake as
+    /// `URLError.badServerResponse`. In our auth flow that means the server
+    /// refused the current token, so retrying immediately with the same token
+    /// will not recover until refresh updates the credentials.
+    private func shouldPauseUntilTokenRefresh(for error: Error) -> Bool {
+        guard let urlError = error as? URLError else { return false }
+        return urlError.code == .badServerResponse
+    }
+
+#if DEBUG
+    /// Debug-only test hook that routes synthetic connection failures through
+    /// the same private handler used by heartbeat/receive/send failures.
+    func simulateConnectionFailureForTesting(_ error: Error) {
+        handleConnectionFailure(error: error)
+    }
+#endif
 }
 
 // MARK: - URLSessionWebSocketTask Extension
