@@ -9,9 +9,9 @@ import Foundation
 
 class DeviceTokenService {
 
-    private let networkClient: NetworkClient
+    private let networkClient: NetworkClientProtocol
 
-    init(networkClient: NetworkClient = NetworkClient.shared) {
+    init(networkClient: NetworkClientProtocol = NetworkClient.shared) {
         self.networkClient = networkClient
     }
 
@@ -30,14 +30,10 @@ class DeviceTokenService {
                 .setUserId(userId)
                 .build()
 
-            let (_, response) = try await URLSession.shared.data(for: request)
-            if let httpResponse = response as? HTTPURLResponse {
-                if httpResponse.statusCode == 200 {
-                    Logger.network.info("Device token registered successfully")
-                } else {
-                    Logger.network.warning("Failed to register device token: HTTP \(httpResponse.statusCode)")
-                }
-            }
+            try await networkClient.performRequestWithoutResponse(request, retryPolicy: .default)
+            Logger.network.info("Device token registered successfully")
+        } catch NetworkError.unauthorized {
+            Logger.network.warning("Failed to register device token: HTTP 401")
         } catch {
             Logger.network.error("Failed to register device token: \(error.localizedDescription)")
         }
