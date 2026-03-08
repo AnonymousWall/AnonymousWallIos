@@ -17,15 +17,17 @@ struct AnonymousWallIosApp: App {
 
     init() {
         let authState = AuthState()
+        let appCoordinator = AppCoordinator(authState: authState)
         _authState = StateObject(wrappedValue: authState)
-        _appCoordinator = StateObject(wrappedValue: AppCoordinator(authState: authState))
+        _appCoordinator = StateObject(wrappedValue: appCoordinator)
         
         // Configure blocked user handler at app startup
-        Task { @MainActor [weak authState] in
+        Task { @MainActor [weak authState, weak appCoordinator] in
             NetworkClient.shared.configureBlockedUserHandler { [weak authState] in
                 authState?.handleBlockedUser()
             }
-            NetworkClient.shared.configureUnauthorizedHandler { [weak authState] in
+            NetworkClient.shared.configureUnauthorizedHandler { [weak authState, weak appCoordinator] in
+                appCoordinator?.disconnectChat()
                 authState?.logout(revokeServerToken: false)
             }
             NetworkClient.shared.configureTokenRefreshHandler { [weak authState] newToken in

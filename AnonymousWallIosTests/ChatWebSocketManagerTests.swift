@@ -9,6 +9,24 @@ import Foundation
 
 @MainActor
 struct ChatWebSocketManagerTests {
+    private let reconnectDelayVerificationNanos: UInt64 = 1_700_000_000
+
+    @Test func testConnectStaysConnectingUntilServerConfirmation() async throws {
+        let manager = ChatWebSocketManager()
+
+        manager.connect(token: "access-token", userId: "user-1")
+
+        #expect(manager.connectionState == .connecting)
+        manager.disconnect()
+    }
+
+    @Test func testConnectedFrameTransitionsToConnected() async throws {
+        let manager = ChatWebSocketManager()
+
+        await manager.simulateIncomingTextMessageForTesting(#"{"type":"connected"}"#)
+
+        #expect(manager.connectionState == .connected)
+    }
 
     @Test func testExpiredTokenHandshakeTransitionsToDisconnected() async throws {
         let manager = ChatWebSocketManager()
@@ -27,6 +45,7 @@ struct ChatWebSocketManagerTests {
 
         #expect(manager.connectionState == .reconnecting)
         manager.disconnect()
+        try await Task.sleep(nanoseconds: reconnectDelayVerificationNanos)
         #expect(manager.connectionState == .disconnected)
     }
 }

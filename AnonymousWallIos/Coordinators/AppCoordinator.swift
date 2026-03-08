@@ -48,4 +48,8 @@ class AppCoordinator: ObservableObject {
     func navigateToPost(id: UUID) {
         navigate(to: .post(id, wall: "national"))
     }
+
+    func disconnectChat() {
+        tabCoordinator.chatCoordinator.chatRepository.disconnect()
+    }
 }

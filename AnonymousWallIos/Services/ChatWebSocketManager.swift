@@ -47,6 +47,7 @@ class ChatWebSocketManager: ChatWebSocketManagerProtocol {
     private var maxReconnectAttempts = 5
     private var heartbeatTask: Task<Void, Never>?
     private var receiveTask: Task<Void, Never>?
+    private var reconnectTask: Task<Void, Never>?
     
     // MARK: - Published Properties
     
@@ -81,6 +82,7 @@ class ChatWebSocketManager: ChatWebSocketManagerProtocol {
     deinit {
         // Disconnect must be called on main actor, but deinit is not isolated
         // The cleanup will happen when the actor is deallocated
+        reconnectTask?.cancel()
         heartbeatTask?.cancel()
         receiveTask?.cancel()
         webSocketTask?.cancel(with: .goingAway, reason: nil)
@@ -119,6 +121,7 @@ class ChatWebSocketManager: ChatWebSocketManagerProtocol {
     
     /// Disconnect from WebSocket
     func disconnect() {
+        reconnectTask?.cancel()
         heartbeatTask?.cancel()
         receiveTask?.cancel()
         webSocketTask?.cancel(with: .goingAway, reason: nil)
@@ -224,8 +227,8 @@ class ChatWebSocketManager: ChatWebSocketManagerProtocol {
         // Start heartbeat
         startHeartbeat()
         
-        connectionStateSubject.send(.connected)
-        Logger.chat.info("WebSocket connected")
+        connectionStateSubject.send(.connecting)
+        Logger.chat.info("WebSocket handshake sent — awaiting server confirmation")
     }
     
     private func startReceiving() {
@@ -268,7 +271,11 @@ class ChatWebSocketManager: ChatWebSocketManagerProtocol {
             
             switch wsMessage.type {
             case .connected:
-                Logger.chat.info("WebSocket connection confirmed")
+                Logger.chat.info("WebSocket connection confirmed by server")
+                // A confirmed handshake means the current socket is healthy, so
+                // future disconnects should start a fresh backoff sequence.
+                reconnectAttempts = 0
+                connectionStateSubject.send(.connected)
                 
             case .message:
                 if let message = wsMessage.message {
@@ -358,6 +365,7 @@ class ChatWebSocketManager: ChatWebSocketManagerProtocol {
     private func handleConnectionFailure(error: Error) {
         if shouldPauseUntilTokenRefresh(for: error) {
             Logger.chat.warning("WebSocket handshake rejected — pausing until token refresh")
+            reconnectTask?.cancel()
             heartbeatTask?.cancel()
             receiveTask?.cancel()
             webSocketTask?.cancel(with: .goingAway, reason: nil)
@@ -376,8 +384,10 @@ class ChatWebSocketManager: ChatWebSocketManagerProtocol {
             let delay = min(pow(1.5, Double(reconnectAttempts)), 10.0) // Cap at 10 seconds
             Logger.chat.info("Reconnecting in \(delay) seconds (attempt \(reconnectAttempts))")
             
-            Task { [weak self] in
+            reconnectTask?.cancel()
+            reconnectTask = Task { [weak self] in
                 try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
+                guard !Task.isCancelled else { return }
                 self?.establishConnection()
             }
         } else {
@@ -400,6 +410,12 @@ class ChatWebSocketManager: ChatWebSocketManagerProtocol {
     /// the same private handler used by heartbeat/receive/send failures.
     func simulateConnectionFailureForTesting(_ error: Error) {
         handleConnectionFailure(error: error)
+    }
+
+    /// Debug-only test hook that routes a synthetic server frame through the
+    /// same parser used by URLSession receive callbacks.
+    func simulateIncomingTextMessageForTesting(_ text: String) async {
+        await parseWebSocketMessage(text)
     }
 #endif
 }
