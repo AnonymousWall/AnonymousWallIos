@@ -14,6 +14,7 @@ struct AnonymousWallIosApp: App {
     @StateObject private var appCoordinator: AppCoordinator
     @StateObject private var blockViewModel = BlockViewModel()
     @StateObject private var deepLinkHandler = DeepLinkHandler.shared
+    @State private var tokenRefreshTimer: Timer?
 
     init() {
         let authState = AuthState()
@@ -80,6 +81,10 @@ struct AnonymousWallIosApp: App {
                         await appCoordinator.tabCoordinator.notificationsViewModel
                             .fetchUnreadCount(authState: authState)
                     }
+                    tokenRefreshTimer?.invalidate()
+                    tokenRefreshTimer = Timer.scheduledTimer(withTimeInterval: 13 * 60, repeats: true) { _ in
+                        Task { _ = await NetworkClient.shared.refreshAccessToken() }
+                    }
                 } else {
                     NotificationCenter.default.post(name: .resetNavigation, object: nil)
                 }
@@ -87,6 +92,19 @@ struct AnonymousWallIosApp: App {
             .onReceive(NotificationCenter.default.publisher(for: UIApplication.didEnterBackgroundNotification)) { _ in
                 if authState.isAuthenticated {
                     appCoordinator.disconnectChatForBackground()
+                    tokenRefreshTimer?.invalidate()
+                    tokenRefreshTimer = nil
+                }
+            }
+            .onChange(of: authState.isAuthenticated) { _, isAuthenticated in
+                if isAuthenticated {
+                    tokenRefreshTimer?.invalidate()
+                    tokenRefreshTimer = Timer.scheduledTimer(withTimeInterval: 13 * 60, repeats: true) { _ in
+                        Task { _ = await NetworkClient.shared.refreshAccessToken() }
+                    }
+                } else {
+                    tokenRefreshTimer?.invalidate()
+                    tokenRefreshTimer = nil
                 }
             }
             .onChange(of: deepLinkHandler.pendingDestination) { _, destination in
