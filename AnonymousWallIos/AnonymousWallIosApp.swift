@@ -17,16 +17,26 @@ struct AnonymousWallIosApp: App {
 
     init() {
         let authState = AuthState()
+        let appCoordinator = AppCoordinator(authState: authState)
         _authState = StateObject(wrappedValue: authState)
-        _appCoordinator = StateObject(wrappedValue: AppCoordinator(authState: authState))
+        _appCoordinator = StateObject(wrappedValue: appCoordinator)
         
         // Configure blocked user handler at app startup
-        Task { @MainActor [weak authState] in
+        Task { @MainActor [weak authState, weak appCoordinator] in
             NetworkClient.shared.configureBlockedUserHandler { [weak authState] in
                 authState?.handleBlockedUser()
             }
-            NetworkClient.shared.configureUnauthorizedHandler { [weak authState] in
-                authState?.logout()
+            NetworkClient.shared.configureUnauthorizedHandler { [weak authState, weak appCoordinator] in
+                appCoordinator?.disconnectChat()
+                authState?.logout(revokeServerToken: false)
+            }
+            NetworkClient.shared.configureTokenRefreshHandler { [weak authState] newToken in
+                authState?.authToken = newToken
+                NotificationCenter.default.post(
+                    name: .tokenRefreshed,
+                    object: nil,
+                    userInfo: ["token": newToken]
+                )
             }
         }
 
@@ -72,6 +82,11 @@ struct AnonymousWallIosApp: App {
                     }
                 } else {
                     NotificationCenter.default.post(name: .resetNavigation, object: nil)
+                }
+            }
+            .onReceive(NotificationCenter.default.publisher(for: UIApplication.didEnterBackgroundNotification)) { _ in
+                if authState.isAuthenticated {
+                    appCoordinator.disconnectChatForBackground()
                 }
             }
             .onChange(of: deepLinkHandler.pendingDestination) { _, destination in

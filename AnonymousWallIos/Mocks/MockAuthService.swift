@@ -60,6 +60,7 @@ class MockAuthService: AuthServiceProtocol {
     var changePasswordCalled = false
     var requestPasswordResetCalled = false
     var resetPasswordCalled = false
+    var logoutCalled = false
     
     // MARK: - Configurable Behavior
     
@@ -129,7 +130,7 @@ class MockAuthService: AuthServiceProtocol {
                 passwordSet: false,
                 createdAt: "2026-01-31T00:00:00Z"
             )
-            return mockAuthResponse ?? AuthResponse(accessToken: "mock-token", user: user)
+            return mockAuthResponse ?? AuthResponse(accessToken: "mock-token", refreshToken: "mock-refresh-token", user: user)
         case .failure(let error):
             throw error
         case .emptyState:
@@ -141,7 +142,7 @@ class MockAuthService: AuthServiceProtocol {
                 passwordSet: false,
                 createdAt: ""
             )
-            return AuthResponse(accessToken: "", user: emptyUser)
+            return AuthResponse(accessToken: "", refreshToken: nil, user: emptyUser)
         }
     }
     
@@ -158,7 +159,7 @@ class MockAuthService: AuthServiceProtocol {
                 passwordSet: true,
                 createdAt: "2026-01-31T00:00:00Z"
             )
-            return mockAuthResponse ?? AuthResponse(accessToken: "mock-token", user: user)
+            return mockAuthResponse ?? AuthResponse(accessToken: "mock-token", refreshToken: "mock-refresh-token", user: user)
         case .failure(let error):
             throw error
         case .emptyState:
@@ -170,7 +171,7 @@ class MockAuthService: AuthServiceProtocol {
                 passwordSet: false,
                 createdAt: ""
             )
-            return AuthResponse(accessToken: "", user: emptyUser)
+            return AuthResponse(accessToken: "", refreshToken: nil, user: emptyUser)
         }
     }
     
@@ -187,7 +188,7 @@ class MockAuthService: AuthServiceProtocol {
                 passwordSet: true,
                 createdAt: "2026-01-31T00:00:00Z"
             )
-            return mockAuthResponse ?? AuthResponse(accessToken: "mock-token", user: user)
+            return mockAuthResponse ?? AuthResponse(accessToken: "mock-token", refreshToken: "mock-refresh-token", user: user)
         case .failure(let error):
             throw error
         case .emptyState:
@@ -199,7 +200,7 @@ class MockAuthService: AuthServiceProtocol {
                 passwordSet: false,
                 createdAt: ""
             )
-            return AuthResponse(accessToken: "", user: emptyUser)
+            return AuthResponse(accessToken: "", refreshToken: nil, user: emptyUser)
         }
     }
     
@@ -255,7 +256,7 @@ class MockAuthService: AuthServiceProtocol {
                 passwordSet: true,
                 createdAt: "2026-01-31T00:00:00Z"
             )
-            return mockAuthResponse ?? AuthResponse(accessToken: "mock-token", user: user)
+            return mockAuthResponse ?? AuthResponse(accessToken: "mock-token", refreshToken: "mock-refresh-token", user: user)
         case .failure(let error):
             throw error
         case .emptyState:
@@ -267,8 +268,12 @@ class MockAuthService: AuthServiceProtocol {
                 passwordSet: false,
                 createdAt: ""
             )
-            return AuthResponse(accessToken: "", user: emptyUser)
+            return AuthResponse(accessToken: "", refreshToken: nil, user: emptyUser)
         }
+    }
+
+    func logout(token: String, userId: String) async throws {
+        logoutCalled = true
     }
     
     // MARK: - Helper Methods
@@ -283,6 +288,7 @@ class MockAuthService: AuthServiceProtocol {
         changePasswordCalled = false
         requestPasswordResetCalled = false
         resetPasswordCalled = false
+        logoutCalled = false
     }
     
     /// Reset all behaviors to success

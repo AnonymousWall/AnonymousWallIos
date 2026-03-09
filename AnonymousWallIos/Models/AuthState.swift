@@ -19,12 +19,14 @@ class AuthState: ObservableObject {
     
     private let config = AppConfiguration.shared
     private let keychainAuthTokenKey: String
+    private let keychainRefreshTokenKey: String
     private let preferencesStore: PreferencesStore
     private let deviceTokenService: DeviceTokenService
     private var apnsTokenObserver: NSObjectProtocol?
     
     init(loadPersistedState: Bool = true, preferencesStore: PreferencesStore = .shared, deviceTokenService: DeviceTokenService = DeviceTokenService()) {
         self.keychainAuthTokenKey = config.authTokenKey
+        self.keychainRefreshTokenKey = config.refreshTokenKey
         self.preferencesStore = preferencesStore
         self.deviceTokenService = deviceTokenService
         setupAPNsTokenObserver()
@@ -43,13 +45,17 @@ class AuthState: ObservableObject {
         }
     }
     
-    func login(user: User, token: String) {
+    func login(user: User, token: String, refreshToken: String? = nil) {
         self.currentUser = user
         self.authToken = token
         self.isAuthenticated = true
         // needsPasswordSetup is the inverse of passwordSet from the API
         // If passwordSet is nil or false, then we need password setup
         self.needsPasswordSetup = !(user.passwordSet ?? false)
+
+        if let refreshToken {
+            KeychainHelper.shared.save(refreshToken, forKey: keychainRefreshTokenKey)
+        }
         
         // Persist state asynchronously - fire-and-forget is acceptable here because:
         // 1. UI state (@Published properties) updates synchronously above
@@ -99,7 +105,17 @@ class AuthState: ObservableObject {
         }
     }
     
-    func logout() {
+    func logout(revokeServerToken: Bool = true) {
+        if revokeServerToken, let token = authToken, let userId = currentUser?.id {
+            Task {
+                do {
+                    try await AuthService.shared.logout(token: token, userId: userId)
+                } catch {
+                    Logger.auth.debug("Server logout failed: \(error.localizedDescription)")
+                }
+            }
+        }
+
         self.currentUser = nil
         self.authToken = nil
         self.isAuthenticated = false
@@ -206,5 +222,6 @@ class AuthState: ObservableObject {
         
         // Clear Keychain
         KeychainHelper.shared.delete(keychainAuthTokenKey)
+        KeychainHelper.shared.delete(keychainRefreshTokenKey)
     }
 }

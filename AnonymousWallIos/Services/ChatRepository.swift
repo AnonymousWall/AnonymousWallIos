@@ -20,12 +20,14 @@ class ChatRepository {
     private let messageStore: MessageStore
     
     private var cancellables = Set<AnyCancellable>()
+    private var tokenRefreshObserver: NSObjectProtocol?
     
     // Track pending temporary messages for reconciliation
     private var pendingTemporaryMessages: [String: String] = [:] // [tempId: receiverId]
     
     // Track active conversations that need recovery on reconnect
     private var activeConversations: Set<String> = []
+    private var shouldMaintainConnection = false
     
     // Store auth credentials for recovery
     private var cachedToken: String?
@@ -75,16 +77,44 @@ class ChatRepository {
         
         setupWebSocketObservers()
     }
+
+    deinit {
+        if let tokenRefreshObserver {
+            NotificationCenter.default.removeObserver(tokenRefreshObserver)
+        }
+    }
     
     // MARK: - Connection Management
     
     func connect(token: String, userId: String) {
         cachedToken = token
         cachedUserId = userId
+        shouldMaintainConnection = true
         webSocketManager.connect(token: token, userId: userId)
     }
     
     func disconnect() {
+        shouldMaintainConnection = false
+        webSocketManager.disconnect()
+    }
+
+    /// Updates the cached token used for WebSocket recovery and REST fallback calls.
+    /// Called when NetworkClient silently refreshes the access token.
+    func updateCachedToken(_ token: String) {
+        cachedToken = token
+        webSocketManager.updateToken(token)
+
+        guard shouldMaintainConnection, let userId = cachedUserId else { return }
+
+        switch webSocketManager.connectionState {
+        case .disconnected, .failed, .reconnecting:
+            webSocketManager.connect(token: token, userId: userId)
+        default:
+            break
+        }
+    }
+    
+    func disconnectForBackground() {
         webSocketManager.disconnect()
     }
     
@@ -299,6 +329,9 @@ class ChatRepository {
                                     userId: userId
                                 )
                                 if !recovered.isEmpty {
+                                    for message in recovered {
+                                        self.messageSubject.send((message, conversationUserId))
+                                    }
                                     Logger.chat.info("Recovered \(recovered.count) messages for conversation: \(conversationUserId)")
                                 }
                             } catch {
@@ -345,6 +378,16 @@ class ChatRepository {
                 }
             }
             .store(in: &cancellables)
+
+        tokenRefreshObserver = NotificationCenter.default.addObserver(
+            forName: .tokenRefreshed,
+            object: nil,
+            queue: .main
+        ) { [weak self] notification in
+            guard let self,
+                  let newToken = notification.userInfo?["token"] as? String else { return }
+            self.updateCachedToken(newToken)
+        }
     }
     
     private func updateReadReceiptForMessage(messageId: String) async {
