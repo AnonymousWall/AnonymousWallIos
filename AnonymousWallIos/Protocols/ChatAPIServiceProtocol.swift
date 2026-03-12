@@ -9,7 +9,7 @@ import Foundation
 import UIKit
 
 /// Protocol defining chat service operations
-protocol ChatServiceProtocol {
+protocol ChatAPIServiceProtocol {
     /// Send a text message to another user
     func sendMessage(receiverId: String, content: String, token: String, userId: String) async throws -> Message
     

@@ -7,147 +7,18 @@
 
 import Foundation
 
-// MARK: - Message
-
-/// Represents a chat message between two users
-struct Message: Codable, Identifiable, Hashable {
-    let id: String
-    let senderId: String
-    let receiverId: String
-    let content: String
-    let imageUrl: String?
-    let readStatus: Bool
-    let createdAt: String
-    
-    /// Local-only status for UI (not from API)
-    var localStatus: MessageStatus = .sent
-    
-    enum CodingKeys: String, CodingKey {
-        case id
-        case senderId
-        case receiverId
-        case content
-        case imageUrl
-        case readStatus
-        case createdAt
-    }
-    
-    // Custom decoder to set localStatus based on readStatus
-    init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        id = try container.decode(String.self, forKey: .id)
-        senderId = try container.decode(String.self, forKey: .senderId)
-        receiverId = try container.decode(String.self, forKey: .receiverId)
-        content = try container.decodeIfPresent(String.self, forKey: .content) ?? ""
-        imageUrl = try container.decodeIfPresent(String.self, forKey: .imageUrl)
-        readStatus = try container.decode(Bool.self, forKey: .readStatus)
-        createdAt = try container.decode(String.self, forKey: .createdAt)
-        
-        // Set localStatus based on readStatus from server
-        localStatus = readStatus ? .read : .sent
-    }
-    
-    // Manual init for creating messages programmatically
-    init(id: String, senderId: String, receiverId: String, content: String, imageUrl: String? = nil, readStatus: Bool, createdAt: String) {
-        self.id = id
-        self.senderId = senderId
-        self.receiverId = receiverId
-        self.content = content
-        self.imageUrl = imageUrl
-        self.readStatus = readStatus
-        self.createdAt = createdAt
-        self.localStatus = readStatus ? .read : .sent
-    }
-    
-    // Hashable conformance based on id
-    func hash(into hasher: inout Hasher) {
-        hasher.combine(id)
-    }
-    
-    // Include localStatus in equality check so SwiftUI detects changes
-    static func == (lhs: Message, rhs: Message) -> Bool {
-        lhs.id == rhs.id &&
-        lhs.readStatus == rhs.readStatus &&
-        lhs.localStatus == rhs.localStatus
-    }
-    
-    /// Create a copy with updated read status
-    func withReadStatus(_ read: Bool) -> Message {
-        var updated = Message(
-            id: self.id,
-            senderId: self.senderId,
-            receiverId: self.receiverId,
-            content: self.content,
-            imageUrl: self.imageUrl,
-            readStatus: read,
-            createdAt: self.createdAt
-        )
-        updated.localStatus = read ? .read : .delivered
-        return updated
-    }
-    
-    /// Create a copy with updated local status
-    func withLocalStatus(_ status: MessageStatus) -> Message {
-        var copy = self
-        copy.localStatus = status
-        return copy
-    }
-    
-    /// Parse ISO8601 timestamp
-    var timestamp: Date? {
-        let formatter = ISO8601DateFormatter()
-        return formatter.date(from: createdAt)
-    }
-}
-
-// MARK: - Message Status
-
-/// Local message status for optimistic UI updates
-enum MessageStatus: String, Codable {
-    case sending    // Message is being sent
-    case sent       // Message sent to server
-    case delivered  // Message delivered to recipient
-    case read       // Message read by recipient
-    case failed     // Message failed to send
-}
-
-// MARK: - Conversation
-
-/// Represents a conversation with another user
-struct Conversation: Codable, Identifiable {
-    let userId: String
-    let profileName: String
-    let lastMessage: Message?
-    let unreadCount: Int
-    
-    // Identifiable conformance
-    var id: String { userId }
-}
-
-// MARK: - API Request/Response Models
+// MARK: - API Request/Response Wrappers
 
 struct SendMessageRequest: Codable {
     let receiverId: String
     let content: String
     let imageUrl: String?
-    
+
     init(receiverId: String, content: String, imageUrl: String? = nil) {
         self.receiverId = receiverId
         self.content = content
         self.imageUrl = imageUrl
     }
-}
-
-struct MessageHistoryResponse: Codable {
-    let messages: [Message]
-    let pagination: MessagePagination
-}
-
-struct MessagePagination: Codable {
-    let page: Int
-    let limit: Int
-    let total: Int
-    let totalPages: Int
 }
 
 struct ConversationsResponse: Codable {
@@ -158,9 +29,8 @@ struct MarkReadResponse: Codable {
     let message: String
 }
 
-// MARK: - WebSocket Message Types
+// MARK: - WebSocket
 
-/// WebSocket message envelope
 struct WebSocketMessage: Codable {
     let type: WebSocketMessageType
     let receiverId: String?
@@ -174,21 +44,15 @@ struct WebSocketMessage: Codable {
     let error: String?
 }
 
-/// WebSocket message types
 enum WebSocketMessageType: String, Codable {
-    // Client to Server
-    case message        // Send message
-    case typing         // Typing indicator
-    case markRead       // Mark message as read
-    
-    // Server to Client
-    case connected      // Connection established
-    case unreadCount    // Unread message count
-    case readReceipt    // Read receipt notification
-    case error          // Error message
+    case message
+    case typing
+    case markRead
+    case connected
+    case unreadCount
+    case readReceipt
+    case error
 }
-
-// MARK: - WebSocket Connection State
 
 enum WebSocketConnectionState: Equatable {
     case disconnected
@@ -202,10 +66,8 @@ enum WebSocketConnectionState: Equatable {
         case (.disconnected, .disconnected),
              (.connecting, .connecting),
              (.connected, .connected),
-             (.reconnecting, .reconnecting):
-            return true
-        case (.failed, .failed):
-            // Errors are compared by case identity only; Error doesn't conform to Equatable.
+             (.reconnecting, .reconnecting),
+             (.failed, .failed):
             return true
         default:
             return false
@@ -215,14 +77,12 @@ enum WebSocketConnectionState: Equatable {
 
 // MARK: - Temporary Message
 
-/// Temporary message for optimistic UI (before server confirmation)
 struct TemporaryMessage {
     let temporaryId: String
     let receiverId: String
     let content: String
     let timestamp: Date
-    
-    /// Convert to Message once server confirms
+
     func toMessage(serverId: String, senderId: String) -> Message {
         let formatter = ISO8601DateFormatter()
         return Message(
@@ -234,8 +94,7 @@ struct TemporaryMessage {
             createdAt: formatter.string(from: timestamp)
         )
     }
-    
-    /// Create a display Message for optimistic UI
+
     func toDisplayMessage(senderId: String) -> Message {
         let formatter = ISO8601DateFormatter()
         var message = Message(

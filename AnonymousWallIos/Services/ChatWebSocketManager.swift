@@ -95,6 +95,7 @@ class ChatWebSocketManager: ChatWebSocketManagerProtocol {
     ///   - token: JWT authentication token
     ///   - userId: Current user ID
     func connect(token: String, userId: String) {
+        isIntentionallyDisconnected = false
         self.token = token
         self.userId = userId
         
@@ -120,7 +121,9 @@ class ChatWebSocketManager: ChatWebSocketManagerProtocol {
     }
     
     /// Disconnect from WebSocket
+    private var isIntentionallyDisconnected = false
     func disconnect() {
+        isIntentionallyDisconnected = true
         reconnectTask?.cancel()
         heartbeatTask?.cancel()
         receiveTask?.cancel()
@@ -235,9 +238,9 @@ class ChatWebSocketManager: ChatWebSocketManagerProtocol {
         receiveTask = Task { [weak self] in
             while !Task.isCancelled {
                 guard let self = self else { return }
-                
+                guard let task = await MainActor.run(body: { self.webSocketTask }) else { break }
                 do {
-                    let message = try await webSocketTask?.receive()
+                    let message = try await task.receive()
                     await self.handleReceivedMessage(message)
                 } catch {
                     Logger.chat.error("WebSocket receive error: \(error)")
@@ -391,7 +394,7 @@ class ChatWebSocketManager: ChatWebSocketManagerProtocol {
             reconnectTask?.cancel()
             reconnectTask = Task { [weak self] in
                 try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
-                guard !Task.isCancelled else { return }
+                guard !Task.isCancelled, self?.isIntentionallyDisconnected == false else { return }
                 self?.establishConnection()
             }
         } else {

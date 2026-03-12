@@ -42,4 +42,8 @@ struct Pagination {
         currentPage += 1
         return currentPage
     }
+    
+    mutating func rollback() {
+        if currentPage > 1 { currentPage -= 1 }
+    }
 }

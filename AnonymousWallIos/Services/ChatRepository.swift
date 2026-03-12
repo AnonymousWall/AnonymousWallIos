@@ -11,11 +11,11 @@ import Combine
 
 /// Repository combining REST and WebSocket for chat functionality
 @MainActor
-class ChatRepository {
+class ChatRepository: ChatRepositoryProtocol {
     
     // MARK: - Properties
     
-    private let chatService: ChatServiceProtocol
+    private let chatService: ChatAPIServiceProtocol
     private let webSocketManager: ChatWebSocketManagerProtocol
     private let messageStore: MessageStore
     
@@ -52,6 +52,10 @@ class ChatRepository {
         webSocketManager.typingPublisher
     }
     
+    var connectionStatePublisher: AnyPublisher<WebSocketConnectionState, Never> {
+        $connectionState.eraseToAnyPublisher()
+    }
+    
     var conversationReadPublisher: AnyPublisher<String, Never> {
         conversationReadSubject.eraseToAnyPublisher()
     }
@@ -67,7 +71,7 @@ class ChatRepository {
     // MARK: - Initialization
     
     init(
-        chatService: ChatServiceProtocol = ChatService.shared,
+        chatService: ChatAPIServiceProtocol = ChatAPIService.shared,
         webSocketManager: ChatWebSocketManagerProtocol,
         messageStore: MessageStore
     ) {
@@ -120,10 +124,10 @@ class ChatRepository {
     
     // MARK: - Message Operations
     
-    func loadMessagesAndConnect(otherUserId: String, token: String, userId: String, page: Int = 1, limit: Int = 50) async throws -> [Message] {
+    func loadMessagesAndConnect(otherUserId: String, token: String, userId: String, page: Int = 1, limit: Int = 50) async throws -> MessageHistoryResponse {
         activeConversations.insert(otherUserId)
         connect(token: token, userId: userId)
-        
+
         let response = try await chatService.getMessageHistory(
             otherUserId: otherUserId,
             page: page,
@@ -131,12 +135,12 @@ class ChatRepository {
             token: token,
             userId: userId
         )
-        
+
         await messageStore.addMessages(response.messages, for: otherUserId)
-        return response.messages
+        return response
     }
     
-    func loadMessages(otherUserId: String, token: String, userId: String, page: Int = 1, limit: Int = 50) async throws -> [Message] {
+    func loadMessages(otherUserId: String, token: String, userId: String, page: Int = 1, limit: Int = 50) async throws -> MessageHistoryResponse {
         let response = try await chatService.getMessageHistory(
             otherUserId: otherUserId,
             page: page,
@@ -144,9 +148,9 @@ class ChatRepository {
             token: token,
             userId: userId
         )
-        
+
         await messageStore.addMessages(response.messages, for: otherUserId)
-        return response.messages
+        return response
     }
     
     /// Send text message with optimistic UI update
@@ -182,6 +186,7 @@ class ChatRepository {
                         confirmedMessage: confirmedMessage,
                         receiverId: receiverId
                     )
+                    messageSubject.send((confirmedMessage, receiverId))
                 } catch {
                     await messageStore.updateLocalStatus(
                         messageId: temporaryId,
@@ -189,7 +194,6 @@ class ChatRepository {
                         status: .failed
                     )
                     pendingTemporaryMessages.removeValue(forKey: temporaryId)
-                    throw error
                 }
             }
         }
@@ -228,6 +232,13 @@ class ChatRepository {
         return await messageStore.getMessages(for: otherUserId)
     }
     
+    /// Called when ChatView disappears. Removes the conversation from active
+    /// recovery tracking but does NOT disconnect the WebSocket, which
+    /// ConversationsViewModel relies on for unread count updates.
+    func leaveConversation(otherUserId: String) {
+        activeConversations.remove(otherUserId)
+    }
+    
     func markAsRead(messageId: String, otherUserId: String, token: String, userId: String) async throws {
         await messageStore.updateReadStatus(messageId: messageId, for: otherUserId, read: true)
         
@@ -254,11 +265,12 @@ class ChatRepository {
     }
     
     func recoverMessages(otherUserId: String, token: String, userId: String) async throws -> [Message] {
-        guard let lastMessage = await messageStore.getLastMessage(for: otherUserId),
-              let lastTimestamp = lastMessage.timestamp else {
-            return try await loadMessages(otherUserId: otherUserId, token: token, userId: userId)
+        guard await messageStore.getLastMessage(for: otherUserId) != nil else {
+            // No cached messages — do a fresh load and return what's new
+            let response = try await loadMessages(otherUserId: otherUserId, token: token, userId: userId)
+            return response.messages
         }
-        
+
         let response = try await chatService.getMessageHistory(
             otherUserId: otherUserId,
             page: 1,
@@ -266,12 +278,10 @@ class ChatRepository {
             token: token,
             userId: userId
         )
-        
-        let newerMessages = response.messages.filter { message in
-            guard let messageTimestamp = message.timestamp else { return false }
-            return messageTimestamp > lastTimestamp
-        }
-        
+
+        let existingIds = Set(await messageStore.getMessages(for: otherUserId).map { $0.id })
+        let newerMessages = response.messages.filter { !existingIds.contains($0.id) }
+
         await messageStore.addMessages(newerMessages, for: otherUserId)
         return newerMessages
     }

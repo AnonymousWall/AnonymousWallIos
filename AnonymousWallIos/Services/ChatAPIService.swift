@@ -1,5 +1,5 @@
 //
-//  ChatService.swift
+//  ChatAPIService.swift
 //  AnonymousWallIos
 //
 //  Chat service for REST API operations
@@ -9,11 +9,11 @@ import Foundation
 import UIKit
 
 /// Chat service implementation for REST API
-class ChatService: ChatServiceProtocol {
+class ChatAPIService: ChatAPIServiceProtocol {
     
     // MARK: - Singleton
     
-    static let shared = ChatService()
+    static let shared = ChatAPIService()
     
     private let networkClient: NetworkClientProtocol
     private let config = AppConfiguration.shared
