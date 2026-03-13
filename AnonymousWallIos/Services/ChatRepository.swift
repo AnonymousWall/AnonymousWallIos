@@ -194,6 +194,10 @@ class ChatRepository: ChatRepositoryProtocol {
                         status: .failed
                     )
                     pendingTemporaryMessages.removeValue(forKey: temporaryId)
+                    let updatedMessages = await messageStore.getMessages(for: receiverId)
+                    if let failedMessage = updatedMessages.first(where: { $0.id == temporaryId }) {
+                        messageSubject.send((failedMessage, receiverId))
+                    }
                 }
             }
         }

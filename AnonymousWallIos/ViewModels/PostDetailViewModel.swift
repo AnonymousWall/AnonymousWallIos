@@ -308,7 +308,7 @@ class PostDetailViewModel: ObservableObject {
             isLoadingMoreComments = false
         }
         
-        let nextPage = pagination.advanceToNextPage()
+        let nextPage = pagination.nextPage()
         
         do {
             let response = try await postService.getComments(

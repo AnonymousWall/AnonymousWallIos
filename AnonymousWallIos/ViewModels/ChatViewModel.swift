@@ -103,7 +103,7 @@ class ChatViewModel: ObservableObject {
               let token = authState.authToken,
               let userId = authState.currentUser?.id else { return }
 
-        let nextPage = pagination.advanceToNextPage()  // ← capture return value
+        let nextPage = pagination.nextPage()   // peek, no mutation
         isLoadingMore = true
 
         Task { [weak self] in
@@ -114,13 +114,13 @@ class ChatViewModel: ObservableObject {
                     otherUserId: otherUserId,
                     token: token,
                     userId: userId,
-                    page: nextPage,              // ← use nextPage, not pagination.currentPage
+                    page: nextPage,
                     limit: 50
                 )
-                pagination.update(totalPages: response.pagination.totalPages)
+                pagination.commitNextPage(totalPages: response.pagination.totalPages)  // commit on success
                 await refreshMessagesFromStore()
             } catch {
-                pagination.rollback()
+                // nothing to roll back — currentPage was never changed
                 Logger.chat.error("Failed to load more messages: \(error)")
             }
 

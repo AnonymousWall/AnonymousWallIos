@@ -36,14 +36,15 @@ struct Pagination {
         hasMorePages = currentPage < totalPages
     }
     
-    /// Advances to the next page and returns the new page number
-    /// - Returns: The next page number
-    mutating func advanceToNextPage() -> Int {
-        currentPage += 1
-        return currentPage
+    /// Returns the next page number without mutating state.
+    /// Call commitNextPage() after a successful load.
+    func nextPage() -> Int {
+        return currentPage + 1
     }
-    
-    mutating func rollback() {
-        if currentPage > 1 { currentPage -= 1 }
+
+    /// Commits the advance after a successful load.
+    mutating func commitNextPage(totalPages: Int) {
+        currentPage += 1
+        hasMorePages = currentPage < totalPages
     }
 }
