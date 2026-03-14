@@ -24,6 +24,9 @@ protocol ChatWebSocketManagerProtocol {
     func sendTypingIndicator(receiverId: String)
     func markAsRead(messageId: String)
     func updateToken(_ token: String)
+    /// Fires when the server rejects the WebSocket handshake due to an expired token.
+    /// Observers should trigger an immediate token refresh.
+    var tokenRefreshNeededPublisher: AnyPublisher<Void, Never> { get }
 }
 
 /// WebSocket manager for real-time chat with automatic reconnection
@@ -40,6 +43,7 @@ class ChatWebSocketManager: ChatWebSocketManagerProtocol {
     private var typingSubject = PassthroughSubject<String, Never>()
     private var readReceiptSubject = PassthroughSubject<String, Never>()
     private var unreadCountSubject = PassthroughSubject<Int, Never>()
+    private var tokenRefreshNeededSubject = PassthroughSubject<Void, Never>()
     
     private var token: String?
     private var userId: String?
@@ -73,6 +77,10 @@ class ChatWebSocketManager: ChatWebSocketManagerProtocol {
     
     var unreadCountPublisher: AnyPublisher<Int, Never> {
         unreadCountSubject.eraseToAnyPublisher()
+    }
+    
+    var tokenRefreshNeededPublisher: AnyPublisher<Void, Never> {
+        tokenRefreshNeededSubject.eraseToAnyPublisher()
     }
     
     // MARK: - Initialization
@@ -378,6 +386,7 @@ class ChatWebSocketManager: ChatWebSocketManagerProtocol {
             webSocketTask?.cancel(with: .goingAway, reason: nil)
             webSocketTask = nil
             connectionStateSubject.send(.disconnected)
+            tokenRefreshNeededSubject.send()
             return
         }
 

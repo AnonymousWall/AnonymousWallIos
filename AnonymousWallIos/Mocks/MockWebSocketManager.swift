@@ -107,6 +107,10 @@ class MockWebSocketManager: ChatWebSocketManagerProtocol {
         updatedToken = token
     }
     
+    var tokenRefreshNeededPublisher: AnyPublisher<Void, Never> {
+        PassthroughSubject<Void, Never>().eraseToAnyPublisher()
+    }
+    
     // MARK: - Test Helpers
     
     /// Simulate receiving a message

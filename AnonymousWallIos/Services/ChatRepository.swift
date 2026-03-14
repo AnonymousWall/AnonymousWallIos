@@ -119,7 +119,15 @@ class ChatRepository: ChatRepositoryProtocol {
     }
     
     func disconnectForBackground() {
+        shouldMaintainConnection = false
         webSocketManager.disconnect()
+    }
+    
+    /// Reconnects using cached credentials. Called on app foreground.
+    /// No-op if credentials were never set (user hasn't opened chat yet).
+    func reconnectForForeground() {
+        guard let token = cachedToken, let userId = cachedUserId else { return }
+        connect(token: token, userId: userId)
     }
     
     // MARK: - Message Operations
@@ -402,6 +410,22 @@ class ChatRepository: ChatRepositoryProtocol {
                   let newToken = notification.userInfo?["token"] as? String else { return }
             self.updateCachedToken(newToken)
         }
+        
+        webSocketManager.tokenRefreshNeededPublisher
+            .sink { [weak self] in
+                guard let self else { return }
+                Logger.chat.info("WebSocket requested token refresh — triggering immediately")
+                Task {
+                    let result = await NetworkClient.shared.refreshAccessToken()
+                    if result == false {
+                        // Refresh token is dead — onUnauthorized handler in NetworkClient
+                        // will fire logout; nothing more to do here
+                        Logger.auth.warning("Token refresh failed during WebSocket recovery — logout expected")
+                    }
+                    // On success, onTokenRefreshed → updateCachedToken → reconnect fires automatically
+                }
+            }
+            .store(in: &cancellables)
     }
     
     private func updateReadReceiptForMessage(messageId: String) async {

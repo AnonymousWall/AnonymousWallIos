@@ -79,11 +79,15 @@ class NetworkClient: NetworkClientProtocol {
 
     // MARK: - Token Refresh
 
-    func refreshAccessToken() async -> Bool {
-        if case .refreshed = await refreshAccessTokenResult() {
+    func refreshAccessToken() async -> Bool? {
+        switch await refreshAccessTokenResult() {
+        case .refreshed:
             return true
+        case .failedAuthentication:
+            return false        // session definitively dead — caller should logout
+        case .failedTransport:
+            return nil          // network issue — don't logout, just retry later
         }
-        return false
     }
 
     private func refreshAccessTokenResult() async -> TokenRefreshResult {
@@ -153,7 +157,7 @@ class NetworkClient: NetworkClientProtocol {
             }
 
             Logger.auth.debug("Token refresh succeeded — new tokens saved")
-            return .refreshed
+            return .refreshed(newToken)
         } catch let error as URLError {
             let networkError: NetworkError
             if error.code == .cancelled {
@@ -192,8 +196,7 @@ class NetworkClient: NetworkClientProtocol {
         if httpResponse.statusCode == HTTPStatus.unauthorized {
             let refreshResult = await refreshAccessTokenResult()
 
-            if case .refreshed = refreshResult,
-               let newToken = KeychainHelper.shared.get(config.authTokenKey) {
+            if case .refreshed(let newToken) = refreshResult {
                 var retryRequest = urlRequest
                 retryRequest.setValue("Bearer \(newToken)", forHTTPHeaderField: "Authorization")
 
@@ -277,14 +280,12 @@ class NetworkClient: NetworkClientProtocol {
             case HTTPStatus.unauthorized:
                 let refreshResult = await refreshAccessTokenResult()
 
-                if case .refreshed = refreshResult {
+                if case .refreshed(let newToken) = refreshResult {
                     var retryRequest = request
-                    if let newToken = KeychainHelper.shared.get(config.authTokenKey) {
-                        retryRequest.setValue(
-                            "Bearer \(newToken)",
-                            forHTTPHeaderField: "Authorization"
-                        )
-                    }
+                    retryRequest.setValue(
+                        "Bearer \(newToken)",
+                        forHTTPHeaderField: "Authorization"
+                    )
                     if let userId = request.value(forHTTPHeaderField: "X-User-Id") {
                         retryRequest.setValue(userId, forHTTPHeaderField: "X-User-Id")
                     }
@@ -444,7 +445,7 @@ private struct TokenRefreshResponse: Codable {
 }
 
 private enum TokenRefreshResult {
-    case refreshed
+    case refreshed(String)      // carries the new access token
     case failedAuthentication
     case failedTransport(NetworkError)
 }
