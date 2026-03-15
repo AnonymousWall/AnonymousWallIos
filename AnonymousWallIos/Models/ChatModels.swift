@@ -12,12 +12,12 @@ import Foundation
 struct SendMessageRequest: Codable {
     let receiverId: String
     let content: String
-    let imageUrl: String?
+    let imageObjectName: String?
 
-    init(receiverId: String, content: String, imageUrl: String? = nil) {
+    init(receiverId: String, content: String, imageObjectName: String? = nil) {
         self.receiverId = receiverId
         self.content = content
-        self.imageUrl = imageUrl
+        self.imageObjectName = imageObjectName
     }
 }
 

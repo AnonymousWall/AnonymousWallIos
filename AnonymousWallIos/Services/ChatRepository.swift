@@ -18,32 +18,23 @@ class ChatRepository: ChatRepositoryProtocol {
     private let chatService: ChatAPIServiceProtocol
     private let webSocketManager: ChatWebSocketManagerProtocol
     private let messageStore: MessageStore
+    private let mediaService: MediaServiceProtocol
     
     private var cancellables = Set<AnyCancellable>()
     private var tokenRefreshObserver: NSObjectProtocol?
     
-    // Track pending temporary messages for reconciliation
-    private var pendingTemporaryMessages: [String: String] = [:] // [tempId: receiverId]
-    
-    // Track active conversations that need recovery on reconnect
+    private var pendingTemporaryMessages: [String: String] = [:]
     private var activeConversations: Set<String> = []
     private var shouldMaintainConnection = false
-    
-    // Store auth credentials for recovery
     private var cachedToken: String?
     private var cachedUserId: String?
     
-    // Subject for read status updates
     private var conversationReadSubject = PassthroughSubject<String, Never>()
     private var readReceiptSubject = PassthroughSubject<String, Never>()
-    
-    // Subject for message updates (emitted AFTER reconciliation)
     private var messageSubject = PassthroughSubject<(Message, String), Never>()
     
-    // Published properties for UI observation
     @Published private(set) var connectionState: WebSocketConnectionState = .disconnected
     
-    // Combine publishers
     var messagePublisher: AnyPublisher<(Message, String), Never> {
         messageSubject.eraseToAnyPublisher()
     }
@@ -73,11 +64,13 @@ class ChatRepository: ChatRepositoryProtocol {
     init(
         chatService: ChatAPIServiceProtocol = ChatAPIService.shared,
         webSocketManager: ChatWebSocketManagerProtocol,
-        messageStore: MessageStore
+        messageStore: MessageStore,
+        mediaService: MediaServiceProtocol = MediaService.shared
     ) {
         self.chatService = chatService
         self.webSocketManager = webSocketManager
         self.messageStore = messageStore
+        self.mediaService = mediaService
         
         setupWebSocketObservers()
     }
@@ -102,8 +95,6 @@ class ChatRepository: ChatRepositoryProtocol {
         webSocketManager.disconnect()
     }
 
-    /// Updates the cached token used for WebSocket recovery and REST fallback calls.
-    /// Called when NetworkClient silently refreshes the access token.
     func updateCachedToken(_ token: String) {
         cachedToken = token
         webSocketManager.updateToken(token)
@@ -123,8 +114,6 @@ class ChatRepository: ChatRepositoryProtocol {
         webSocketManager.disconnect()
     }
     
-    /// Reconnects using cached credentials. Called on app foreground.
-    /// No-op if credentials were never set (user hasn't opened chat yet).
     func reconnectForForeground() {
         guard let token = cachedToken, let userId = cachedUserId else { return }
         connect(token: token, userId: userId)
@@ -161,9 +150,7 @@ class ChatRepository: ChatRepositoryProtocol {
         return response
     }
     
-    /// Send text message with optimistic UI update
     func sendMessage(receiverId: String, content: String, token: String, userId: String) async throws -> String {
-        // Create temporary message for optimistic UI
         let temporaryId = UUID().uuidString
         let tempMessage = TemporaryMessage(
             temporaryId: temporaryId,
@@ -213,30 +200,18 @@ class ChatRepository: ChatRepositoryProtocol {
         return temporaryId
     }
     
-    /// Send image message — upload first, then send via REST
-    /// No optimistic UI since we must wait for upload to get URL
+    /// Send image message — presign + upload directly to OCI, then send objectName via REST
     func sendImageMessage(image: UIImage, receiverId: String, token: String, userId: String) async throws {
-        // Step 1: Compress image (ChatRepository is @MainActor; jpegData is safe to call directly)
-        let resized = image.resized(maxDimension: 1024)
-        guard let jpeg = resized.jpegData(compressionQuality: 0.6) else {
-            throw NetworkError.serverError("Failed to compress image")
-        }
-        
-        // Step 2: Upload image → get URL
-        let imageUrl = try await chatService.uploadChatImage(jpeg, token: token, userId: userId)
-        
-        // Step 3: Send message with imageUrl via REST
+        let objectName = try await mediaService.uploadImage(image, folder: "chat", token: token)
+
         let confirmedMessage = try await chatService.sendImageMessage(
             receiverId: receiverId,
-            imageUrl: imageUrl,
+            imageObjectName: objectName,
             token: token,
             userId: userId
         )
-        
-        // Step 4: Add confirmed message directly to store
+
         await messageStore.addMessage(confirmedMessage, for: receiverId)
-        
-        // Step 5: Emit so ViewModel refreshes
         messageSubject.send((confirmedMessage, receiverId))
     }
     
@@ -244,9 +219,6 @@ class ChatRepository: ChatRepositoryProtocol {
         return await messageStore.getMessages(for: otherUserId)
     }
     
-    /// Called when ChatView disappears. Removes the conversation from active
-    /// recovery tracking but does NOT disconnect the WebSocket, which
-    /// ConversationsViewModel relies on for unread count updates.
     func leaveConversation(otherUserId: String) {
         activeConversations.remove(otherUserId)
     }
@@ -278,7 +250,6 @@ class ChatRepository: ChatRepositoryProtocol {
     
     func recoverMessages(otherUserId: String, token: String, userId: String) async throws -> [Message] {
         guard await messageStore.getLastMessage(for: otherUserId) != nil else {
-            // No cached messages — do a fresh load and return what's new
             let response = try await loadMessages(otherUserId: otherUserId, token: token, userId: userId)
             return response.messages
         }
@@ -418,11 +389,8 @@ class ChatRepository: ChatRepositoryProtocol {
                 Task {
                     let result = await NetworkClient.shared.refreshAccessToken()
                     if result == false {
-                        // Refresh token is dead — onUnauthorized handler in NetworkClient
-                        // will fire logout; nothing more to do here
                         Logger.auth.warning("Token refresh failed during WebSocket recovery — logout expected")
                     }
-                    // On success, onTokenRefreshed → updateCachedToken → reconnect fires automatically
                 }
             }
             .store(in: &cancellables)

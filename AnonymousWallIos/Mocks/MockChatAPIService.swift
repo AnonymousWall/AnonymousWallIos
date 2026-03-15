@@ -93,7 +93,7 @@ class MockChatService: ChatAPIServiceProtocol {
         }
     }
     
-    func sendImageMessage(receiverId: String, imageUrl: String, token: String, userId: String) async throws -> Message {
+    func sendImageMessage(receiverId: String, imageObjectName imageUrl: String, token: String, userId: String) async throws -> Message {
         sendImageMessageCalled = true
         
         switch sendImageMessageBehavior {

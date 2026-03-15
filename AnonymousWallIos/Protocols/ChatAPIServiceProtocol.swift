@@ -14,10 +14,7 @@ protocol ChatAPIServiceProtocol {
     func sendMessage(receiverId: String, content: String, token: String, userId: String) async throws -> Message
     
     /// Send an image message (with pre-uploaded imageUrl)
-    func sendImageMessage(receiverId: String, imageUrl: String, token: String, userId: String) async throws -> Message
-    
-    /// Upload a chat image and return the URL
-    func uploadChatImage(_ jpeg: Data, token: String, userId: String) async throws -> String
+    func sendImageMessage(receiverId: String, imageObjectName: String, token: String, userId: String) async throws -> Message
     
     /// Get message history with another user
     func getMessageHistory(otherUserId: String, page: Int, limit: Int, token: String, userId: String) async throws -> MessageHistoryResponse
