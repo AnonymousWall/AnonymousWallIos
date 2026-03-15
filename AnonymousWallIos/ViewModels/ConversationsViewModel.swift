@@ -23,13 +23,14 @@ class ConversationsViewModel: ObservableObject {
     
     // MARK: - Private Properties
     
-    private let repository: ChatRepository
+    private let repository: ChatRepositoryProtocol
     private var cancellables = Set<AnyCancellable>()
     private var loadTask: Task<Void, Never>?
+    private var currentAuthState: AuthState?
     
     // MARK: - Initialization
     
-    init(repository: ChatRepository) {
+    init(repository: ChatRepositoryProtocol) {
         self.repository = repository
         Logger.chat.info("🎬 ConversationsViewModel initialized")
         setupObservers()
@@ -41,7 +42,7 @@ class ConversationsViewModel: ObservableObject {
     }
     
     // MARK: - Public Methods
-    
+    private var currentUserId: String?
     /// Load conversations list
     func loadConversations(authState: AuthState) {
         guard let token = authState.authToken,
@@ -49,6 +50,8 @@ class ConversationsViewModel: ObservableObject {
             errorMessage = "Authentication required"
             return
         }
+        currentUserId = userId
+        currentAuthState = authState
         
         loadTask?.cancel()
         loadTask = Task { [weak self] in
@@ -64,6 +67,7 @@ class ConversationsViewModel: ObservableObject {
                 )
                 
                 conversations = loadedConversations
+                unreadCount = loadedConversations.reduce(0) { $0 + $1.unreadCount }
                 
                 // Connect WebSocket for real-time updates
                 repository.connect(token: token, userId: userId)
@@ -92,6 +96,8 @@ class ConversationsViewModel: ObservableObject {
                   let userId = authState.currentUser?.id else {
                 return
             }
+            currentUserId = userId
+            currentAuthState = authState
             
             do {
                 let loadedConversations = try await repository.loadConversations(
@@ -99,6 +105,7 @@ class ConversationsViewModel: ObservableObject {
                     userId: userId
                 )
                 conversations = loadedConversations
+                unreadCount = loadedConversations.reduce(0) { $0 + $1.unreadCount }
             } catch {
                 if (error as? URLError)?.code == .cancelled ||
                    error is CancellationError {
@@ -159,17 +166,25 @@ class ConversationsViewModel: ObservableObject {
                 if let index = self.conversations.firstIndex(where: { $0.userId == conversationUserId }) {
                     let existing = self.conversations[index]  // ← was `var`, never mutated so now `let`
                     
+                    let isSentByCurrentUser = message.senderId == self.currentUserId
+                    let newUnreadCount = (message.readStatus || isSentByCurrentUser)
+                        ? existing.unreadCount
+                        : existing.unreadCount + 1
+
                     let updatedConv = Conversation(
                         userId: existing.userId,
                         profileName: existing.profileName,
                         lastMessage: message,
-                        unreadCount: message.readStatus ? existing.unreadCount : existing.unreadCount + 1
+                        unreadCount: newUnreadCount
                     )
                     
                     self.conversations.remove(at: index)
                     self.conversations.insert(updatedConv, at: 0)
                 } else {
                     Logger.chat.info("New conversation detected: \(conversationUserId)")
+                    if let authState = currentAuthState {
+                        loadConversations(authState: authState)
+                    }
                 }
             }
             .store(in: &cancellables)

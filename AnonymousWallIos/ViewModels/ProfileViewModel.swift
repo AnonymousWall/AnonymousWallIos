@@ -314,7 +314,7 @@ class ProfileViewModel: ObservableObject {
             isLoadingMorePosts = false
         }
         
-        let nextPage = postsPagination.advanceToNextPage()
+        let nextPage = postsPagination.nextPage()
         
         do {
             let response = try await userService.getUserPosts(
@@ -382,7 +382,7 @@ class ProfileViewModel: ObservableObject {
             isLoadingMoreComments = false
         }
         
-        let nextPage = commentsPagination.advanceToNextPage()
+        let nextPage = commentsPagination.nextPage()
         
         do {
             let response = try await userService.getUserComments(
@@ -517,7 +517,7 @@ class ProfileViewModel: ObservableObject {
             isLoadingMoreInternships = false
         }
         
-        let nextPage = internshipsPagination.advanceToNextPage()
+        let nextPage = internshipsPagination.nextPage()
         
         do {
             let response = try await userService.getUserInternships(
@@ -581,7 +581,7 @@ class ProfileViewModel: ObservableObject {
             isLoadingMoreMarketplaceItems = false
         }
         
-        let nextPage = marketplacesPagination.advanceToNextPage()
+        let nextPage = marketplacesPagination.nextPage()
         
         do {
             let response = try await userService.getUserMarketplaces(

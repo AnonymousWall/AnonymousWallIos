@@ -29,7 +29,7 @@ class ChatCoordinator: Coordinator {
         self.messageStore = MessageStore()
         self.webSocketManager = ChatWebSocketManager()
         self.chatRepository = ChatRepository(
-            chatService: ChatService.shared,
+            chatService: ChatAPIService.shared,
             webSocketManager: webSocketManager,
             messageStore: messageStore
         )

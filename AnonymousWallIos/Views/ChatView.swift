@@ -10,9 +10,10 @@ import PhotosUI
 
 struct ChatView: View {
     @EnvironmentObject var authState: AuthState
+    @EnvironmentObject var blockViewModel: BlockViewModel
     @Environment(\.dismiss) var dismiss
     @StateObject var viewModel: ChatViewModel
-    
+
     @FocusState private var isInputFocused: Bool
     @State private var selectedPhotoItem: PhotosPickerItem? = nil
     @State private var pendingImage: UIImage? = nil
@@ -21,153 +22,23 @@ struct ChatView: View {
     @State private var selectedImageItem: ImageViewerItem? = nil
     @State private var showBlockConfirmation = false
     @State private var showBlockSuccessAlert = false
-    @EnvironmentObject var blockViewModel: BlockViewModel
-    
+
+    /// Captures the top message ID before a load-more so scroll position
+    /// can be restored after older messages are prepended.
+    @State private var firstVisibleMessageId: String? = nil
+
     var body: some View {
         VStack(spacing: 0) {
-            // Connection status bar
-            if case .connecting = viewModel.connectionState {
-                connectionStatusBar(text: "Connecting...", color: .orange)
-            } else if case .reconnecting = viewModel.connectionState {
-                connectionStatusBar(text: "Reconnecting...", color: .orange)
-            } else if case .failed = viewModel.connectionState {
-                connectionStatusBar(text: "Connection failed", color: .accentRed)
-            }
-            
-            // Image upload progress
-            if viewModel.isUploadingImage {
-                HStack(spacing: 8) {
-                    ProgressView()
-                        .tint(.white)
-                        .scaleEffect(0.7)
-                    Text("Uploading image...")
-                        .font(.caption)
-                        .foregroundColor(.white)
-                }
-                .padding(.vertical, 8)
-                .frame(maxWidth: .infinity)
-                .background(Color.accentColor)
-            }
-            
-            // Messages list
-            ScrollViewReader { proxy in
-                ScrollView {
-                    LazyVStack(spacing: 12) {
-                        if viewModel.isLoadingMessages {
-                            ProgressView()
-                                .padding()
-                        } else if viewModel.messages.isEmpty {
-                            emptyStateView
-                        } else {
-                            ForEach(viewModel.messages) { message in
-                                MessageBubbleView(
-                                    message: message,
-                                    isCurrentUser: message.senderId == authState.currentUser?.id,
-                                    onTapImage: { url in
-                                        selectedImageURL = url
-                                        selectedImageItem = ImageViewerItem(index: 0)
-                                    }
-                                )
-                                .id(message.id)
-                            }
-                        }
-                        
-                        // Typing indicator
-                        if viewModel.isTyping {
-                            typingIndicatorView
-                        }
-                    }
-                    .padding()
-                }
-                .onChange(of: viewModel.messages.count) { _, _ in
-                    if let lastMessage = viewModel.messages.last {
-                        withAnimation {
-                            proxy.scrollTo(lastMessage.id, anchor: .bottom)
-                        }
-                    }
-                }
-            }
-            
+            connectionBanner
+            uploadProgressBanner
+            messageList
             Divider()
-            
-            // Input bar
-            HStack(spacing: 12) {
-                let isUploading = viewModel.isUploadingImage
-                // Image picker button
-                PhotosPicker(
-                    selection: $selectedPhotoItem,
-                    matching: .images,
-                    photoLibrary: .shared()
-                ) {
-                    Image(systemName: "photo")
-                        .font(.system(size: 22))
-                        .foregroundColor(isUploading ? .gray : .accentColor)
-                }
-                .disabled(viewModel.isUploadingImage)
-                .onChange(of: selectedPhotoItem) { _, item in
-                    guard let item else { return }
-                    Task {
-                        do {
-                            if let data = try await item.loadTransferable(type: Data.self),
-                               let image = UIImage(data: data) {
-                                pendingImage = image
-                                showImageConfirmation = true
-                            }
-                        } catch {
-                            viewModel.errorMessage = "Failed to load image: \(error.localizedDescription)"
-                        }
-                        selectedPhotoItem = nil
-                    }
-                }
-                .accessibilityLabel("Send image")
-                
-                // Text input
-                TextField("Type a message...", text: $viewModel.messageText, axis: .vertical)
-                    .textFieldStyle(.plain)
-                    .padding(10)
-                    .background(Color.surfaceSecondary)
-                    .cornerRadius(20)
-                    .focused($isInputFocused)
-                    .onChange(of: viewModel.messageText) { _, _ in
-                        viewModel.onTextChanged()
-                    }
-                    .accessibilityLabel("Message input")
-                
-                // Send button
-                Button(action: {
-                    HapticFeedback.medium()
-                    viewModel.sendMessage(authState: authState)
-                }) {
-                    Image(systemName: "arrow.up.circle.fill")
-                        .font(.system(size: 32))
-                        .foregroundColor(viewModel.messageText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? .gray : .accentColor)
-                }
-                .disabled(viewModel.messageText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || viewModel.isSendingMessage)
-                .accessibilityLabel("Send message")
-            }
-            .padding()
-            .background(Color.surfacePrimary)
+            inputBar
         }
         .background(Color.appBackground.ignoresSafeArea())
         .navigationTitle(viewModel.otherUserName)
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .navigationBarTrailing) {
-                Menu {
-                    Button(role: .destructive, action: {
-                        HapticFeedback.warning()
-                        showBlockConfirmation = true
-                    }) {
-                        Label("Block User", systemImage: "hand.raised.fill")
-                    }
-                } label: {
-                    Image(systemName: "ellipsis.circle")
-                        .font(.title3)
-                }
-                .accessibilityLabel("Chat options")
-                .accessibilityHint("Double tap to access chat options including block user")
-            }
-        }
+        .toolbar { chatOptionsMenu }
         .confirmationDialog(
             "Block \(viewModel.otherUserName)?",
             isPresented: $showBlockConfirmation,
@@ -186,10 +57,6 @@ struct ChatView: View {
             ActiveConversationTracker.shared.activeConversationId = viewModel.otherUserId
             viewModel.loadMessages(authState: authState)
             viewModel.viewDidAppear()
-            Task {
-                try? await Task.sleep(nanoseconds: 500_000_000)
-                viewModel.markConversationAsRead(authState: authState)
-            }
         }
         .onDisappear {
             ActiveConversationTracker.shared.activeConversationId = nil
@@ -210,9 +77,7 @@ struct ChatView: View {
             Button("Retry") { viewModel.retry(authState: authState) }
             Button("Cancel", role: .cancel) { viewModel.errorMessage = nil }
         } message: {
-            if let error = viewModel.errorMessage {
-                Text(error)
-            }
+            if let error = viewModel.errorMessage { Text(error) }
         }
         .alert("User Blocked", isPresented: $showBlockSuccessAlert) {
             Button("OK", role: .cancel) {}
@@ -225,14 +90,198 @@ struct ChatView: View {
         )) {
             Button("OK", role: .cancel) { blockViewModel.errorMessage = nil }
         } message: {
-            if let error = blockViewModel.errorMessage {
-                Text(error)
+            if let error = blockViewModel.errorMessage { Text(error) }
+        }
+    }
+
+    // MARK: - Banners
+
+    @ViewBuilder
+    private var connectionBanner: some View {
+        switch viewModel.connectionState {
+        case .connecting:
+            ConnectionStatusBarView(text: "Connecting...", color: .orange)
+        case .reconnecting:
+            ConnectionStatusBarView(text: "Reconnecting...", color: .orange)
+        case .failed:
+            ConnectionStatusBarView(text: "Connection failed", color: .accentRed, showSpinner: false)
+        default:
+            EmptyView()
+        }
+    }
+
+    @ViewBuilder
+    private var uploadProgressBanner: some View {
+        if viewModel.isUploadingImage {
+            HStack(spacing: 8) {
+                ProgressView().tint(.white).scaleEffect(0.7)
+                Text("Uploading image...")
+                    .font(.caption)
+                    .foregroundColor(.white)
+            }
+            .padding(.vertical, 8)
+            .frame(maxWidth: .infinity)
+            .background(Color.accentColor)
+        }
+    }
+
+    // MARK: - Message List
+
+    private var messageList: some View {
+        ScrollViewReader { proxy in
+            ScrollView {
+                LazyVStack(spacing: 12) {
+                    loadMoreTrigger
+                    messageContent
+                    if viewModel.isTyping {
+                        TypingIndicatorView(isTyping: viewModel.isTyping)
+                    }
+                }
+                .padding()
+            }
+            // Scroll to bottom when new messages arrive at the bottom
+            .onChange(of: viewModel.messages.count) { oldCount, newCount in
+                guard newCount > oldCount else { return }
+                if let savedId = firstVisibleMessageId {
+                    // Older messages prepended — restore position without jumping
+                    proxy.scrollTo(savedId, anchor: .top)
+                    firstVisibleMessageId = nil
+                } else if let lastMessage = viewModel.messages.last {
+                    withAnimation {
+                        proxy.scrollTo(lastMessage.id, anchor: .bottom)
+                    }
+                }
+            }
+            // Jump to bottom after initial load completes
+            .onChange(of: viewModel.isLoadingMessages) { _, isLoading in
+                if !isLoading, let lastMessage = viewModel.messages.last {
+                    proxy.scrollTo(lastMessage.id, anchor: .bottom)
+                }
             }
         }
     }
-    
-    // MARK: - Subviews
-    
+
+    @ViewBuilder
+    private var loadMoreTrigger: some View {
+        if viewModel.isLoadingMore {
+            ProgressView()
+                .padding(.vertical, 8)
+        } else if viewModel.hasMoreMessages && !viewModel.isLoadingMessages {
+            Color.clear
+                .frame(height: 1)
+                .onAppear {
+                    firstVisibleMessageId = viewModel.messages.first?.id
+                    viewModel.loadMoreMessages(authState: authState)
+                }
+        }
+    }
+
+    @ViewBuilder
+    private var messageContent: some View {
+        if viewModel.isLoadingMessages {
+            ProgressView().padding()
+        } else if viewModel.messages.isEmpty {
+            emptyStateView
+        } else {
+            ForEach(viewModel.messages) { message in
+                MessageBubbleView(
+                    message: message,
+                    isCurrentUser: message.senderId == authState.currentUser?.id,
+                    onTapImage: { url in
+                        selectedImageURL = url
+                        selectedImageItem = ImageViewerItem(index: 0)
+                    }
+                )
+                .id(message.id)
+            }
+        }
+    }
+
+    // MARK: - Input Bar
+
+    private var inputBar: some View {
+        HStack(spacing: 12) {
+            PhotosPicker(
+                selection: $selectedPhotoItem,
+                matching: .images,
+                photoLibrary: .shared()
+            ) {
+                Image(systemName: "photo")
+                    .font(.system(size: 22))
+                    .foregroundColor(viewModel.isUploadingImage ? .gray : .accentColor)
+            }
+            .disabled(viewModel.isUploadingImage)
+            .onChange(of: selectedPhotoItem) { _, item in
+                guard let item else { return }
+                Task {
+                    do {
+                        if let data = try await item.loadTransferable(type: Data.self),
+                           let image = UIImage(data: data) {
+                            pendingImage = image
+                            showImageConfirmation = true
+                        }
+                    } catch {
+                        viewModel.errorMessage = "Failed to load image: \(error.localizedDescription)"
+                    }
+                    selectedPhotoItem = nil
+                }
+            }
+            .accessibilityLabel("Send image")
+
+            TextField("Type a message...", text: $viewModel.messageText, axis: .vertical)
+                .textFieldStyle(.plain)
+                .padding(10)
+                .background(Color.surfaceSecondary)
+                .cornerRadius(20)
+                .focused($isInputFocused)
+                .onChange(of: viewModel.messageText) { _, _ in
+                    viewModel.onTextChanged()
+                }
+                .accessibilityLabel("Message input")
+
+            Button {
+                HapticFeedback.medium()
+                viewModel.sendMessage(authState: authState)
+            } label: {
+                Image(systemName: "arrow.up.circle.fill")
+                    .font(.system(size: 32))
+                    .foregroundColor(
+                        viewModel.messageText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                            ? .gray : .accentColor
+                    )
+            }
+            .disabled(
+                viewModel.messageText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                    || viewModel.isSendingMessage
+            )
+            .accessibilityLabel("Send message")
+        }
+        .padding()
+        .background(Color.surfacePrimary)
+    }
+
+    // MARK: - Toolbar
+
+    @ToolbarContentBuilder
+    private var chatOptionsMenu: some ToolbarContent {
+        ToolbarItem(placement: .navigationBarTrailing) {
+            Menu {
+                Button(role: .destructive) {
+                    HapticFeedback.warning()
+                    showBlockConfirmation = true
+                } label: {
+                    Label("Block User", systemImage: "hand.raised.fill")
+                }
+            } label: {
+                Image(systemName: "ellipsis.circle").font(.title3)
+            }
+            .accessibilityLabel("Chat options")
+            .accessibilityHint("Double tap to access chat options including block user")
+        }
+    }
+
+    // MARK: - Empty State
+
     private var emptyStateView: some View {
         VStack(spacing: 16) {
             Image(systemName: "bubble.left.and.bubble.right")
@@ -247,119 +296,5 @@ struct ChatView: View {
                 .multilineTextAlignment(.center)
         }
         .padding()
-    }
-    
-    private var typingIndicatorView: some View {
-        HStack(spacing: 8) {
-            HStack(spacing: 4) {
-                Circle()
-                    .fill(Color.secondary)
-                    .frame(width: 6, height: 6)
-                    .animation(Animation.easeInOut(duration: 0.6).repeatForever(), value: viewModel.isTyping)
-                Circle()
-                    .fill(Color.secondary)
-                    .frame(width: 6, height: 6)
-                    .animation(Animation.easeInOut(duration: 0.6).repeatForever().delay(0.2), value: viewModel.isTyping)
-                Circle()
-                    .fill(Color.secondary)
-                    .frame(width: 6, height: 6)
-                    .animation(Animation.easeInOut(duration: 0.6).repeatForever().delay(0.4), value: viewModel.isTyping)
-            }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
-            .background(Color.surfaceSecondary)
-            .cornerRadius(16)
-            
-            Spacer()
-        }
-    }
-
-    private func connectionStatusBar(text: String, color: Color) -> some View {
-        HStack {
-            ProgressView()
-                .tint(.white)
-                .scaleEffect(0.7)
-            Text(text)
-                .font(.caption)
-                .foregroundColor(.white)
-        }
-        .padding(.vertical, 8)
-        .frame(maxWidth: .infinity)
-        .background(color)
-    }
-}
-
-// MARK: - Message Bubble View
-
-struct MessageBubbleView: View {
-    let message: Message
-    let isCurrentUser: Bool
-    var onTapImage: ((String) -> Void)?
-    
-    var body: some View {
-        HStack {
-            if isCurrentUser { Spacer() }
-            
-            VStack(alignment: isCurrentUser ? .trailing : .leading, spacing: 4) {
-                // Image bubble
-                if let imageUrl = message.imageUrl {
-                    AuthenticatedImageView(objectName: imageUrl, contentMode: .fill)
-                        .frame(width: 200, height: 200)
-                        .clipped()
-                        .cornerRadius(12)
-                        .onTapGesture { onTapImage?(imageUrl) }
-                        .accessibilityLabel("Image message")
-                        .accessibilityHint("Double tap to view full screen")
-                }
-                
-                // Text bubble (only if non-empty)
-                if !message.content.isEmpty {
-                    Text(message.content)
-                        .font(.body)
-                        .foregroundColor(isCurrentUser ? .white : .textPrimary)
-                        .padding(12)
-                        .background(isCurrentUser ? AnyShapeStyle(LinearGradient.brandGradient) : AnyShapeStyle(Color.surfaceSecondary))
-                        .cornerRadius(16)
-                        .accessibilityLabel("Message: \(message.content)")
-                }
-                
-                // Timestamp + status
-                HStack(spacing: 4) {
-                    Text(DateFormatting.formatRelativeTime(message.createdAt))
-                        .font(.caption2)
-                        .foregroundColor(.textSecondary)
-                    
-                    if isCurrentUser {
-                        statusIcon
-                    }
-                }
-            }
-            .frame(maxWidth: 280, alignment: isCurrentUser ? .trailing : .leading)
-            
-            if !isCurrentUser { Spacer() }
-        }
-    }
-    
-    private var statusIcon: some View {
-        Group {
-            switch message.localStatus {
-            case .sending:
-                Image(systemName: "clock")
-                    .font(.caption2)
-                    .foregroundColor(.textSecondary)
-            case .sent, .delivered:
-                Image(systemName: "checkmark")
-                    .font(.caption2)
-                    .foregroundColor(.textSecondary)
-            case .read:
-                Image(systemName: "checkmark.circle.fill")
-                    .font(.caption2)
-                    .foregroundColor(.blue)
-            case .failed:
-                Image(systemName: "exclamationmark.circle")
-                    .font(.caption2)
-                    .foregroundColor(.accentRed)
-            }
-        }
     }
 }

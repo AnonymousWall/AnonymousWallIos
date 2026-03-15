@@ -11,7 +11,7 @@ struct ConversationsListView: View {
     @EnvironmentObject var authState: AuthState
     @ObservedObject var viewModel: ConversationsViewModel
     var onSelectConversation: ((String, String) -> Void)?
-    
+
     var body: some View {
         Group {
             if viewModel.isLoadingConversations {
@@ -26,7 +26,7 @@ struct ConversationsListView: View {
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
                 if viewModel.unreadCount > 0 {
-                    Badge(count: viewModel.unreadCount)
+                    BadgeView(count: viewModel.unreadCount)
                 }
             }
         }
@@ -45,9 +45,9 @@ struct ConversationsListView: View {
             }
         }
     }
-    
+
     // MARK: - Subviews
-    
+
     private var conversationsList: some View {
         List {
             ForEach(viewModel.conversations) { conversation in
@@ -63,7 +63,7 @@ struct ConversationsListView: View {
         .scrollContentBackground(.hidden)
         .background(Color.appBackground)
     }
-    
+
     private var emptyStateView: some View {
         VStack(spacing: 16) {
             Image(systemName: "bubble.left.and.bubble.right")
@@ -78,86 +78,5 @@ struct ConversationsListView: View {
                 .multilineTextAlignment(.center)
         }
         .padding()
-    }
-}
-
-// MARK: - Conversation Row View
-
-struct ConversationRowView: View {
-    let conversation: Conversation
-    
-    var body: some View {
-        HStack(spacing: 12) {
-            // Avatar placeholder
-            Circle()
-                .fill(LinearGradient.brandGradient)
-                .frame(width: 50, height: 50)
-                .overlay(
-                    Text(conversation.profileName.prefix(1))
-                        .font(.title3.bold())
-                        .foregroundColor(.white)
-                )
-            
-            VStack(alignment: .leading, spacing: 4) {
-                HStack {
-                    Text(conversation.profileName)
-                        .font(.headline)
-                        .foregroundColor(.textPrimary)
-                    
-                    Spacer()
-                    
-                    if let lastMessage = conversation.lastMessage {
-                        Text(DateFormatting.formatRelativeTime(lastMessage.createdAt))
-                            .font(.caption)
-                            .foregroundColor(.textSecondary)
-                    }
-                }
-                
-                HStack {
-                    if let lastMessage = conversation.lastMessage {
-                        // Show image preview text if image message
-                        let preview: String = {
-                            if lastMessage.imageUrl != nil && lastMessage.content.isEmpty {
-                                return "📷 Photo"
-                            }
-                            return lastMessage.content
-                        }()
-                        
-                        Text(preview)
-                            .font(.subheadline)
-                            .foregroundColor(.textSecondary)
-                            .lineLimit(1)
-                    } else {
-                        Text("No messages")
-                            .font(.subheadline)
-                            .foregroundColor(.textSecondary)
-                            .italic()
-                    }
-                    
-                    Spacer()
-                    
-                    if conversation.unreadCount > 0 {
-                        Badge(count: conversation.unreadCount)
-                    }
-                }
-            }
-        }
-        .padding(.vertical, 4)
-    }
-}
-
-// MARK: - Badge View
-
-struct Badge: View {
-    let count: Int
-    
-    var body: some View {
-        Text("\(count)")
-            .font(.caption2.bold())
-            .foregroundColor(.white)
-            .padding(.horizontal, count > 9 ? 6 : 8)
-            .padding(.vertical, 4)
-            .background(Color.accentRed)
-            .cornerRadius(10)
     }
 }

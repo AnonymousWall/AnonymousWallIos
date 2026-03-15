@@ -13,8 +13,11 @@ class MarketplaceService: MarketplaceServiceProtocol {
 
     private let config = AppConfiguration.shared
     private let networkClient = NetworkClient.shared
+    private let mediaService: MediaServiceProtocol
 
-    private init() {}
+    private init(mediaService: MediaServiceProtocol = MediaService.shared) {
+        self.mediaService = mediaService
+    }
 
     // MARK: - Marketplace Operations
 
@@ -74,51 +77,37 @@ class MarketplaceService: MarketplaceServiceProtocol {
         token: String,
         userId: String
     ) async throws -> MarketplaceItem {
-        guard let url = URL(string: config.fullAPIBaseURL + "/marketplace") else {
-            throw NetworkError.invalidURL
+        let objectNames = try await mediaService.uploadImages(images, folder: "marketplace", token: token)
+
+        struct CreateItemBody: Encodable {
+            let title: String
+            let price: Double
+            let description: String?
+            let category: String?
+            let condition: String?
+            let wall: String
+            let imageObjectNames: [String]
         }
 
-        let boundary = UUID().uuidString
-        var urlRequest = URLRequest(url: url)
-        urlRequest.httpMethod = "POST"
-        urlRequest.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        urlRequest.setValue(userId, forHTTPHeaderField: "X-User-Id")
-        urlRequest.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
-        urlRequest.timeoutInterval = 60
-        urlRequest.assumesHTTP3Capable = false
+        let body = CreateItemBody(
+            title: title,
+            price: price,
+            description: description,
+            category: category,
+            condition: condition,
+            wall: wall.rawValue,
+            imageObjectNames: objectNames
+        )
 
-        var body = Data()
-        body.appendFormField(name: "title", value: title, boundary: boundary)
-        body.appendFormField(name: "price", value: String(price), boundary: boundary)
-        if let description, !description.isEmpty {
-            body.appendFormField(name: "description", value: description, boundary: boundary)
-        }
-        if let category, !category.isEmpty {
-            body.appendFormField(name: "category", value: category, boundary: boundary)
-        }
-        if let condition, !condition.isEmpty {
-            body.appendFormField(name: "condition", value: condition, boundary: boundary)
-        }
-        body.appendFormField(name: "wall", value: wall.rawValue, boundary: boundary)
+        let request = try APIRequestBuilder()
+            .setPath("/marketplace")
+            .setMethod(.POST)
+            .setToken(token)
+            .setUserId(userId)
+            .setBody(body)
+            .build()
 
-        for (index, image) in images.prefix(5).enumerated() {
-            let resized = image.resized(maxDimension: 1024)
-            if let jpeg = resized.jpegData(compressionQuality: 0.6) {
-                body.appendFileField(
-                    name: "images",
-                    filename: "image\(index).jpg",
-                    mimeType: "image/jpeg",
-                    data: jpeg,
-                    boundary: boundary
-                )
-            }
-        }
-
-        body.append("--\(boundary)--\r\n".data(using: .utf8) ?? Data())
-        urlRequest.httpBody = body
-
-        let data = try await NetworkClient.shared.performMultipartRequest(urlRequest)
-        return try JSONDecoder().decode(MarketplaceItem.self, from: data)
+        return try await networkClient.performRequest(request)
     }
 
     func updateItem(

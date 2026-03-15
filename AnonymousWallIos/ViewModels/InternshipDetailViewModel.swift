@@ -205,7 +205,7 @@ class InternshipDetailViewModel: ObservableObject {
 
         defer { isLoadingMoreComments = false }
 
-        let nextPage = pagination.advanceToNextPage()
+        let nextPage = pagination.nextPage()
 
         do {
             let response = try await service.getComments(

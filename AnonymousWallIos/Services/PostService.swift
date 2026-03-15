@@ -13,8 +13,11 @@ class PostService: PostServiceProtocol {
     
     private let config = AppConfiguration.shared
     private let networkClient = NetworkClient.shared
+    private let mediaService: MediaServiceProtocol
     
-    private init() {}
+    private init(mediaService: MediaServiceProtocol = MediaService.shared) {
+        self.mediaService = mediaService
+    }
     
     // MARK: - Post Operations
     
@@ -42,15 +45,11 @@ class PostService: PostServiceProtocol {
             .setUserId(userId)
             .build()
         
-        // Try to decode as PostListResponse with pagination structure
         do {
             return try await networkClient.performRequest(request)
         } catch NetworkError.cancelled {
-            // Re-throw cancellation errors without logging
             throw NetworkError.cancelled
         } catch {
-            // If backend returns a different structure, try to handle gracefully
-            // This can happen if backend hasn't been updated yet
             Logger.data.warning("Failed to decode PostListResponse: \(error.localizedDescription)")
             throw error
         }
@@ -67,52 +66,40 @@ class PostService: PostServiceProtocol {
         return try await networkClient.performRequest(request)
     }
     
-    /// Create a new post (single multipart request, supports up to 5 images)
-        func createPost(
-            title: String,
-            content: String,
-            wall: WallType = .campus,
-            images: [UIImage] = [],
-            token: String,
-            userId: String
-        ) async throws -> Post {
-            guard let url = URL(string: config.fullAPIBaseURL + "/posts") else {
-                throw NetworkError.invalidURL
-            }
+    func createPost(
+        title: String,
+        content: String,
+        wall: WallType = .campus,
+        images: [UIImage] = [],
+        token: String,
+        userId: String
+    ) async throws -> Post {
+        let objectNames = try await mediaService.uploadImages(images, folder: "posts", token: token)
 
-            let boundary = UUID().uuidString
-            var urlRequest = URLRequest(url: url)
-            urlRequest.httpMethod = "POST"
-            urlRequest.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-            urlRequest.setValue(userId, forHTTPHeaderField: "X-User-Id")
-            urlRequest.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
-            urlRequest.timeoutInterval = 60
-            urlRequest.assumesHTTP3Capable = false
-
-            var body = Data()
-            body.appendFormField(name: "title", value: title, boundary: boundary)
-            body.appendFormField(name: "content", value: content, boundary: boundary)
-            body.appendFormField(name: "wall", value: wall.rawValue, boundary: boundary)
-
-            for (index, image) in images.prefix(5).enumerated() {
-                let resized = image.resized(maxDimension: 1024)
-                if let jpeg = resized.jpegData(compressionQuality: 0.6) {
-                    body.appendFileField(
-                        name: "images",
-                        filename: "image\(index).jpg",
-                        mimeType: "image/jpeg",
-                        data: jpeg,
-                        boundary: boundary
-                    )
-                }
-            }
-
-            body.append("--\(boundary)--\r\n".data(using: .utf8) ?? Data())
-            urlRequest.httpBody = body
-
-            let data = try await NetworkClient.shared.performMultipartRequest(urlRequest)
-            return try JSONDecoder().decode(Post.self, from: data)
+        struct CreatePostBody: Encodable {
+            let title: String
+            let content: String
+            let wall: String
+            let imageObjectNames: [String]
         }
+
+        let body = CreatePostBody(
+            title: title,
+            content: content,
+            wall: wall.rawValue,
+            imageObjectNames: objectNames
+        )
+
+        let request = try APIRequestBuilder()
+            .setPath("/posts")
+            .setMethod(.POST)
+            .setToken(token)
+            .setUserId(userId)
+            .setBody(body)
+            .build()
+
+        return try await networkClient.performRequest(request)
+    }
 
     func toggleLike(postId: String, token: String, userId: String) async throws -> LikeResponse {
         let request = try APIRequestBuilder()
@@ -125,7 +112,6 @@ class PostService: PostServiceProtocol {
         return try await networkClient.performRequest(request)
     }
     
-    /// Hide/delete a post (soft delete)
     func hidePost(postId: String, token: String, userId: String) async throws -> HidePostResponse {
         let request = try APIRequestBuilder()
             .setPath("/posts/\(postId)/hide")
@@ -137,7 +123,6 @@ class PostService: PostServiceProtocol {
         return try await networkClient.performRequest(request)
     }
     
-    /// Unhide a post (restore from soft delete)
     func unhidePost(postId: String, token: String, userId: String) async throws -> HidePostResponse {
         let request = try APIRequestBuilder()
             .setPath("/posts/\(postId)/unhide")
@@ -151,7 +136,6 @@ class PostService: PostServiceProtocol {
     
     // MARK: - Comment Operations
     
-    /// Add a comment to a post
     func addComment(postId: String, text: String, token: String, userId: String) async throws -> Comment {
         let body = CreateCommentRequest(text: text)
         
@@ -166,7 +150,6 @@ class PostService: PostServiceProtocol {
         return try await networkClient.performRequest(request)
     }
     
-    /// Get comments for a post
     func getComments(
         postId: String,
         token: String,
@@ -192,7 +175,6 @@ class PostService: PostServiceProtocol {
         return try await networkClient.performRequest(request)
     }
     
-    /// Hide/delete a comment (soft delete)
     func hideComment(postId: String, commentId: String, token: String, userId: String) async throws -> HidePostResponse {
         let request = try APIRequestBuilder()
             .setPath("/posts/\(postId)/comments/\(commentId)/hide")
@@ -204,7 +186,6 @@ class PostService: PostServiceProtocol {
         return try await networkClient.performRequest(request)
     }
     
-    /// Unhide a comment (restore from soft delete)
     func unhideComment(postId: String, commentId: String, token: String, userId: String) async throws -> HidePostResponse {
         let request = try APIRequestBuilder()
             .setPath("/posts/\(postId)/comments/\(commentId)/unhide")
@@ -218,7 +199,6 @@ class PostService: PostServiceProtocol {
     
     // MARK: - Report Operations
     
-    /// Report a post
     func reportPost(postId: String, reason: String?, token: String, userId: String) async throws -> ReportResponse {
         let body = ReportRequest(reason: reason)
         
@@ -233,7 +213,6 @@ class PostService: PostServiceProtocol {
         return try await networkClient.performRequest(request)
     }
     
-    /// Report a comment
     func reportComment(postId: String, commentId: String, reason: String?, token: String, userId: String) async throws -> ReportResponse {
         let body = ReportRequest(reason: reason)
         
@@ -250,7 +229,6 @@ class PostService: PostServiceProtocol {
     
     // MARK: - Poll Operations
     
-    /// Create a poll post (multipart/form-data — same endpoint as standard posts)
     func createPollPost(
         title: String,
         content: String?,
@@ -259,35 +237,33 @@ class PostService: PostServiceProtocol {
         token: String,
         userId: String
     ) async throws -> Post {
-        guard let url = URL(string: config.fullAPIBaseURL + "/posts") else {
-            throw NetworkError.invalidURL
+        struct CreatePollBody: Encodable {
+            let title: String
+            let content: String
+            let wall: String
+            let postType: String
+            let pollOptions: [String]
         }
 
-        let boundary = UUID().uuidString
-        var urlRequest = URLRequest(url: url)
-        urlRequest.httpMethod = "POST"
-        urlRequest.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        urlRequest.setValue(userId, forHTTPHeaderField: "X-User-Id")
-        urlRequest.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
-        urlRequest.timeoutInterval = 60
-        urlRequest.assumesHTTP3Capable = false
+        let body = CreatePollBody(
+            title: title,
+            content: content ?? "",
+            wall: wall.rawValue,
+            postType: "poll",
+            pollOptions: pollOptions
+        )
 
-        var body = Data()
-        body.appendFormField(name: "title", value: title, boundary: boundary)
-        body.appendFormField(name: "content", value: content ?? "", boundary: boundary)
-        body.appendFormField(name: "wall", value: wall.rawValue, boundary: boundary)
-        body.appendFormField(name: "postType", value: "poll", boundary: boundary)
-        for option in pollOptions {
-            body.appendFormField(name: "pollOptions", value: option, boundary: boundary)
-        }
-        body.append("--\(boundary)--\r\n".data(using: .utf8) ?? Data())
-        urlRequest.httpBody = body
+        let request = try APIRequestBuilder()
+            .setPath("/posts")
+            .setMethod(.POST)
+            .setToken(token)
+            .setUserId(userId)
+            .setBody(body)
+            .build()
 
-        let data = try await NetworkClient.shared.performMultipartRequest(urlRequest)
-        return try JSONDecoder().decode(Post.self, from: data)
+        return try await networkClient.performRequest(request)
     }
     
-    /// Vote on a poll option
     func votePoll(postId: UUID, optionId: UUID, token: String, userId: String) async throws -> PollDTO {
         let body = PollVoteRequest(optionId: optionId)
         
@@ -303,7 +279,6 @@ class PostService: PostServiceProtocol {
         return response.poll
     }
     
-    /// Fetch poll details
     func getPoll(postId: UUID, viewResults: Bool, token: String, userId: String) async throws -> PollDTO {
         let queryItems = [URLQueryItem(name: "viewResults", value: viewResults ? "true" : "false")]
         

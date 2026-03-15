@@ -24,6 +24,9 @@ protocol ChatWebSocketManagerProtocol {
     func sendTypingIndicator(receiverId: String)
     func markAsRead(messageId: String)
     func updateToken(_ token: String)
+    /// Fires when the server rejects the WebSocket handshake due to an expired token.
+    /// Observers should trigger an immediate token refresh.
+    var tokenRefreshNeededPublisher: AnyPublisher<Void, Never> { get }
 }
 
 /// WebSocket manager for real-time chat with automatic reconnection
@@ -40,6 +43,7 @@ class ChatWebSocketManager: ChatWebSocketManagerProtocol {
     private var typingSubject = PassthroughSubject<String, Never>()
     private var readReceiptSubject = PassthroughSubject<String, Never>()
     private var unreadCountSubject = PassthroughSubject<Int, Never>()
+    private var tokenRefreshNeededSubject = PassthroughSubject<Void, Never>()
     
     private var token: String?
     private var userId: String?
@@ -75,6 +79,10 @@ class ChatWebSocketManager: ChatWebSocketManagerProtocol {
         unreadCountSubject.eraseToAnyPublisher()
     }
     
+    var tokenRefreshNeededPublisher: AnyPublisher<Void, Never> {
+        tokenRefreshNeededSubject.eraseToAnyPublisher()
+    }
+    
     // MARK: - Initialization
     
     init() {}
@@ -95,6 +103,7 @@ class ChatWebSocketManager: ChatWebSocketManagerProtocol {
     ///   - token: JWT authentication token
     ///   - userId: Current user ID
     func connect(token: String, userId: String) {
+        isIntentionallyDisconnected = false
         self.token = token
         self.userId = userId
         
@@ -120,7 +129,9 @@ class ChatWebSocketManager: ChatWebSocketManagerProtocol {
     }
     
     /// Disconnect from WebSocket
+    private var isIntentionallyDisconnected = false
     func disconnect() {
+        isIntentionallyDisconnected = true
         reconnectTask?.cancel()
         heartbeatTask?.cancel()
         receiveTask?.cancel()
@@ -235,9 +246,9 @@ class ChatWebSocketManager: ChatWebSocketManagerProtocol {
         receiveTask = Task { [weak self] in
             while !Task.isCancelled {
                 guard let self = self else { return }
-                
+                guard let task = await MainActor.run(body: { self.webSocketTask }) else { break }
                 do {
-                    let message = try await webSocketTask?.receive()
+                    let message = try await task.receive()
                     await self.handleReceivedMessage(message)
                 } catch {
                     Logger.chat.error("WebSocket receive error: \(error)")
@@ -375,6 +386,7 @@ class ChatWebSocketManager: ChatWebSocketManagerProtocol {
             webSocketTask?.cancel(with: .goingAway, reason: nil)
             webSocketTask = nil
             connectionStateSubject.send(.disconnected)
+            tokenRefreshNeededSubject.send()
             return
         }
 
@@ -391,7 +403,7 @@ class ChatWebSocketManager: ChatWebSocketManagerProtocol {
             reconnectTask?.cancel()
             reconnectTask = Task { [weak self] in
                 try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
-                guard !Task.isCancelled else { return }
+                guard !Task.isCancelled, self?.isIntentionallyDisconnected == false else { return }
                 self?.establishConnection()
             }
         } else {

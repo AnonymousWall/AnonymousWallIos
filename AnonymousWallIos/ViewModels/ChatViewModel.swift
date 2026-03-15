@@ -24,13 +24,15 @@ class ChatViewModel: ObservableObject {
     
     // MARK: - Private Properties
     
-    private let repository: ChatRepository
+    private let repository: ChatRepositoryProtocol
     private let messageStore: MessageStore
     private var cancellables = Set<AnyCancellable>()
     private var loadTask: Task<Void, Never>?
     private var typingTimer: Timer?
     private var isViewActive = false
     private var currentAuthState: AuthState?
+    private var pagination = Pagination()
+    var hasMoreMessages: Bool { pagination.hasMorePages }
     
     let otherUserId: String
     let otherUserName: String
@@ -40,7 +42,7 @@ class ChatViewModel: ObservableObject {
     init(
         otherUserId: String,
         otherUserName: String,
-        repository: ChatRepository,
+        repository: ChatRepositoryProtocol,
         messageStore: MessageStore
     ) {
         self.otherUserId = otherUserId
@@ -64,31 +66,65 @@ class ChatViewModel: ObservableObject {
             errorMessage = "Authentication required"
             return
         }
-        
+
         currentAuthState = authState
-        
+
         loadTask?.cancel()
         loadTask = Task { [weak self] in
             guard let self = self else { return }
-            
+
             isLoadingMessages = true
             errorMessage = nil
-            
+            pagination.reset()
+
             do {
-                let loadedMessages = try await repository.loadMessagesAndConnect(
+                let response = try await repository.loadMessagesAndConnect(
                     otherUserId: otherUserId,
                     token: token,
                     userId: userId,
                     page: 1,
                     limit: 50
                 )
-                messages = loadedMessages
+                pagination.update(totalPages: response.pagination.totalPages)
+                await refreshMessagesFromStore()
+                markConversationAsRead(authState: authState)
             } catch {
                 errorMessage = "Failed to load messages: \(error.localizedDescription)"
                 Logger.chat.error("Failed to load messages: \(error)")
             }
-            
+
             isLoadingMessages = false
+        }
+    }
+    
+    func loadMoreMessages(authState: AuthState) {
+        guard !isLoadingMore,
+              pagination.hasMorePages,
+              let token = authState.authToken,
+              let userId = authState.currentUser?.id else { return }
+
+        let nextPage = pagination.nextPage()   // peek, no mutation
+        isLoadingMore = true
+
+        Task { [weak self] in
+            guard let self = self else { return }
+
+            do {
+                let response = try await repository.loadMessages(
+                    otherUserId: otherUserId,
+                    token: token,
+                    userId: userId,
+                    page: nextPage,
+                    limit: 50
+                )
+                pagination.commitNextPage(totalPages: response.pagination.totalPages)  // commit on success
+                await refreshMessagesFromStore()
+            } catch {
+                // nothing to roll back — currentPage was never changed
+                Logger.chat.error("Failed to load more messages: \(error)")
+            }
+
+            isLoadingMore = false
         }
     }
     
@@ -198,8 +234,11 @@ class ChatViewModel: ObservableObject {
     
     func onTextChanged() {
         typingTimer?.invalidate()
-        typingTimer = nil
-        sendTypingIndicator()
+        typingTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: false) { [weak self] _ in
+            Task { @MainActor [weak self] in
+                self?.sendTypingIndicator()
+            }
+        }
     }
     
     func viewDidAppear() {
@@ -208,7 +247,7 @@ class ChatViewModel: ObservableObject {
     
     func disconnect() {
         isViewActive = false
-        repository.disconnect()
+        repository.leaveConversation(otherUserId: otherUserId)
     }
     
     func retry(authState: AuthState) {
@@ -218,7 +257,7 @@ class ChatViewModel: ObservableObject {
     // MARK: - Private Methods
     
     private func setupObservers() {
-        repository.$connectionState
+        repository.connectionStatePublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] state in
                 self?.connectionState = state

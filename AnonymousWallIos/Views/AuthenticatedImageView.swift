@@ -83,7 +83,7 @@ struct AuthenticatedImageView: View {
 
             if statusCode == 401 {
                 let refreshed = await NetworkClient.shared.refreshAccessToken()
-                if refreshed,
+                if refreshed == true,
                    let newToken = KeychainHelper.shared.get(
                     AppConfiguration.shared.authTokenKey) {
                     var retryRequest = request

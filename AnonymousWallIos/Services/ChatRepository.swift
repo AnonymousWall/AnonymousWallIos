@@ -11,45 +11,40 @@ import Combine
 
 /// Repository combining REST and WebSocket for chat functionality
 @MainActor
-class ChatRepository {
+class ChatRepository: ChatRepositoryProtocol {
     
     // MARK: - Properties
     
-    private let chatService: ChatServiceProtocol
+    private let chatService: ChatAPIServiceProtocol
     private let webSocketManager: ChatWebSocketManagerProtocol
     private let messageStore: MessageStore
+    private let mediaService: MediaServiceProtocol
     
     private var cancellables = Set<AnyCancellable>()
     private var tokenRefreshObserver: NSObjectProtocol?
     
-    // Track pending temporary messages for reconciliation
-    private var pendingTemporaryMessages: [String: String] = [:] // [tempId: receiverId]
-    
-    // Track active conversations that need recovery on reconnect
+    private var pendingTemporaryMessages: [String: String] = [:]
     private var activeConversations: Set<String> = []
     private var shouldMaintainConnection = false
-    
-    // Store auth credentials for recovery
     private var cachedToken: String?
     private var cachedUserId: String?
     
-    // Subject for read status updates
     private var conversationReadSubject = PassthroughSubject<String, Never>()
     private var readReceiptSubject = PassthroughSubject<String, Never>()
-    
-    // Subject for message updates (emitted AFTER reconciliation)
     private var messageSubject = PassthroughSubject<(Message, String), Never>()
     
-    // Published properties for UI observation
     @Published private(set) var connectionState: WebSocketConnectionState = .disconnected
     
-    // Combine publishers
     var messagePublisher: AnyPublisher<(Message, String), Never> {
         messageSubject.eraseToAnyPublisher()
     }
     
     var typingPublisher: AnyPublisher<String, Never> {
         webSocketManager.typingPublisher
+    }
+    
+    var connectionStatePublisher: AnyPublisher<WebSocketConnectionState, Never> {
+        $connectionState.eraseToAnyPublisher()
     }
     
     var conversationReadPublisher: AnyPublisher<String, Never> {
@@ -67,13 +62,15 @@ class ChatRepository {
     // MARK: - Initialization
     
     init(
-        chatService: ChatServiceProtocol = ChatService.shared,
+        chatService: ChatAPIServiceProtocol = ChatAPIService.shared,
         webSocketManager: ChatWebSocketManagerProtocol,
-        messageStore: MessageStore
+        messageStore: MessageStore,
+        mediaService: MediaServiceProtocol = MediaService.shared
     ) {
         self.chatService = chatService
         self.webSocketManager = webSocketManager
         self.messageStore = messageStore
+        self.mediaService = mediaService
         
         setupWebSocketObservers()
     }
@@ -98,8 +95,6 @@ class ChatRepository {
         webSocketManager.disconnect()
     }
 
-    /// Updates the cached token used for WebSocket recovery and REST fallback calls.
-    /// Called when NetworkClient silently refreshes the access token.
     func updateCachedToken(_ token: String) {
         cachedToken = token
         webSocketManager.updateToken(token)
@@ -115,15 +110,21 @@ class ChatRepository {
     }
     
     func disconnectForBackground() {
+        shouldMaintainConnection = false
         webSocketManager.disconnect()
+    }
+    
+    func reconnectForForeground() {
+        guard let token = cachedToken, let userId = cachedUserId else { return }
+        connect(token: token, userId: userId)
     }
     
     // MARK: - Message Operations
     
-    func loadMessagesAndConnect(otherUserId: String, token: String, userId: String, page: Int = 1, limit: Int = 50) async throws -> [Message] {
+    func loadMessagesAndConnect(otherUserId: String, token: String, userId: String, page: Int = 1, limit: Int = 50) async throws -> MessageHistoryResponse {
         activeConversations.insert(otherUserId)
         connect(token: token, userId: userId)
-        
+
         let response = try await chatService.getMessageHistory(
             otherUserId: otherUserId,
             page: page,
@@ -131,12 +132,12 @@ class ChatRepository {
             token: token,
             userId: userId
         )
-        
+
         await messageStore.addMessages(response.messages, for: otherUserId)
-        return response.messages
+        return response
     }
     
-    func loadMessages(otherUserId: String, token: String, userId: String, page: Int = 1, limit: Int = 50) async throws -> [Message] {
+    func loadMessages(otherUserId: String, token: String, userId: String, page: Int = 1, limit: Int = 50) async throws -> MessageHistoryResponse {
         let response = try await chatService.getMessageHistory(
             otherUserId: otherUserId,
             page: page,
@@ -144,14 +145,12 @@ class ChatRepository {
             token: token,
             userId: userId
         )
-        
+
         await messageStore.addMessages(response.messages, for: otherUserId)
-        return response.messages
+        return response
     }
     
-    /// Send text message with optimistic UI update
     func sendMessage(receiverId: String, content: String, token: String, userId: String) async throws -> String {
-        // Create temporary message for optimistic UI
         let temporaryId = UUID().uuidString
         let tempMessage = TemporaryMessage(
             temporaryId: temporaryId,
@@ -182,6 +181,7 @@ class ChatRepository {
                         confirmedMessage: confirmedMessage,
                         receiverId: receiverId
                     )
+                    messageSubject.send((confirmedMessage, receiverId))
                 } catch {
                     await messageStore.updateLocalStatus(
                         messageId: temporaryId,
@@ -189,7 +189,10 @@ class ChatRepository {
                         status: .failed
                     )
                     pendingTemporaryMessages.removeValue(forKey: temporaryId)
-                    throw error
+                    let updatedMessages = await messageStore.getMessages(for: receiverId)
+                    if let failedMessage = updatedMessages.first(where: { $0.id == temporaryId }) {
+                        messageSubject.send((failedMessage, receiverId))
+                    }
                 }
             }
         }
@@ -197,35 +200,27 @@ class ChatRepository {
         return temporaryId
     }
     
-    /// Send image message — upload first, then send via REST
-    /// No optimistic UI since we must wait for upload to get URL
+    /// Send image message — presign + upload directly to OCI, then send objectName via REST
     func sendImageMessage(image: UIImage, receiverId: String, token: String, userId: String) async throws {
-        // Step 1: Compress image (ChatRepository is @MainActor; jpegData is safe to call directly)
-        let resized = image.resized(maxDimension: 1024)
-        guard let jpeg = resized.jpegData(compressionQuality: 0.6) else {
-            throw NetworkError.serverError("Failed to compress image")
-        }
-        
-        // Step 2: Upload image → get URL
-        let imageUrl = try await chatService.uploadChatImage(jpeg, token: token, userId: userId)
-        
-        // Step 3: Send message with imageUrl via REST
+        let objectName = try await mediaService.uploadImage(image, folder: "chat", token: token)
+
         let confirmedMessage = try await chatService.sendImageMessage(
             receiverId: receiverId,
-            imageUrl: imageUrl,
+            imageObjectName: objectName,
             token: token,
             userId: userId
         )
-        
-        // Step 4: Add confirmed message directly to store
+
         await messageStore.addMessage(confirmedMessage, for: receiverId)
-        
-        // Step 5: Emit so ViewModel refreshes
         messageSubject.send((confirmedMessage, receiverId))
     }
     
     func getCachedMessages(for otherUserId: String) async -> [Message] {
         return await messageStore.getMessages(for: otherUserId)
+    }
+    
+    func leaveConversation(otherUserId: String) {
+        activeConversations.remove(otherUserId)
     }
     
     func markAsRead(messageId: String, otherUserId: String, token: String, userId: String) async throws {
@@ -254,11 +249,11 @@ class ChatRepository {
     }
     
     func recoverMessages(otherUserId: String, token: String, userId: String) async throws -> [Message] {
-        guard let lastMessage = await messageStore.getLastMessage(for: otherUserId),
-              let lastTimestamp = lastMessage.timestamp else {
-            return try await loadMessages(otherUserId: otherUserId, token: token, userId: userId)
+        guard await messageStore.getLastMessage(for: otherUserId) != nil else {
+            let response = try await loadMessages(otherUserId: otherUserId, token: token, userId: userId)
+            return response.messages
         }
-        
+
         let response = try await chatService.getMessageHistory(
             otherUserId: otherUserId,
             page: 1,
@@ -266,12 +261,10 @@ class ChatRepository {
             token: token,
             userId: userId
         )
-        
-        let newerMessages = response.messages.filter { message in
-            guard let messageTimestamp = message.timestamp else { return false }
-            return messageTimestamp > lastTimestamp
-        }
-        
+
+        let existingIds = Set(await messageStore.getMessages(for: otherUserId).map { $0.id })
+        let newerMessages = response.messages.filter { !existingIds.contains($0.id) }
+
         await messageStore.addMessages(newerMessages, for: otherUserId)
         return newerMessages
     }
@@ -388,6 +381,19 @@ class ChatRepository {
                   let newToken = notification.userInfo?["token"] as? String else { return }
             self.updateCachedToken(newToken)
         }
+        
+        webSocketManager.tokenRefreshNeededPublisher
+            .sink { [weak self] in
+                guard let self else { return }
+                Logger.chat.info("WebSocket requested token refresh — triggering immediately")
+                Task {
+                    let result = await NetworkClient.shared.refreshAccessToken()
+                    if result == false {
+                        Logger.auth.warning("Token refresh failed during WebSocket recovery — logout expected")
+                    }
+                }
+            }
+            .store(in: &cancellables)
     }
     
     private func updateReadReceiptForMessage(messageId: String) async {
