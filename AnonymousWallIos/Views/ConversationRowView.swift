@@ -60,7 +60,7 @@ struct ConversationRowView: View {
     }
 
     private func lastMessagePreview(_ message: Message) -> String {
-        if message.imageUrl != nil && message.content.isEmpty {
+        if let imageUrl = message.imageUrl, !imageUrl.isEmpty, message.content.isEmpty {
             return "📷 Photo"
         }
         return message.content
