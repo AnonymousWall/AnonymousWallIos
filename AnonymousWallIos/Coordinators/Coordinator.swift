@@ -58,9 +58,3 @@ extension Coordinator {
         }
     }
 }
-
-extension Notification.Name {
-    /// Posted when all coordinators should reset their navigation stacks to root.
-    /// Fired on app foreground when the user's session is no longer valid.
-    static let resetNavigation = Notification.Name("resetNavigation")
-}

@@ -8,7 +8,7 @@
 import Foundation
 
 /// Mock ChatService for testing with configurable responses
-class MockChatService: ChatServiceProtocol {
+class MockChatService: ChatAPIServiceProtocol {
     
     // MARK: - Configuration
     
@@ -93,7 +93,7 @@ class MockChatService: ChatServiceProtocol {
         }
     }
     
-    func sendImageMessage(receiverId: String, imageUrl: String, token: String, userId: String) async throws -> Message {
+    func sendImageMessage(receiverId: String, imageObjectName imageUrl: String, token: String, userId: String) async throws -> Message {
         sendImageMessageCalled = true
         
         switch sendImageMessageBehavior {
@@ -140,7 +140,7 @@ class MockChatService: ChatServiceProtocol {
         case .success:
             return MessageHistoryResponse(
                 messages: mockMessages,
-                pagination: MessagePagination(
+                pagination: PaginationInfo(
                     page: page,
                     limit: limit,
                     total: mockMessages.count,
@@ -154,7 +154,7 @@ class MockChatService: ChatServiceProtocol {
         case .emptyState:
             return MessageHistoryResponse(
                 messages: [],
-                pagination: MessagePagination(
+                pagination: PaginationInfo(
                     page: page,
                     limit: limit,
                     total: 0,

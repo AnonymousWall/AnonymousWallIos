@@ -151,7 +151,7 @@ class WallViewModel: ObservableObject {
             isLoadingMore = false
         }
         
-        let nextPage = pagination.advanceToNextPage()
+        let nextPage = pagination.nextPage()
         
         do {
             let response = try await PostService.shared.fetchPosts(
