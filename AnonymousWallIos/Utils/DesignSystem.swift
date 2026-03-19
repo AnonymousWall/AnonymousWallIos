@@ -137,7 +137,7 @@ extension Font {
     static let labelSmall    = Font.system(size: 11, weight: .semibold)
 
     // Caption
-    static let captionFont   = Font.system(size: 11, weight: .medium)
+    static let captionMedium = Font.system(size: 11, weight: .medium)
     static let captionCaps   = Font.system(size: 10, weight: .semibold)
 }
 
@@ -161,4 +161,21 @@ enum Radius {
     static let lg:   CGFloat = 16
     static let xl:   CGFloat = 20
     static let pill: CGFloat = 100
+}
+
+// MARK: - Animation Tokens
+
+enum Animations {
+    static let fast   = Animation.easeInOut(duration: 0.15)
+    static let normal = Animation.easeInOut(duration: 0.25)
+    static let slow   = Animation.easeInOut(duration: 0.4)
+}
+
+// MARK: - Opacity Tokens
+
+enum Opacity {
+    static let subtle: Double = 0.05
+    static let light:  Double = 0.10
+    static let medium: Double = 0.15
+    static let strong: Double = 0.30
 }

@@ -16,7 +16,7 @@ struct ChipBadge: View {
         HStack(spacing: Spacing.xs) {
             if let icon {
                 Image(systemName: icon)
-                    .font(.captionFont)
+                    .font(.captionMedium)
                     .accessibilityHidden(true)
             }
             Text(label)

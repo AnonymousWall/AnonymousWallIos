@@ -24,103 +24,112 @@ struct WallView: View {
             VStack(spacing: 0) {
                 // Password setup alert banner
                 if authState.needsPasswordSetup {
-                    HStack {
-                        Image(systemName: "exclamationmark.triangle.fill")
-                            .foregroundColor(.orange)
-                        Text("Please set up your password to secure your account")
-                            .font(.caption)
-                            .foregroundColor(.textPrimary)
-                        Spacer()
-                        Button("Set Now") {
-                            showSetPassword = true
-                        }
-                        .font(.caption)
-                        .fontWeight(.semibold)
-                        .foregroundColor(.blue)
+                    PasswordSetupBannerView {
+                        showSetPassword = true
                     }
-                    .padding()
-                    .background(Color.orange.opacity(0.1))
-                    .cornerRadius(8)
-                    .padding()
                 }
                 
                 // Post list
                 ScrollView {
-                    if viewModel.isLoadingPosts && viewModel.posts.isEmpty {
-                        VStack {
-                            Spacer()
-                            ProgressView("Loading posts...")
-                            Spacer()
-                        }
-                        .frame(maxWidth: .infinity, minHeight: minimumScrollableHeight)
-                    } else if viewModel.posts.isEmpty && !viewModel.isLoadingPosts {
-                        VStack {
-                            Spacer()
-                            VStack(spacing: 16) {
-                                Image(systemName: "bubble.left.and.bubble.right")
-                                    .font(.system(size: 60))
-                                    .foregroundColor(.textSecondary)
-                                    .accessibilityHidden(true)
-                                Text("No posts yet")
-                                    .font(.headline)
-                                    .foregroundColor(.textSecondary)
-                                Text("Be the first to post!")
-                                    .font(.subheadline)
-                                    .foregroundColor(.textSecondary)
+                    Group {
+                        if viewModel.isLoadingPosts && viewModel.posts.isEmpty {
+                            VStack {
+                                Spacer()
+                                ProgressView("Loading posts...")
+                                Spacer()
                             }
-                            .accessibilityElement(children: .combine)
-                            .accessibilityLabel("No posts yet. Be the first to post!")
-                            Spacer()
-                        }
-                        .frame(maxWidth: .infinity, minHeight: minimumScrollableHeight)
-                    } else {
-                        LazyVStack(spacing: 12) {
-                            ForEach(viewModel.posts) { post in
-                                if let index = viewModel.posts.firstIndex(where: { $0.id == post.id }) {
-                                    NavigationLink(destination: PostDetailView(post: Binding(
-                                        get: { viewModel.posts[index] },
-                                        set: { viewModel.posts[index] = $0 }
-                                    ))) {
-                                        PostRowView(
-                                            post: post,
-                                            isOwnPost: post.author.id == authState.currentUser?.id,
-                                            onLike: { viewModel.toggleLike(for: post, authState: authState) },
-                                            onDelete: { viewModel.deletePost(post, authState: authState) }
-                                        )
+                            .frame(maxWidth: .infinity, minHeight: minimumScrollableHeight)
+                            .transition(.opacity)
+                        } else if viewModel.posts.isEmpty && !viewModel.isLoadingPosts {
+                            VStack {
+                                Spacer()
+                                VStack(spacing: 16) {
+                                    Image(systemName: "bubble.left.and.bubble.right")
+                                        .font(.system(size: 60))
+                                        .foregroundColor(.textSecondary)
+                                        .accessibilityHidden(true)
+                                    Text("No posts yet")
+                                        .font(.headline)
+                                        .foregroundColor(.textSecondary)
+                                    Text("Be the first to post!")
+                                        .font(.subheadline)
+                                        .foregroundColor(.textSecondary)
+                                }
+                                .accessibilityElement(children: .combine)
+                                .accessibilityLabel("No posts yet. Be the first to post!")
+                                Spacer()
+                            }
+                            .frame(maxWidth: .infinity, minHeight: minimumScrollableHeight)
+                            .transition(.opacity)
+                        } else {
+                            LazyVStack(spacing: 12) {
+                                ForEach(viewModel.posts) { post in
+                                    if let index = viewModel.posts.firstIndex(where: { $0.id == post.id }) {
+                                        NavigationLink(destination: PostDetailView(post: Binding(
+                                            get: { viewModel.posts[index] },
+                                            set: { viewModel.posts[index] = $0 }
+                                        ))) {
+                                            PostRowView(
+                                                post: post,
+                                                isOwnPost: post.author.id == authState.currentUser?.id,
+                                                onLike: { viewModel.toggleLike(for: post, authState: authState) },
+                                                onDelete: { viewModel.deletePost(post, authState: authState) }
+                                            )
+                                        }
+                                        .buttonStyle(PlainButtonStyle())
+                                        .accessibilityLabel("View post: \(post.title)")
+                                        .accessibilityHint("Double tap to view full post and comments")
+                                        .onAppear {
+                                            viewModel.loadMoreIfNeeded(for: post, authState: authState)
+                                        }
                                     }
-                                    .buttonStyle(PlainButtonStyle())
-                                    .accessibilityLabel("View post: \(post.title)")
-                                    .accessibilityHint("Double tap to view full post and comments")
-                                    .onAppear {
-                                        viewModel.loadMoreIfNeeded(for: post, authState: authState)
+                                }
+
+                                // Loading indicator at bottom
+                                if viewModel.isLoadingMore {
+                                    HStack {
+                                        Spacer()
+                                        ProgressView()
+                                            .padding()
+                                        Spacer()
                                     }
                                 }
                             }
-                            
-                            // Loading indicator at bottom
-                            if viewModel.isLoadingMore {
-                                HStack {
-                                    Spacer()
-                                    ProgressView()
-                                        .padding()
-                                    Spacer()
-                                }
-                            }
+                            .padding()
+                            .transition(.opacity)
                         }
-                        .padding()
                     }
+                    .animation(Animations.normal, value: viewModel.isLoadingPosts)
+                    .animation(Animations.normal, value: viewModel.posts.isEmpty)
                 }
                 .refreshable {
                     await viewModel.refreshPosts(authState: authState)
                 }
                 .tint(.accentPurple)
-                
+
                 // Error message
                 if let errorMessage = viewModel.errorMessage {
-                    Text(errorMessage)
-                        .foregroundColor(.accentRed)
-                        .font(.caption)
-                        .padding()
+                    HStack {
+                        Text(errorMessage)
+                            .foregroundColor(.accentRed)
+                            .font(.captionMedium)
+                        Spacer()
+                        Button {
+                            viewModel.errorMessage = nil
+                        } label: {
+                            Image(systemName: "xmark")
+                                .font(.captionMedium)
+                                .foregroundColor(.accentRed)
+                        }
+                        .accessibilityLabel("Dismiss error")
+                    }
+                    .padding(.horizontal, Spacing.lg)
+                    .padding(.vertical, Spacing.sm)
+                    .background(Color.accentRed.opacity(Opacity.light))
+                    .cornerRadius(Radius.sm)
+                    .padding(.horizontal, Spacing.lg)
+                    .accessibilityElement(children: .combine)
+                    .accessibilityLabel("Error: \(errorMessage). Tap to dismiss.")
                 }
             }
             .navigationTitle("Wall")
