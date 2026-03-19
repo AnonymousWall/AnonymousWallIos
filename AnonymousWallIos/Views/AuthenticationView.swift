@@ -37,7 +37,7 @@ struct AuthenticationView: View {
                         
                         // App Name
                         VStack(spacing: 8) {
-                            Text("Anonymous Wall")
+                            Text("Echo Talk")
                                 .font(.system(size: 42, weight: .heavy))
                                 .foregroundColor(.white)
                                 .shadow(color: Color.black.opacity(0.2), radius: 4, x: 0, y: 2)

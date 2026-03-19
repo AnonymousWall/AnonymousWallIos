@@ -97,6 +97,19 @@ struct Post: Codable, Identifiable, Hashable {
         self.poll = poll
     }
     
+    static let placeholder = Post(
+        id: "placeholder",
+        title: "Placeholder Post Title",
+        content: "Placeholder post content for skeleton loading display.",
+        wall: "CAMPUS",
+        likes: 0,
+        comments: 0,
+        liked: false,
+        author: Post.Author(id: "placeholder", profileName: "Loading", isAnonymous: true),
+        createdAt: "",
+        updatedAt: ""
+    )
+
     /// Create a copy of this post with updated like status
     func withUpdatedLike(liked: Bool, likes: Int) -> Post {
         return Post(

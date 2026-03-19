@@ -7,6 +7,7 @@ import SwiftUI
 
 struct ConversationRowView: View {
     let conversation: Conversation
+    var isLoading: Bool = false
 
     var body: some View {
         HStack(spacing: 12) {
@@ -57,6 +58,7 @@ struct ConversationRowView: View {
             }
         }
         .padding(.vertical, 4)
+        .skeletonLoading(isLoading)
     }
 
     private func lastMessagePreview(_ message: Message) -> String {

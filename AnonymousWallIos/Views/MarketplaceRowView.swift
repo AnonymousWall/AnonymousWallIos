@@ -12,6 +12,7 @@ struct MarketplaceRowView: View {
     let isOwnItem: Bool
     var onDelete: () -> Void
     var onTapAuthor: (() -> Void)?
+    var isLoading: Bool = false
 
     @EnvironmentObject var authState: AuthState
     @EnvironmentObject var blockViewModel: BlockViewModel
@@ -98,7 +99,7 @@ struct MarketplaceRowView: View {
 
                 Text(item.formattedPrice)
                     .font(.title3.bold())
-                    .foregroundColor(.green)
+                    .foregroundColor(.accentGreen)
                     .accessibilityLabel("Price: \(item.formattedPrice)")
             }
 
@@ -204,6 +205,7 @@ struct MarketplaceRowView: View {
             RoundedRectangle(cornerRadius: 16)
                 .stroke(Color.surfaceSecondary, lineWidth: 0.5)
         )
+        .skeletonLoading(isLoading)
         .fullScreenCover(item: $selectedImageViewer) { viewer in
             FullScreenImageViewer(imageURLs: item.imageUrls, initialIndex: viewer.index)
         }

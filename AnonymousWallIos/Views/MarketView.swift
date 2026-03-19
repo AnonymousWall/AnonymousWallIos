@@ -100,12 +100,12 @@ struct MarketView: View {
                 // Feed
                 ScrollView {
                     if activeViewModel.isLoading && activeViewModel.items.isEmpty {
-                        VStack {
-                            Spacer()
-                            ProgressView("Loading items...")
-                            Spacer()
+                        LazyVStack(spacing: 12) {
+                            ForEach(0..<4, id: \.self) { _ in
+                                MarketplaceRowView(item: .placeholder, isOwnItem: false, onDelete: {}, isLoading: true)
+                            }
                         }
-                        .frame(maxWidth: .infinity, minHeight: minimumScrollableHeight)
+                        .padding()
                     } else if activeViewModel.items.isEmpty && !activeViewModel.isLoading {
                         VStack {
                             Spacer()
@@ -258,7 +258,7 @@ struct MarketView: View {
         .sheet(isPresented: $showWallPicker) {
             WallPickerSheet(selectedWall: $selectedWall)
                 .presentationDetents([.height(260)])
-                .presentationDragIndicator(.hidden)
+                .presentationDragIndicator(.visible)
                 .presentationCornerRadius(28)
         }
         .onChange(of: selectedWall) { _, _ in

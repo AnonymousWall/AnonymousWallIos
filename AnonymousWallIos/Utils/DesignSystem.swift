@@ -179,3 +179,48 @@ enum Opacity {
     static let medium: Double = 0.15
     static let strong: Double = 0.30
 }
+
+// MARK: - Shimmer
+
+struct ShimmerModifier: ViewModifier {
+    @State private var phase: CGFloat = 0
+
+    func body(content: Content) -> some View {
+        content
+            .overlay(
+                LinearGradient(
+                    stops: [
+                        .init(color: .clear, location: 0),
+                        .init(color: .white.opacity(0.25), location: 0.5),
+                        .init(color: .clear, location: 1)
+                    ],
+                    startPoint: .init(x: phase - 0.3, y: 0.5),
+                    endPoint: .init(x: phase + 0.3, y: 0.5)
+                )
+                .blendMode(.plusLighter)
+                .allowsHitTesting(false)
+            )
+            .onAppear {
+                withAnimation(.linear(duration: 1.4).repeatForever(autoreverses: false)) {
+                    phase = 1.3
+                }
+            }
+    }
+}
+
+extension View {
+    func shimmer() -> some View {
+        modifier(ShimmerModifier())
+    }
+
+    @ViewBuilder
+    func skeletonLoading(_ isLoading: Bool) -> some View {
+        if isLoading {
+            redacted(reason: .placeholder)
+                .shimmer()
+                .allowsHitTesting(false)
+        } else {
+            self
+        }
+    }
+}

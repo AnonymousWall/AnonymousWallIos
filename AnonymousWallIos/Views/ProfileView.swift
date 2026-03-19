@@ -494,9 +494,9 @@ struct ProfileCommentRowView: View {
     var parentBadgeColor: Color {
         switch parentType {
         case "POST": return .accentBlue
-        case "INTERNSHIP": return .orange
-        case "MARKETPLACE": return .green
-        default: return .gray
+        case "INTERNSHIP": return .accentOrange
+        case "MARKETPLACE": return .accentGreen
+        default: return .textTertiary
         }
     }
     

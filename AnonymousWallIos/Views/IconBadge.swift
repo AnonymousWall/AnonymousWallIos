@@ -2,7 +2,9 @@
 //  IconBadge.swift
 //  AnonymousWallIos
 //
-//  Coloured icon container — used in sheets, settings rows, and type pickers.
+//  Coloured icon container — a rounded-square background with a centred SF Symbol.
+//  Use in sheet option rows, settings rows, and post type pickers.
+//  For numeric count indicators use BadgeView. For text pill labels use ChipBadge.
 //
 
 import SwiftUI

@@ -33,12 +33,12 @@ struct WallView: View {
                 ScrollView {
                     Group {
                         if viewModel.isLoadingPosts && viewModel.posts.isEmpty {
-                            VStack {
-                                Spacer()
-                                ProgressView("Loading posts...")
-                                Spacer()
+                            LazyVStack(spacing: 12) {
+                                ForEach(0..<4, id: \.self) { _ in
+                                    PostRowView(post: .placeholder, isOwnPost: false, onLike: {}, onDelete: {}, isLoading: true)
+                                }
                             }
-                            .frame(maxWidth: .infinity, minHeight: minimumScrollableHeight)
+                            .padding()
                             .transition(.opacity)
                         } else if viewModel.posts.isEmpty && !viewModel.isLoadingPosts {
                             VStack {

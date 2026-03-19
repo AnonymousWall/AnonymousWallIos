@@ -21,6 +21,21 @@ struct Internship: Codable, Identifiable, Hashable {
     let createdAt: String
     let updatedAt: String
 
+    static let placeholder = Internship(
+        id: "placeholder",
+        company: "Placeholder Company",
+        role: "Placeholder Role Title",
+        salary: nil,
+        location: nil,
+        description: nil,
+        deadline: nil,
+        wall: "CAMPUS",
+        comments: 0,
+        author: Post.Author(id: "placeholder", profileName: "Loading", isAnonymous: false),
+        createdAt: "",
+        updatedAt: ""
+    )
+
     // Hashable conformance based on id
     func hash(into hasher: inout Hasher) {
         hasher.combine(id)

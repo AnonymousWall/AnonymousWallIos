@@ -13,6 +13,7 @@ struct PostRowView: View {
     var onLike: () -> Void
     var onDelete: () -> Void
     var onTapAuthor: (() -> Void)?
+    var isLoading: Bool = false
     
     @EnvironmentObject var authState: AuthState
     @EnvironmentObject var blockViewModel: BlockViewModel
@@ -195,6 +196,7 @@ struct PostRowView: View {
             }
         }
         }
+        .skeletonLoading(isLoading)
         .fullScreenCover(item: $selectedImageViewer) { item in
             FullScreenImageViewer(imageURLs: post.imageUrls, initialIndex: item.index)
         }

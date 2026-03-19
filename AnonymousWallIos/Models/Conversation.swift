@@ -18,4 +18,11 @@ struct Conversation: Codable, Identifiable {
     
     // Identifiable conformance
     var id: String { userId }
+
+    static let placeholder = Conversation(
+        userId: "placeholder",
+        profileName: "Loading",
+        lastMessage: nil,
+        unreadCount: 0
+    )
 }

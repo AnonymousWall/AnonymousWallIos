@@ -70,6 +70,20 @@ struct MarketplaceItem: Codable, Identifiable, Hashable {
         self.updatedAt = updatedAt
     }
 
+    static let placeholder = MarketplaceItem(
+        id: "placeholder",
+        title: "Placeholder Listing Title",
+        price: 0,
+        description: nil,
+        category: "books",
+        condition: "new",
+        wall: "CAMPUS",
+        comments: 0,
+        author: Post.Author(id: "placeholder", profileName: "Loading", isAnonymous: false),
+        createdAt: "",
+        updatedAt: ""
+    )
+
     // Hashable conformance based on id
     func hash(into hasher: inout Hasher) {
         hasher.combine(id)
