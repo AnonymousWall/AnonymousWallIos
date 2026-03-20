@@ -137,7 +137,7 @@ extension Font {
     static let labelSmall    = Font.system(size: 11, weight: .semibold)
 
     // Caption
-    static let captionFont   = Font.system(size: 11, weight: .medium)
+    static let captionMedium = Font.system(size: 11, weight: .medium)
     static let captionCaps   = Font.system(size: 10, weight: .semibold)
 }
 
@@ -161,4 +161,66 @@ enum Radius {
     static let lg:   CGFloat = 16
     static let xl:   CGFloat = 20
     static let pill: CGFloat = 100
+}
+
+// MARK: - Animation Tokens
+
+enum Animations {
+    static let fast   = Animation.easeInOut(duration: 0.15)
+    static let normal = Animation.easeInOut(duration: 0.25)
+    static let slow   = Animation.easeInOut(duration: 0.4)
+}
+
+// MARK: - Opacity Tokens
+
+enum Opacity {
+    static let subtle: Double = 0.05
+    static let light:  Double = 0.10
+    static let medium: Double = 0.15
+    static let strong: Double = 0.30
+}
+
+// MARK: - Shimmer
+
+struct ShimmerModifier: ViewModifier {
+    @State private var phase: CGFloat = 0
+
+    func body(content: Content) -> some View {
+        content
+            .overlay(
+                LinearGradient(
+                    stops: [
+                        .init(color: .clear, location: 0),
+                        .init(color: .white.opacity(0.25), location: 0.5),
+                        .init(color: .clear, location: 1)
+                    ],
+                    startPoint: .init(x: phase - 0.3, y: 0.5),
+                    endPoint: .init(x: phase + 0.3, y: 0.5)
+                )
+                .blendMode(.plusLighter)
+                .allowsHitTesting(false)
+            )
+            .onAppear {
+                withAnimation(.linear(duration: 1.4).repeatForever(autoreverses: false)) {
+                    phase = 1.3
+                }
+            }
+    }
+}
+
+extension View {
+    func shimmer() -> some View {
+        modifier(ShimmerModifier())
+    }
+
+    @ViewBuilder
+    func skeletonLoading(_ isLoading: Bool) -> some View {
+        if isLoading {
+            redacted(reason: .placeholder)
+                .shimmer()
+                .allowsHitTesting(false)
+        } else {
+            self
+        }
+    }
 }

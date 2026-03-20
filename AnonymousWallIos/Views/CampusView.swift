@@ -26,7 +26,7 @@ struct CampusView: View {
                 if authState.needsPasswordSetup {
                     HStack {
                         Image(systemName: "exclamationmark.triangle.fill")
-                            .foregroundColor(.orange)
+                            .foregroundColor(.accentOrange)
                         Text("Please set up your password to secure your account")
                             .font(.caption)
                             .foregroundColor(.textPrimary)
@@ -36,10 +36,10 @@ struct CampusView: View {
                         }
                         .font(.caption)
                         .fontWeight(.semibold)
-                        .foregroundColor(.blue)
+                        .foregroundColor(.accentBlue)
                     }
                     .padding()
-                    .background(Color.orange.opacity(0.1))
+                    .background(Color.accentOrange.opacity(Opacity.light))
                     .cornerRadius(8)
                     .padding()
                 }
@@ -80,12 +80,12 @@ struct CampusView: View {
                 // Post list
                 ScrollView {
                     if viewModel.isLoadingPosts && viewModel.posts.isEmpty {
-                        VStack {
-                            Spacer()
-                            ProgressView("Loading posts...")
-                            Spacer()
+                        LazyVStack(spacing: 12) {
+                            ForEach(0..<4, id: \.self) { _ in
+                                PostRowView(post: .placeholder, isOwnPost: false, onLike: {}, onDelete: {}, isLoading: true)
+                            }
                         }
-                        .frame(maxWidth: .infinity, minHeight: minimumScrollableHeight)
+                        .padding()
                     } else if viewModel.posts.isEmpty && !viewModel.isLoadingPosts {
                         VStack {
                             Spacer()
@@ -242,7 +242,7 @@ struct CampusView: View {
         .sheet(isPresented: $showSortPicker) {
             SortPickerSheet(selectedSort: $viewModel.selectedSortOrder)
                 .presentationDetents([.medium])
-                .presentationDragIndicator(.hidden)
+                .presentationDragIndicator(.visible)
                 .presentationCornerRadius(28)
         }
         .onChange(of: viewModel.selectedSortOrder) { _, _ in

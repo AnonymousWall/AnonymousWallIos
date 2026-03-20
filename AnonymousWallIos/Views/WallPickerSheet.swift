@@ -40,12 +40,6 @@ struct WallPickerSheet: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // Sheet handle
-            Capsule()
-                .fill(Color.white.opacity(0.15))
-                .frame(width: 36, height: 4)
-                .padding(.top, 12)
-
             SectionLabel(text: "Community")
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal, 16)
@@ -130,6 +124,6 @@ struct WallOptionRow: View {
 #Preview {
     WallPickerSheet(selectedWall: .constant(.campus))
         .presentationDetents([.height(260)])
-        .presentationDragIndicator(.hidden)
+        .presentationDragIndicator(.visible)
         .presentationCornerRadius(28)
 }

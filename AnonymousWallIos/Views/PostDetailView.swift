@@ -231,7 +231,7 @@ struct PostDetailView: View {
                     } else {
                         ZStack {
                             Circle()
-                                .fill(viewModel.commentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? AnyShapeStyle(Color.gray.opacity(0.3)) : AnyShapeStyle(LinearGradient.brandGradient))
+                                .fill(viewModel.commentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? AnyShapeStyle(Color.surfaceTertiary) : AnyShapeStyle(LinearGradient.brandGradient))
                                 .frame(width: 36, height: 36)
                             
                             Image(systemName: "arrow.up")
@@ -405,7 +405,7 @@ struct CommentRowView: View {
                     
                     Text(DateFormatting.formatRelativeTime(comment.createdAt))
                         .font(.caption2)
-                        .foregroundColor(isOwnComment ? Color.white.opacity(0.8) : .gray)
+                        .foregroundColor(isOwnComment ? Color.white.opacity(0.8) : .textTertiary)
                         .accessibilityLabel("Posted \(DateFormatting.formatRelativeTime(comment.createdAt))")
                 }
                 

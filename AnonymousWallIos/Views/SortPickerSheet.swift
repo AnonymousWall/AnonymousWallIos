@@ -52,12 +52,6 @@ struct SortPickerSheet: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // Sheet handle
-            Capsule()
-                .fill(Color.white.opacity(0.15))
-                .frame(width: 36, height: 4)
-                .padding(.top, 12)
-
             SectionLabel(text: "Sort By")
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal, 16)
@@ -142,6 +136,6 @@ struct SortOptionRow: View {
 #Preview {
     SortPickerSheet(selectedSort: .constant(.newest))
         .presentationDetents([.medium])
-        .presentationDragIndicator(.hidden)
+        .presentationDragIndicator(.visible)
         .presentationCornerRadius(28)
 }

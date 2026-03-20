@@ -82,12 +82,12 @@ struct InternshipView: View {
                 // Feed
                 ScrollView {
                     if activeViewModel.isLoading && activeViewModel.internships.isEmpty {
-                        VStack {
-                            Spacer()
-                            ProgressView("Loading internships...")
-                            Spacer()
+                        LazyVStack(spacing: 12) {
+                            ForEach(0..<4, id: \.self) { _ in
+                                InternshipRowView(internship: .placeholder, isOwnPosting: false, onDelete: {}, isLoading: true)
+                            }
                         }
-                        .frame(maxWidth: .infinity, minHeight: minimumScrollableHeight)
+                        .padding()
                     } else if activeViewModel.internships.isEmpty && !activeViewModel.isLoading {
                         VStack {
                             Spacer()
@@ -238,7 +238,7 @@ struct InternshipView: View {
         .sheet(isPresented: $showWallPicker) {
             WallPickerSheet(selectedWall: $selectedWall)
                 .presentationDetents([.height(260)])
-                .presentationDragIndicator(.hidden)
+                .presentationDragIndicator(.visible)
                 .presentationCornerRadius(28)
         }
         .onChange(of: selectedWall) { _, _ in

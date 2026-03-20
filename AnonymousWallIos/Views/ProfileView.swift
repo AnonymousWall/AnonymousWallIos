@@ -29,30 +29,25 @@ struct ProfileView: View {
         default: return "Marketplace"
         }
     }
-    
+
+    @ViewBuilder
+    private func sortMenuButton(title: String, isSelected: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack {
+                Text(title)
+                if isSelected { Image(systemName: "checkmark") }
+            }
+        }
+    }
+
     var body: some View {
         NavigationStack(path: $coordinator.path) {
             VStack(spacing: 0) {
                 // Password setup alert banner
                 if authState.needsPasswordSetup {
-                    HStack {
-                        Image(systemName: "exclamationmark.triangle.fill")
-                            .foregroundColor(.orange)
-                        Text("Please set up your password to secure your account")
-                            .font(.caption)
-                            .foregroundColor(.textPrimary)
-                        Spacer()
-                        Button("Set Now") {
-                            coordinator.navigate(to: .setPassword)
-                        }
-                        .font(.caption)
-                        .fontWeight(.semibold)
-                        .foregroundColor(.accentPurple)
+                    PasswordSetupBannerView {
+                        coordinator.navigate(to: .setPassword)
                     }
-                    .padding()
-                    .background(Color.orange.opacity(0.1))
-                    .cornerRadius(8)
-                    .padding()
                 }
                 
                 // User info section
@@ -120,94 +115,38 @@ struct ProfileView: View {
                     
                     Menu {
                         if viewModel.selectedSegment == 0 {
-                            // Posts sorting options
                             ForEach(SortOrder.feedOptions, id: \.self) { option in
-                                Button {
+                                sortMenuButton(title: option.displayName, isSelected: viewModel.postSortOrder == option) {
                                     viewModel.postSortOrder = option
                                     viewModel.postSortChanged(authState: authState)
-                                } label: {
-                                    HStack {
-                                        Text(option.displayName)
-                                        if viewModel.postSortOrder == option {
-                                            Image(systemName: "checkmark")
-                                        }
-                                    }
                                 }
                             }
                         } else if viewModel.selectedSegment == 1 {
-                            // Comments sorting options - only newest/oldest supported
-                            Button {
+                            sortMenuButton(title: SortOrder.newest.displayName, isSelected: viewModel.commentSortOrder == .newest) {
                                 viewModel.commentSortOrder = .newest
                                 viewModel.commentSortChanged(authState: authState)
-                            } label: {
-                                HStack {
-                                    Text(SortOrder.newest.displayName)
-                                    if viewModel.commentSortOrder == .newest {
-                                        Image(systemName: "checkmark")
-                                    }
-                                }
                             }
-                            
-                            Button {
+                            sortMenuButton(title: SortOrder.oldest.displayName, isSelected: viewModel.commentSortOrder == .oldest) {
                                 viewModel.commentSortOrder = .oldest
                                 viewModel.commentSortChanged(authState: authState)
-                            } label: {
-                                HStack {
-                                    Text(SortOrder.oldest.displayName)
-                                    if viewModel.commentSortOrder == .oldest {
-                                        Image(systemName: "checkmark")
-                                    }
-                                }
                             }
                         } else if viewModel.selectedSegment == 2 {
-                            // Internships sorting options - newest/oldest
-                            Button {
+                            sortMenuButton(title: SortOrder.newest.displayName, isSelected: viewModel.internshipSortOrder == .newest) {
                                 viewModel.internshipSortOrder = .newest
                                 viewModel.internshipSortChanged(authState: authState)
-                            } label: {
-                                HStack {
-                                    Text(SortOrder.newest.displayName)
-                                    if viewModel.internshipSortOrder == .newest {
-                                        Image(systemName: "checkmark")
-                                    }
-                                }
                             }
-                            
-                            Button {
+                            sortMenuButton(title: SortOrder.oldest.displayName, isSelected: viewModel.internshipSortOrder == .oldest) {
                                 viewModel.internshipSortOrder = .oldest
                                 viewModel.internshipSortChanged(authState: authState)
-                            } label: {
-                                HStack {
-                                    Text(SortOrder.oldest.displayName)
-                                    if viewModel.internshipSortOrder == .oldest {
-                                        Image(systemName: "checkmark")
-                                    }
-                                }
                             }
                         } else {
-                            // Marketplace sorting options - newest/oldest
-                            Button {
+                            sortMenuButton(title: SortOrder.newest.displayName, isSelected: viewModel.marketplaceSortOrder == .newest) {
                                 viewModel.marketplaceSortOrder = .newest
                                 viewModel.marketplaceSortChanged(authState: authState)
-                            } label: {
-                                HStack {
-                                    Text(SortOrder.newest.displayName)
-                                    if viewModel.marketplaceSortOrder == .newest {
-                                        Image(systemName: "checkmark")
-                                    }
-                                }
                             }
-                            
-                            Button {
+                            sortMenuButton(title: SortOrder.oldest.displayName, isSelected: viewModel.marketplaceSortOrder == .oldest) {
                                 viewModel.marketplaceSortOrder = .oldest
                                 viewModel.marketplaceSortChanged(authState: authState)
-                            } label: {
-                                HStack {
-                                    Text(SortOrder.oldest.displayName)
-                                    if viewModel.marketplaceSortOrder == .oldest {
-                                        Image(systemName: "checkmark")
-                                    }
-                                }
                             }
                         }
                     } label: {
@@ -233,6 +172,7 @@ struct ProfileView: View {
                 
                 // Content area
                 ScrollView {
+                    Group {
                     if viewModel.isLoading {
                         VStack {
                             Spacer()
@@ -240,34 +180,16 @@ struct ProfileView: View {
                             Spacer()
                         }
                         .frame(maxWidth: .infinity, minHeight: 300)
+                        .transition(.opacity)
                     } else if viewModel.selectedSegment == 0 {
                         // Posts section
                         if viewModel.myPosts.isEmpty {
-                            VStack(spacing: 20) {
-                                ZStack {
-                                    Circle()
-                                        .fill(Color.orangePinkGradient)
-                                        .frame(width: 100, height: 100)
-                                        .blur(radius: 30)
-                                    
-                                    Image(systemName: "bubble.left.and.bubble.right.fill")
-                                        .font(.system(size: 60))
-                                        .foregroundStyle(Color.orangePinkGradient)
-                                        .accessibilityHidden(true)
-                                }
-                                
-                                VStack(spacing: 8) {
-                                    Text("No posts yet")
-                                        .font(.title3.bold())
-                                        .foregroundColor(.textPrimary)
-                                    Text("Create your first post!")
-                                        .font(.body)
-                                        .foregroundColor(.textSecondary)
-                                }
-                                .accessibilityElement(children: .combine)
-                                .accessibilityLabel("No posts yet. Create your first post!")
-                            }
-                            .frame(maxWidth: .infinity, minHeight: 300)
+                            ProfileEmptyStateView(
+                                gradient: Color.orangePinkGradient,
+                                icon: "bubble.left.and.bubble.right.fill",
+                                title: "No posts yet",
+                                subtitle: "Create your first post!"
+                            )
                         } else {
                             LazyVStack(spacing: 12) {
                                 ForEach(viewModel.myPosts) { post in
@@ -304,31 +226,12 @@ struct ProfileView: View {
                     } else if viewModel.selectedSegment == 1 {
                         // Comments section
                         if viewModel.myComments.isEmpty {
-                            VStack(spacing: 20) {
-                                ZStack {
-                                    Circle()
-                                        .fill(LinearGradient.brandGradient)
-                                        .frame(width: 100, height: 100)
-                                        .blur(radius: 30)
-                                    
-                                    Image(systemName: "bubble.left.fill")
-                                        .font(.system(size: 60))
-                                        .foregroundStyle(LinearGradient.brandGradient)
-                                        .accessibilityHidden(true)
-                                }
-                                
-                                VStack(spacing: 8) {
-                                    Text("No comments yet")
-                                        .font(.title3.bold())
-                                        .foregroundColor(.textPrimary)
-                                    Text("Start commenting on posts!")
-                                        .font(.body)
-                                        .foregroundColor(.textSecondary)
-                                }
-                                .accessibilityElement(children: .combine)
-                                .accessibilityLabel("No comments yet. Start commenting on posts!")
-                            }
-                            .frame(maxWidth: .infinity, minHeight: 300)
+                            ProfileEmptyStateView(
+                                gradient: LinearGradient.brandGradient,
+                                icon: "bubble.left.fill",
+                                title: "No comments yet",
+                                subtitle: "Start commenting on posts!"
+                            )
                         } else {
                             LazyVStack(spacing: 12) {
                                 ForEach(viewModel.myComments) { comment in
@@ -380,31 +283,12 @@ struct ProfileView: View {
                     } else if viewModel.selectedSegment == 2 {
                         // Internships section
                         if viewModel.myInternships.isEmpty {
-                            VStack(spacing: 20) {
-                                ZStack {
-                                    Circle()
-                                        .fill(LinearGradient.brandGradient)
-                                        .frame(width: 100, height: 100)
-                                        .blur(radius: 30)
-                                    
-                                    Image(systemName: "briefcase.fill")
-                                        .font(.system(size: 60))
-                                        .foregroundStyle(LinearGradient.brandGradient)
-                                        .accessibilityHidden(true)
-                                }
-                                
-                                VStack(spacing: 8) {
-                                    Text("No internship postings yet")
-                                        .font(.title3.bold())
-                                        .foregroundColor(.textPrimary)
-                                    Text("Post your first internship opportunity!")
-                                        .font(.body)
-                                        .foregroundColor(.textSecondary)
-                                }
-                                .accessibilityElement(children: .combine)
-                                .accessibilityLabel("No internship postings yet. Post your first internship opportunity!")
-                            }
-                            .frame(maxWidth: .infinity, minHeight: 300)
+                            ProfileEmptyStateView(
+                                gradient: LinearGradient.brandGradient,
+                                icon: "briefcase.fill",
+                                title: "No internship postings yet",
+                                subtitle: "Post your first internship opportunity!"
+                            )
                         } else {
                             LazyVStack(spacing: 12) {
                                 ForEach(viewModel.myInternships) { internship in
@@ -440,31 +324,12 @@ struct ProfileView: View {
                     } else {
                         // Marketplace section
                         if viewModel.myMarketplaceItems.isEmpty {
-                            VStack(spacing: 20) {
-                                ZStack {
-                                    Circle()
-                                        .fill(Color.orangePinkGradient)
-                                        .frame(width: 100, height: 100)
-                                        .blur(radius: 30)
-                                    
-                                    Image(systemName: "bag.fill")
-                                        .font(.system(size: 60))
-                                        .foregroundStyle(Color.orangePinkGradient)
-                                        .accessibilityHidden(true)
-                                }
-                                
-                                VStack(spacing: 8) {
-                                    Text("No marketplace listings yet")
-                                        .font(.title3.bold())
-                                        .foregroundColor(.textPrimary)
-                                    Text("List your first item for sale!")
-                                        .font(.body)
-                                        .foregroundColor(.textSecondary)
-                                }
-                                .accessibilityElement(children: .combine)
-                                .accessibilityLabel("No marketplace listings yet. List your first item for sale!")
-                            }
-                            .frame(maxWidth: .infinity, minHeight: 300)
+                            ProfileEmptyStateView(
+                                gradient: Color.orangePinkGradient,
+                                icon: "bag.fill",
+                                title: "No marketplace listings yet",
+                                subtitle: "List your first item for sale!"
+                            )
                         } else {
                             LazyVStack(spacing: 12) {
                                 ForEach(viewModel.myMarketplaceItems) { item in
@@ -498,17 +363,37 @@ struct ProfileView: View {
                             .padding()
                         }
                     }
+                    }
+                    .animation(Animations.normal, value: viewModel.selectedSegment)
+                    .animation(Animations.normal, value: viewModel.isLoading)
                 }
                 .refreshable {
                     await viewModel.refreshContent(authState: authState)
                 }
-                
+
                 // Error message
                 if let errorMessage = viewModel.errorMessage {
-                    Text(errorMessage)
-                        .foregroundColor(.accentRed)
-                        .font(.caption)
-                        .padding()
+                    HStack {
+                        Text(errorMessage)
+                            .foregroundColor(.accentRed)
+                            .font(.captionMedium)
+                        Spacer()
+                        Button {
+                            viewModel.errorMessage = nil
+                        } label: {
+                            Image(systemName: "xmark")
+                                .font(.captionMedium)
+                                .foregroundColor(.accentRed)
+                        }
+                        .accessibilityLabel("Dismiss error")
+                    }
+                    .padding(.horizontal, Spacing.lg)
+                    .padding(.vertical, Spacing.sm)
+                    .background(Color.accentRed.opacity(Opacity.light))
+                    .cornerRadius(Radius.sm)
+                    .padding(.horizontal, Spacing.lg)
+                    .accessibilityElement(children: .combine)
+                    .accessibilityLabel("Error: \(errorMessage). Tap to dismiss.")
                 }
             }
             .navigationTitle("Profile")
@@ -609,9 +494,9 @@ struct ProfileCommentRowView: View {
     var parentBadgeColor: Color {
         switch parentType {
         case "POST": return .accentBlue
-        case "INTERNSHIP": return .orange
-        case "MARKETPLACE": return .green
-        default: return .gray
+        case "INTERNSHIP": return .accentOrange
+        case "MARKETPLACE": return .accentGreen
+        default: return .textTertiary
         }
     }
     

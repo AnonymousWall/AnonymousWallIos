@@ -46,6 +46,10 @@ struct PollCardView: View {
 
                 // Footer
                 HStack(spacing: 6) {
+                    if poll.isClosed {
+                        ChipBadge(label: "Closed", icon: "lock.fill", color: .textTertiary)
+                            .accessibilityLabel("Poll closed")
+                    }
                     Image(systemName: "person.2.fill")
                         .font(.caption2)
                         .foregroundColor(.textSecondary)
@@ -136,7 +140,7 @@ private struct PollOptionRow: View {
                         RoundedRectangle(cornerRadius: 10)
                             .fill(isVoted ? AnyShapeStyle(LinearGradient(colors: [Color.accentPurple.opacity(0.85), Color.accentPink.opacity(0.85)], startPoint: .topLeading, endPoint: .bottomTrailing)) : AnyShapeStyle(Color.accentPurple.opacity(0.5)))
                             .frame(width: geo.size.width * progressFraction, height: 42)
-                            .animation(.easeInOut(duration: 0.4), value: progressFraction)
+                            .animation(.spring(response: 0.5, dampingFraction: 0.7), value: progressFraction)
                     }
                     .frame(height: 42)
                 }

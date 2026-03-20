@@ -37,6 +37,7 @@ struct GradientButton: View {
             .frame(height: 52)
             .foregroundColor(.white)
         }
+        .buttonStyle(.bounce)
         .background(isDisabled ? AnyShapeStyle(Color.surfaceTertiary) : AnyShapeStyle(LinearGradient.brandGradient))
         .cornerRadius(Radius.lg)
         .opacity(isDisabled ? 0.35 : 1.0)

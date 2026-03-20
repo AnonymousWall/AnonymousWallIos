@@ -2,7 +2,9 @@
 //  ChipBadge.swift
 //  AnonymousWallIos
 //
-//  Pill-shaped badge for type indicators, tags, and status labels.
+//  Pill-shaped label badge for type indicators, tags, and status labels.
+//  Accepts an optional SF Symbol icon to the left of the text.
+//  For numeric count indicators use BadgeView. For icon-only containers use IconBadge.
 //
 
 import SwiftUI
@@ -16,7 +18,7 @@ struct ChipBadge: View {
         HStack(spacing: Spacing.xs) {
             if let icon {
                 Image(systemName: icon)
-                    .font(.captionFont)
+                    .font(.captionMedium)
                     .accessibilityHidden(true)
             }
             Text(label)

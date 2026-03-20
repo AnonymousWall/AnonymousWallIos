@@ -12,6 +12,7 @@ struct InternshipRowView: View {
     let isOwnPosting: Bool
     var onDelete: () -> Void
     var onTapAuthor: (() -> Void)?
+    var isLoading: Bool = false
 
     @EnvironmentObject var authState: AuthState
     @EnvironmentObject var blockViewModel: BlockViewModel
@@ -48,7 +49,7 @@ struct InternshipRowView: View {
                         Text("by \(internship.author.profileName)")
                             .font(.caption)
                             .fontWeight(.medium)
-                            .foregroundColor(.blue)
+                            .foregroundColor(.accentBlue)
                             .underline()
                     }
                     .accessibilityLabel("Posted by \(internship.author.profileName)")
@@ -90,13 +91,13 @@ struct InternshipRowView: View {
             // Details chips
             HStack(spacing: 8) {
                 if let salary = internship.salary, !salary.isEmpty {
-                    DetailChip(icon: "dollarsign.circle", text: salary, color: .green)
+                    DetailChip(icon: "dollarsign.circle", text: salary, color: .accentGreen)
                 }
                 if let location = internship.location, !location.isEmpty {
-                    DetailChip(icon: "mappin.circle", text: location, color: .blue)
+                    DetailChip(icon: "mappin.circle", text: location, color: .accentBlue)
                 }
                 if let deadline = internship.deadline, !deadline.isEmpty {
-                    DetailChip(icon: "calendar", text: deadline, color: .orange)
+                    DetailChip(icon: "calendar", text: deadline, color: .accentOrange)
                 }
             }
 
@@ -171,6 +172,7 @@ struct InternshipRowView: View {
             RoundedRectangle(cornerRadius: 16)
                 .stroke(Color.borderSubtle, lineWidth: 0.5)
         )
+        .skeletonLoading(isLoading)
         .alert("User Blocked", isPresented: $showBlockSuccessAlert) {
             Button("OK", role: .cancel) {}
         } message: {

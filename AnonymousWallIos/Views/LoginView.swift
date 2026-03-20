@@ -131,7 +131,7 @@ struct LoginView: View {
                         }
                         .padding(.horizontal, 16)
                         .padding(.vertical, 12)
-                        .background((viewModel.email.isEmpty || viewModel.resendCountdown > 0) ? Color.gray : Color.accentPurple)
+                        .background((viewModel.email.isEmpty || viewModel.resendCountdown > 0) ? Color.surfaceTertiary : Color.accentPurple)
                         .foregroundColor(.white)
                         .cornerRadius(10)
                         .disabled(viewModel.email.isEmpty || viewModel.isSendingCode || viewModel.resendCountdown > 0)

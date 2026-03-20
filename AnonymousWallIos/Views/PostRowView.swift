@@ -13,6 +13,7 @@ struct PostRowView: View {
     var onLike: () -> Void
     var onDelete: () -> Void
     var onTapAuthor: (() -> Void)?
+    var isLoading: Bool = false
     
     @EnvironmentObject var authState: AuthState
     @EnvironmentObject var blockViewModel: BlockViewModel
@@ -137,8 +138,9 @@ struct PostRowView: View {
                     }
                     .padding(.horizontal, 10)
                     .padding(.vertical, 6)
-                    .background(post.liked ? Color.pink.opacity(0.15) : Color.surfaceSecondary)
-                    .cornerRadius(8)
+                    .background(post.liked ? Color.pink.opacity(Opacity.medium) : Color.surfaceSecondary)
+                    .cornerRadius(Radius.sm)
+                    .animation(.spring(response: 0.3, dampingFraction: 0.6), value: post.liked)
                 }
                 .buttonStyle(.bounce)
                 .accessibilityLabel(post.liked ? "Unlike" : "Like")
@@ -157,8 +159,8 @@ struct PostRowView: View {
                 }
                 .padding(.horizontal, 10)
                 .padding(.vertical, 6)
-                .background(Color.accentBlue.opacity(0.15))
-                .cornerRadius(8)
+                .background(Color.accentBlue.opacity(Opacity.medium))
+                .cornerRadius(Radius.sm)
                 .accessibilityElement(children: .combine)
                 .accessibilityLabel("\(post.comments) comments")
                 
@@ -173,7 +175,7 @@ struct PostRowView: View {
                             .foregroundColor(.white)
                             .padding(6)
                             .background(Color.accentRed)
-                            .cornerRadius(8)
+                            .cornerRadius(Radius.sm)
                     }
                     .buttonStyle(.bounce)
                     .accessibilityLabel("Delete post")
@@ -194,6 +196,7 @@ struct PostRowView: View {
             }
         }
         }
+        .skeletonLoading(isLoading)
         .fullScreenCover(item: $selectedImageViewer) { item in
             FullScreenImageViewer(imageURLs: post.imageUrls, initialIndex: item.index)
         }

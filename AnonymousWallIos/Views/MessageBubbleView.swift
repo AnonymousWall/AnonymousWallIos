@@ -68,7 +68,7 @@ struct MessageBubbleView: View {
             case .read:
                 Image(systemName: "checkmark.circle.fill")
                     .font(.caption2)
-                    .foregroundColor(.blue)
+                    .foregroundColor(.accentBlue)
             case .failed:
                 Image(systemName: "exclamationmark.circle")
                     .font(.caption2)

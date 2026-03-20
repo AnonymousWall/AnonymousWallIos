@@ -71,7 +71,7 @@ struct ForgotPasswordView: View {
                             }
                             .padding(.horizontal, 16)
                             .padding(.vertical, 12)
-                            .background((viewModel.email.isEmpty || viewModel.resendCountdown > 0) ? Color.gray : Color.accentPurple)
+                            .background((viewModel.email.isEmpty || viewModel.resendCountdown > 0) ? Color.surfaceTertiary : Color.accentPurple)
                             .foregroundColor(.white)
                             .cornerRadius(10)
                             .disabled(viewModel.email.isEmpty || viewModel.isSendingCode || viewModel.resendCountdown > 0)
@@ -160,7 +160,7 @@ struct ForgotPasswordView: View {
                         }
                     }
                     .frame(height: 50)
-                    .background((viewModel.verificationCode.isEmpty || viewModel.newPassword.isEmpty || viewModel.confirmPassword.isEmpty || viewModel.isLoading) ? AnyShapeStyle(Color.gray) : AnyShapeStyle(LinearGradient.brandGradient))
+                    .background((viewModel.verificationCode.isEmpty || viewModel.newPassword.isEmpty || viewModel.confirmPassword.isEmpty || viewModel.isLoading) ? AnyShapeStyle(Color.surfaceTertiary) : AnyShapeStyle(LinearGradient.brandGradient))
                     .foregroundColor(.white)
                     .cornerRadius(10)
                     .padding(.horizontal)

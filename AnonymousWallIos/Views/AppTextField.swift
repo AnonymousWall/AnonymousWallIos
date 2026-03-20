@@ -51,7 +51,7 @@ struct AppTextField: View {
                 }
                 if let limit = characterLimit {
                     Text("\(text.count)/\(limit)")
-                        .font(.captionFont)
+                        .font(.captionMedium)
                         .foregroundColor(isOverLimit ? .accentRed : .textTertiary)
                 }
             }
