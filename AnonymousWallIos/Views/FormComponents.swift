@@ -166,6 +166,81 @@ struct StyledTextEditorField: View {
     }
 }
 
+// MARK: - Styled Date Picker Field
+
+/// A consistently styled optional date picker with a "tap to set" placeholder and a clear button.
+struct StyledDatePickerField: View {
+    let icon: String
+    let label: String
+    @Binding var date: Date?
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 4) {
+                Image(systemName: icon)
+                    .font(.caption)
+                    .foregroundColor(.accentPurple)
+                    .accessibilityHidden(true)
+                Text(label)
+                    .font(.subheadline)
+                    .fontWeight(.medium)
+                Spacer()
+                if date != nil {
+                    Button(action: { date = nil }) {
+                        Image(systemName: "xmark.circle.fill")
+                            .foregroundColor(.textSecondary)
+                    }
+                    .accessibilityLabel("Clear deadline")
+                }
+            }
+
+            if let binding = Binding($date) {
+                DatePicker(
+                    "",
+                    selection: binding,
+                    in: Date()...,
+                    displayedComponents: .date
+                )
+                .datePickerStyle(.compact)
+                .labelsHidden()
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .background(Color.surfaceSecondary)
+                .cornerRadius(10)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10)
+                        .stroke(Color.borderSubtle, lineWidth: 0.5)
+                )
+            } else {
+                Button(action: {
+                    date = Calendar.current.date(byAdding: .month, value: 1, to: Date())
+                }) {
+                    HStack {
+                        Text("Tap to set a deadline")
+                            .font(.subheadline)
+                            .foregroundColor(.textSecondary)
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .font(.caption)
+                            .foregroundColor(.textSecondary)
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 10)
+                    .background(Color.surfaceSecondary)
+                    .cornerRadius(10)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 10)
+                            .stroke(Color.borderSubtle, lineWidth: 0.5)
+                    )
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(label)
+    }
+}
+
 // MARK: - Create Form Submit Button
 
 /// Gradient submit button with a loading spinner, shared by all create forms.

@@ -116,12 +116,10 @@ struct CreateInternshipView: View {
                 accessibilityLabel: "Location"
             )
 
-            StyledTextField(
+            StyledDatePickerField(
                 icon: "calendar.badge.clock",
                 label: "Application Deadline",
-                placeholder: "e.g. 2026-06-30",
-                text: $viewModel.deadline,
-                accessibilityLabel: "Application deadline"
+                date: $viewModel.deadlineDate
             )
 
             StyledTextEditorField(
