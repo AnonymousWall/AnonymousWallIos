@@ -29,7 +29,8 @@ actor MessageStore {
     /// - Parameters:
     ///   - message: Message to add
     ///   - conversationUserId: The other user's ID in the conversation
-    /// - Returns: True if message was added (not duplicate), false otherwise
+    /// - Returns: True if the store changed — either a new message was inserted, or an existing
+    ///   message's read status was updated. False if the message was already present with identical read status.
     @discardableResult
     func addMessage(_ message: Message, for conversationUserId: String) -> Bool {
         var messages = messagesByConversation[conversationUserId] ?? []
@@ -67,7 +68,8 @@ actor MessageStore {
     /// - Parameters:
     ///   - messages: Messages to add
     ///   - conversationUserId: The other user's ID
-    /// - Returns: Number of new messages added
+    /// - Returns: Number of messages inserted or updated. Existing messages whose read status
+    ///   changed count toward this total alongside newly inserted messages.
     @discardableResult
     func addMessages(_ messages: [Message], for conversationUserId: String) -> Int {
         var existingMessages = messagesByConversation[conversationUserId] ?? []

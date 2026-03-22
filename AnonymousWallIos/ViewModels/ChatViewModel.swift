@@ -28,6 +28,7 @@ class ChatViewModel: ObservableObject {
     private let messageStore: MessageStore
     private var cancellables = Set<AnyCancellable>()
     private var loadTask: Task<Void, Never>?
+    private var markReadTask: Task<Void, Never>?
     private var typingTimer: Timer?
     private var isViewActive = false
     private var currentAuthState: AuthState?
@@ -55,6 +56,7 @@ class ChatViewModel: ObservableObject {
     
     deinit {
         loadTask?.cancel()
+        markReadTask?.cancel()
         typingTimer?.invalidate()
     }
     
@@ -247,6 +249,7 @@ class ChatViewModel: ObservableObject {
     
     func disconnect() {
         isViewActive = false
+        markReadTask?.cancel()
         repository.leaveConversation(otherUserId: otherUserId)
     }
     
@@ -275,12 +278,18 @@ class ChatViewModel: ObservableObject {
                         
                         if self.isViewActive && message.senderId == self.otherUserId && !message.readStatus,
                            let authState = self.currentAuthState {
-                            // Mark the whole conversation as read so ConversationsViewModel
-                            // receives conversationReadPublisher and resets the per-row
-                            // unread badge. Calling single-message markAsRead here only
-                            // emits readReceiptPublisher, which ConversationsViewModel
-                            // does not observe, leaving the badge permanently incremented.
-                            self.markConversationAsRead(authState: authState)
+                            // Debounce: cancel any pending request and reschedule.
+                            // This coalesces a rapid burst of incoming messages into a
+                            // single REST call instead of firing one per message.
+                            // markConversationAsRead (not single-message markAsRead) is
+                            // used so ConversationsViewModel receives conversationReadPublisher
+                            // and resets the per-row unread badge correctly.
+                            self.markReadTask?.cancel()
+                            self.markReadTask = Task { [weak self] in
+                                try? await Task.sleep(nanoseconds: 300_000_000) // 300 ms
+                                guard !Task.isCancelled, let self else { return }
+                                self.markConversationAsRead(authState: authState)
+                            }
                         }
                     }
                 }
