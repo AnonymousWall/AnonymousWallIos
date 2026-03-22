@@ -275,7 +275,12 @@ class ChatViewModel: ObservableObject {
                         
                         if self.isViewActive && message.senderId == self.otherUserId && !message.readStatus,
                            let authState = self.currentAuthState {
-                            self.markAsRead(messageId: message.id, authState: authState, refreshStore: false)
+                            // Mark the whole conversation as read so ConversationsViewModel
+                            // receives conversationReadPublisher and resets the per-row
+                            // unread badge. Calling single-message markAsRead here only
+                            // emits readReceiptPublisher, which ConversationsViewModel
+                            // does not observe, leaving the badge permanently incremented.
+                            self.markConversationAsRead(authState: authState)
                         }
                     }
                 }

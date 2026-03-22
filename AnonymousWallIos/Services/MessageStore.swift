@@ -33,9 +33,14 @@ actor MessageStore {
     @discardableResult
     func addMessage(_ message: Message, for conversationUserId: String) -> Bool {
         var messages = messagesByConversation[conversationUserId] ?? []
-        
-        // Check for duplicates
-        if messages.contains(where: { $0.id == message.id }) {
+
+        // If the message already exists, update read status if it changed
+        if let index = messages.firstIndex(where: { $0.id == message.id }) {
+            if messages[index].readStatus != message.readStatus {
+                messages[index] = messages[index].withReadStatus(message.readStatus)
+                messagesByConversation[conversationUserId] = messages
+                return true
+            }
             return false
         }
         
@@ -67,18 +72,33 @@ actor MessageStore {
     func addMessages(_ messages: [Message], for conversationUserId: String) -> Int {
         var existingMessages = messagesByConversation[conversationUserId] ?? []
         
-        // Create a set of existing IDs for O(1) lookup
-        let existingIds = Set(existingMessages.map { $0.id })
-        
-        // Filter out duplicates
-        let newMessages = messages.filter { !existingIds.contains($0.id) }
-        
-        if newMessages.isEmpty {
+        // Create a map of existing messages for O(1) lookup by ID
+        var existingById: [String: Int] = [:]
+        for (index, msg) in existingMessages.enumerated() {
+            existingById[msg.id] = index
+        }
+
+        // Update read status for existing messages that changed; collect truly new ones
+        var addedCount = 0
+        var newMessages: [Message] = []
+        for message in messages {
+            if let index = existingById[message.id] {
+                if existingMessages[index].readStatus != message.readStatus {
+                    existingMessages[index] = existingMessages[index].withReadStatus(message.readStatus)
+                    addedCount += 1
+                }
+            } else {
+                newMessages.append(message)
+            }
+        }
+
+        if newMessages.isEmpty && addedCount == 0 {
             return 0
         }
-        
+
         // Append all new messages
         existingMessages.append(contentsOf: newMessages)
+        addedCount += newMessages.count
         
         // Sort once after all additions
         existingMessages.sort { msg1, msg2 in
@@ -95,7 +115,7 @@ actor MessageStore {
         
         // Keep only the most recent messages to bound memory usage
         messagesByConversation[conversationUserId] = trimToLimit(existingMessages)
-        return newMessages.count
+        return addedCount
     }
     
     /// Get all messages for a conversation

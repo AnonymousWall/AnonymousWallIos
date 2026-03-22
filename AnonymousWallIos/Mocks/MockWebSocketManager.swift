@@ -110,6 +110,12 @@ class MockWebSocketManager: ChatWebSocketManagerProtocol {
     var tokenRefreshNeededPublisher: AnyPublisher<Void, Never> {
         PassthroughSubject<Void, Never>().eraseToAnyPublisher()
     }
+
+    private var sendFailureSubject = PassthroughSubject<(receiverId: String, content: String), Never>()
+
+    var sendFailurePublisher: AnyPublisher<(receiverId: String, content: String), Never> {
+        sendFailureSubject.eraseToAnyPublisher()
+    }
     
     // MARK: - Test Helpers
     
@@ -131,6 +137,11 @@ class MockWebSocketManager: ChatWebSocketManagerProtocol {
     /// Simulate receiving unread count update
     func simulateUnreadCount(_ count: Int) {
         unreadCountSubject.send(count)
+    }
+
+    /// Simulate a WebSocket send failure for a message
+    func simulateSendFailure(receiverId: String, content: String) {
+        sendFailureSubject.send((receiverId: receiverId, content: content))
     }
     
     /// Simulate reconnection
