@@ -15,7 +15,7 @@ class CreateInternshipViewModel: ObservableObject {
     @Published var salary = ""
     @Published var location = ""
     @Published var description = ""
-    @Published var deadline = ""
+    @Published var deadlineDate: Date? = nil
     @Published var selectedWall: WallType = .campus
     @Published var isPosting = false
     @Published var errorMessage: String?
@@ -25,6 +25,12 @@ class CreateInternshipViewModel: ObservableObject {
 
     // MARK: - Constants
     let maxCompanyLength = 255
+    private static let deadlineDateFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "yyyy-MM-dd"
+        f.locale = Locale(identifier: "en_US_POSIX")
+        return f
+    }()
     let maxRoleLength = 255
     let maxDescriptionLength = 5000
 
@@ -82,7 +88,7 @@ class CreateInternshipViewModel: ObservableObject {
         let trimmedSalary = salary.trimmingCharacters(in: .whitespacesAndNewlines)
         let trimmedLocation = location.trimmingCharacters(in: .whitespacesAndNewlines)
         let trimmedDescription = description.trimmingCharacters(in: .whitespacesAndNewlines)
-        let trimmedDeadline = deadline.trimmingCharacters(in: .whitespacesAndNewlines)
+        let deadlineString = deadlineDate.map { Self.deadlineDateFormatter.string(from: $0) }
 
         Task {
             do {
@@ -92,7 +98,7 @@ class CreateInternshipViewModel: ObservableObject {
                     salary: trimmedSalary.isEmpty ? nil : trimmedSalary,
                     location: trimmedLocation.isEmpty ? nil : trimmedLocation,
                     description: trimmedDescription.isEmpty ? nil : trimmedDescription,
-                    deadline: trimmedDeadline.isEmpty ? nil : trimmedDeadline,
+                    deadline: deadlineString,
                     wall: selectedWall,
                     token: token,
                     userId: userId
