@@ -69,6 +69,8 @@ struct ProfileView: View {
                         Text(email)
                             .font(.displayLarge)
                             .foregroundColor(.textPrimary)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.5)
                             .accessibilityLabel("Email: \(email)")
                     }
                     
