@@ -27,6 +27,9 @@ protocol ChatWebSocketManagerProtocol {
     /// Fires when the server rejects the WebSocket handshake due to an expired token.
     /// Observers should trigger an immediate token refresh.
     var tokenRefreshNeededPublisher: AnyPublisher<Void, Never> { get }
+    /// Fires when a chat message send fails at the socket level.
+    /// Emits (receiverId, content) so callers can retry via REST.
+    var sendFailurePublisher: AnyPublisher<(receiverId: String, content: String), Never> { get }
 }
 
 /// WebSocket manager for real-time chat with automatic reconnection
@@ -44,6 +47,7 @@ class ChatWebSocketManager: ChatWebSocketManagerProtocol {
     private var readReceiptSubject = PassthroughSubject<String, Never>()
     private var unreadCountSubject = PassthroughSubject<Int, Never>()
     private var tokenRefreshNeededSubject = PassthroughSubject<Void, Never>()
+    private var sendFailureSubject = PassthroughSubject<(receiverId: String, content: String), Never>()
     
     private var token: String?
     private var userId: String?
@@ -82,7 +86,11 @@ class ChatWebSocketManager: ChatWebSocketManagerProtocol {
     var tokenRefreshNeededPublisher: AnyPublisher<Void, Never> {
         tokenRefreshNeededSubject.eraseToAnyPublisher()
     }
-    
+
+    var sendFailurePublisher: AnyPublisher<(receiverId: String, content: String), Never> {
+        sendFailureSubject.eraseToAnyPublisher()
+    }
+
     // MARK: - Initialization
     
     init() {}
@@ -344,6 +352,9 @@ class ChatWebSocketManager: ChatWebSocketManagerProtocol {
                 } catch {
                     Logger.chat.error("Failed to send WebSocket message: \(error)")
                     self?.handleConnectionFailure(error: error)
+                    if let receiverId = message.receiverId, let content = message.content {
+                        self?.sendFailureSubject.send((receiverId: receiverId, content: content))
+                    }
                 }
             }
         } catch {

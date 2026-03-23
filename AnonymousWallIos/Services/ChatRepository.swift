@@ -262,11 +262,14 @@ class ChatRepository: ChatRepositoryProtocol {
             userId: userId
         )
 
+        // Snapshot existing IDs before the merge so we can identify genuinely new
+        // messages for publishing, while still letting addMessages apply any
+        // read-status updates to already-cached messages (e.g. messages that were
+        // read by the recipient while this device was disconnected / token-refreshing).
         let existingIds = Set(await messageStore.getMessages(for: otherUserId).map { $0.id })
-        let newerMessages = response.messages.filter { !existingIds.contains($0.id) }
-
-        await messageStore.addMessages(newerMessages, for: otherUserId)
-        return newerMessages
+        await messageStore.addMessages(response.messages, for: otherUserId)
+        let newMessages = response.messages.filter { !existingIds.contains($0.id) }
+        return newMessages
     }
     
     // MARK: - Private Methods
@@ -382,6 +385,53 @@ class ChatRepository: ChatRepositoryProtocol {
             self.updateCachedToken(newToken)
         }
         
+        webSocketManager.sendFailurePublisher
+            .sink { [weak self] (receiverId, content) in
+                guard let self else { return }
+                // Find the pending temp message for this content+receiver and mark it failed,
+                // then retry via REST so the message is not silently lost.
+                Task { @MainActor in
+                    guard let token = self.cachedToken,
+                          let userId = self.cachedUserId else { return }
+                    var candidateTempIds: [String] = []
+                    for (tempId, tempReceiverId) in self.pendingTemporaryMessages where tempReceiverId == receiverId {
+                        if await self.messageStore.getTemporaryMessage(id: tempId)?.content == content {
+                            candidateTempIds.append(tempId)
+                        }
+                    }
+                    // Ambiguous or missing mapping — skip automatic recovery to avoid
+                    // reconciling the wrong message when multiple pending messages share
+                    // the same (receiverId, content) pair.
+                    guard candidateTempIds.count == 1, let temporaryId = candidateTempIds.first else { return }
+                    do {
+                        let confirmedMessage = try await self.chatService.sendMessage(
+                            receiverId: receiverId,
+                            content: content,
+                            token: token,
+                            userId: userId
+                        )
+                        await self.reconcileTemporaryMessage(
+                            temporaryId: temporaryId,
+                            confirmedMessage: confirmedMessage,
+                            receiverId: receiverId
+                        )
+                        self.messageSubject.send((confirmedMessage, receiverId))
+                    } catch {
+                        await self.messageStore.updateLocalStatus(
+                            messageId: temporaryId,
+                            for: receiverId,
+                            status: .failed
+                        )
+                        self.pendingTemporaryMessages.removeValue(forKey: temporaryId)
+                        let messages = await self.messageStore.getMessages(for: receiverId)
+                        if let failedMessage = messages.first(where: { $0.id == temporaryId }) {
+                            self.messageSubject.send((failedMessage, receiverId))
+                        }
+                    }
+                }
+            }
+            .store(in: &cancellables)
+
         webSocketManager.tokenRefreshNeededPublisher
             .sink { [weak self] in
                 guard let self else { return }
