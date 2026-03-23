@@ -88,7 +88,7 @@ struct AnonymousWallIosApp: App {
                         }
                     }
                     tokenRefreshTimer?.invalidate()
-                    tokenRefreshTimer = Timer.scheduledTimer(withTimeInterval: 13, repeats: true) { [weak authState, weak appCoordinator] _ in
+                    tokenRefreshTimer = Timer.scheduledTimer(withTimeInterval: 13 * 60, repeats: true) { [weak authState, weak appCoordinator] _ in
                         let capturedAuthState = authState
                         let capturedCoordinator = appCoordinator
                         Task {
@@ -115,7 +115,7 @@ struct AnonymousWallIosApp: App {
             .onChange(of: authState.isAuthenticated) { _, isAuthenticated in
                 if isAuthenticated {
                     tokenRefreshTimer?.invalidate()
-                    tokenRefreshTimer = Timer.scheduledTimer(withTimeInterval: 13, repeats: true) { [weak authState, weak appCoordinator] _ in
+                    tokenRefreshTimer = Timer.scheduledTimer(withTimeInterval: 13 * 60, repeats: true) { [weak authState, weak appCoordinator] _ in
                         let capturedAuthState = authState
                         let capturedCoordinator = appCoordinator
                         Task {
