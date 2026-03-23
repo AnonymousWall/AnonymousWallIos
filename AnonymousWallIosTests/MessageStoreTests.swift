@@ -48,6 +48,67 @@ struct MessageStoreTests {
         #expect(messages.count == 1)
     }
     
+    @Test func testAddMessageReturnsTrueWhenReadStatusChanges() async throws {
+        let store = MessageStore()
+        let message = createMockMessage(id: "msg1", senderId: "user1", receiverId: "user2", readStatus: false)
+        
+        let added = await store.addMessage(message, for: "user1")
+        #expect(added == true)
+        
+        // Re-add same ID but with readStatus flipped to true
+        let updatedMessage = createMockMessage(id: "msg1", senderId: "user1", receiverId: "user2", readStatus: true)
+        let updated = await store.addMessage(updatedMessage, for: "user1")
+        
+        // Should return true because the store changed (readStatus updated)
+        #expect(updated == true)
+        
+        // Should not duplicate — still exactly one message
+        let messages = await store.getMessages(for: "user1")
+        #expect(messages.count == 1)
+        #expect(messages[0].readStatus == true)
+    }
+    
+    @Test func testAddMessageReturnsFalseWhenReadStatusAlreadyMatches() async throws {
+        let store = MessageStore()
+        // Add a message already marked read
+        let message = createMockMessage(id: "msg1", senderId: "user1", receiverId: "user2", readStatus: true)
+        await store.addMessage(message, for: "user1")
+        
+        // Re-add with the same readStatus — no change expected
+        let result = await store.addMessage(message, for: "user1")
+        
+        #expect(result == false)
+        let messages = await store.getMessages(for: "user1")
+        #expect(messages.count == 1)
+    }
+    
+    @Test func testAddMessagesCountsReadStatusUpdatesForDuplicates() async throws {
+        let store = MessageStore()
+        
+        // Pre-populate with unread messages
+        let existing = [
+            createMockMessage(id: "msg1", senderId: "user1", receiverId: "user2", readStatus: false),
+            createMockMessage(id: "msg2", senderId: "user1", receiverId: "user2", readStatus: false)
+        ]
+        await store.addMessages(existing, for: "user1")
+        
+        // Merge batch: msg1 now read (update), msg2 still unread (no change), msg3 new
+        let incoming = [
+            createMockMessage(id: "msg1", senderId: "user1", receiverId: "user2", readStatus: true),
+            createMockMessage(id: "msg2", senderId: "user1", receiverId: "user2", readStatus: false),
+            createMockMessage(id: "msg3", senderId: "user1", receiverId: "user2", readStatus: false)
+        ]
+        let count = await store.addMessages(incoming, for: "user1")
+        
+        // msg1 (readStatus updated) + msg3 (new) = 2
+        #expect(count == 2)
+        
+        let messages = await store.getMessages(for: "user1")
+        #expect(messages.count == 3)
+        #expect(messages.first(where: { $0.id == "msg1" })?.readStatus == true)
+        #expect(messages.first(where: { $0.id == "msg2" })?.readStatus == false)
+    }
+    
     @Test func testAddMultipleMessagesSortsCorrectly() async throws {
         let store = MessageStore()
         

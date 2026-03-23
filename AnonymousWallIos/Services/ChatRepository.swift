@@ -393,14 +393,16 @@ class ChatRepository: ChatRepositoryProtocol {
                 Task { @MainActor in
                     guard let token = self.cachedToken,
                           let userId = self.cachedUserId else { return }
-                    var temporaryId: String?
+                    var candidateTempIds: [String] = []
                     for (tempId, tempReceiverId) in self.pendingTemporaryMessages where tempReceiverId == receiverId {
                         if await self.messageStore.getTemporaryMessage(id: tempId)?.content == content {
-                            temporaryId = tempId
-                            break
+                            candidateTempIds.append(tempId)
                         }
                     }
-                    guard let temporaryId else { return }
+                    // Ambiguous or missing mapping — skip automatic recovery to avoid
+                    // reconciling the wrong message when multiple pending messages share
+                    // the same (receiverId, content) pair.
+                    guard candidateTempIds.count == 1, let temporaryId = candidateTempIds.first else { return }
                     do {
                         let confirmedMessage = try await self.chatService.sendMessage(
                             receiverId: receiverId,
